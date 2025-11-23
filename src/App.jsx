@@ -87,4 +87,4 @@ const FinanceDashboard = () => {
       grouped[t.category] = (grouped[t.category] || 0) + Math.abs(t.amount);
     });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [filt
+  }, [transactions]);
