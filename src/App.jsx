@@ -1,295 +1,765 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { DollarSign, TrendingUp, TrendingDown, Calendar } from 'lucide-react';
+import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
 
-const COLORS = ['#10b981', '#ef4444', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899'];
-
-function App() {
+const FinanceDashboard = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [currentDate] = useState(new Date());
+  const [lastImportDate, setLastImportDate] = useState(new Date('2024-11-23'));
+  
   const [transactions, setTransactions] = useState([
-    { id: 1, date: '2024-01-15', description: 'Salary', amount: 5000, type: 'income', category: 'Salary' },
-    { id: 2, date: '2024-01-16', description: 'Rent', amount: -1500, type: 'expense', category: 'Housing' },
-    { id: 3, date: '2024-01-17', description: 'Groceries', amount: -200, type: 'expense', category: 'Food' },
-    { id: 4, date: '2024-01-18', description: 'Utilities', amount: -150, type: 'expense', category: 'Bills' },
-    { id: 5, date: '2024-01-19', description: 'Entertainment', amount: -80, type: 'expense', category: 'Entertainment' },
+    // Sample data across multiple months for comparison
+    { id: 1, date: '2024-11-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 2, date: '2024-11-15', description: 'Freelance Project', amount: 2000, type: 'income', category: 'Freelance', source: 'Side Business' },
+    { id: 3, date: '2024-11-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 4, date: '2024-11-22', description: 'Grocery Store', amount: -450, type: 'expense', category: 'Food', source: 'Groceries' },
+    { id: 5, date: '2024-11-23', description: 'Electric Bill', amount: -180, type: 'expense', category: 'Utilities', source: 'Electric' },
+    { id: 6, date: '2024-11-25', description: 'Gas Bill', amount: -120, type: 'expense', category: 'Utilities', source: 'Gas' },
+    { id: 7, date: '2024-11-28', description: 'Car Insurance', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
+    { id: 8, date: '2024-11-30', description: 'Restaurant', amount: -85, type: 'expense', category: 'Food', source: 'Dining Out' },
+    // October data
+    { id: 9, date: '2024-10-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 10, date: '2024-10-15', description: 'Freelance Project', amount: 1500, type: 'income', category: 'Freelance', source: 'Side Business' },
+    { id: 11, date: '2024-10-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 12, date: '2024-10-22', description: 'Grocery Store', amount: -520, type: 'expense', category: 'Food', source: 'Groceries' },
+    { id: 13, date: '2024-10-28', description: 'Car Insurance', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
+    // September data
+    { id: 14, date: '2024-09-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 15, date: '2024-09-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 16, date: '2024-09-22', description: 'Grocery Store', amount: -480, type: 'expense', category: 'Food', source: 'Groceries' },
+    // August data
+    { id: 17, date: '2024-08-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 18, date: '2024-08-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    // 2023 data for year comparison
+    { id: 19, date: '2023-11-15', description: 'Salary - Tech Corp', amount: 7500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 20, date: '2023-11-20', description: 'Mortgage Payment', amount: -2000, type: 'expense', category: 'Housing', source: 'Mortgage' },
   ]);
 
-  const [formData, setFormData] = useState({
+  const [investments, setInvestments] = useState([
+    { id: 1, type: '401(k)', currentValue: 250000, targetValue: 1000000, contributionRate: 15 },
+    { id: 2, type: 'Roth IRA', currentValue: 85000, targetValue: 500000, contributionRate: 10 },
+    { id: 3, type: 'Taxable Brokerage', currentValue: 120000, targetValue: 300000, contributionRate: 8 },
+    { id: 4, type: 'Real Estate', currentValue: 180000, targetValue: 500000, contributionRate: 5 },
+  ]);
+
+  const [newTransaction, setNewTransaction] = useState({
     date: '',
     description: '',
     amount: '',
     type: 'expense',
-    category: ''
+    category: '',
+    source: ''
   });
 
-  const [filterType, setFilterType] = useState('all');
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const categories = {
+    income: ['Salary', 'Freelance', 'Investment Income', 'Other Income'],
+    expense: ['Housing', 'Food', 'Utilities', 'Transportation', 'Insurance', 'Healthcare', 'Entertainment', 'Other']
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (formData.date && formData.description && formData.amount && formData.category) {
-      const newTransaction = {
-        id: transactions.length + 1,
-        date: formData.date,
-        description: formData.description,
-        amount: formData.type === 'expense' ? -Math.abs(parseFloat(formData.amount)) : Math.abs(parseFloat(formData.amount)),
-        type: formData.type,
-        category: formData.category
-      };
-      setTransactions([...transactions, newTransaction]);
-      setFormData({
-        date: '',
-        description: '',
-        amount: '',
-        type: 'expense',
-        category: ''
+  // Filter transactions by selected month and year
+  const filteredTransactions = useMemo(() => {
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === selectedMonth && 
+             transactionDate.getFullYear() === selectedYear;
+    });
+  }, [transactions, selectedMonth, selectedYear]);
+
+  // Calculate totals for selected period
+  const totals = useMemo(() => {
+    const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const expenses = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    return {
+      income,
+      expenses,
+      netIncome: income - expenses
+    };
+  }, [filteredTransactions]);
+
+  // Helper function to get transactions for a specific period
+  const getTransactionsForPeriod = (month, year) => {
+    return transactions.filter(t => {
+      const date = new Date(t.date);
+      return date.getMonth() === month && date.getFullYear() === year;
+    });
+  };
+
+  // Helper function to get quarter transactions
+  const getQuarterTransactions = (quarter, year) => {
+    const startMonth = (quarter - 1) * 3;
+    const endMonth = startMonth + 2;
+    return transactions.filter(t => {
+      const date = new Date(t.date);
+      const month = date.getMonth();
+      return date.getFullYear() === year && month >= startMonth && month <= endMonth;
+    });
+  };
+
+  // Calculate comparison data
+  const comparisonData = useMemo(() => {
+    // Month over month
+    const currentMonth = getTransactionsForPeriod(selectedMonth, selectedYear);
+    const lastMonth = selectedMonth === 0 
+      ? getTransactionsForPeriod(11, selectedYear - 1)
+      : getTransactionsForPeriod(selectedMonth - 1, selectedYear);
+    
+    const currentMonthExpenses = currentMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const lastMonthExpenses = lastMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    // Quarter over quarter
+    const currentQuarter = Math.floor(selectedMonth / 3) + 1;
+    const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
+    const lastQuarterYear = currentQuarter === 1 ? selectedYear - 1 : selectedYear;
+    
+    const currentQuarterTrans = getQuarterTransactions(currentQuarter, selectedYear);
+    const lastQuarterTrans = getQuarterTransactions(lastQuarter, lastQuarterYear);
+    
+    const currentQuarterExpenses = currentQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const lastQuarterExpenses = lastQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    // Year over year
+    const currentYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear);
+    const lastYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear - 1);
+    
+    const currentYearExpenses = currentYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const lastYearExpenses = lastYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+    return {
+      monthOverMonth: {
+        current: currentMonthExpenses,
+        previous: lastMonthExpenses,
+        change: lastMonthExpenses > 0 ? ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses * 100) : 0
+      },
+      quarterOverQuarter: {
+        current: currentQuarterExpenses,
+        previous: lastQuarterExpenses,
+        change: lastQuarterExpenses > 0 ? ((currentQuarterExpenses - lastQuarterExpenses) / lastQuarterExpenses * 100) : 0
+      },
+      yearOverYear: {
+        current: currentYearExpenses,
+        previous: lastYearExpenses,
+        change: lastYearExpenses > 0 ? ((currentYearExpenses - lastYearExpenses) / lastYearExpenses * 100) : 0
+      }
+    };
+  }, [transactions, selectedMonth, selectedYear]);
+
+  // Prepare trend data for line chart
+  const trendData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const data = [];
+    
+    for (let i = 0; i < 12; i++) {
+      const currentYearTrans = getTransactionsForPeriod(i, selectedYear);
+      const lastYearTrans = getTransactionsForPeriod(i, selectedYear - 1);
+      
+      const currentExpenses = currentYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      const lastYearExpenses = lastYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
+      
+      data.push({
+        month: months[i],
+        currentYear: currentExpenses,
+        lastYear: lastYearExpenses
       });
+    }
+    
+    return data;
+  }, [transactions, selectedYear]);
+
+  // Calculate totals (keep existing logic but use filteredTransactions)
+  const incomeBySource = useMemo(() => {
+    const grouped = {};
+    filteredTransactions.filter(t => t.type === 'income').forEach(t => {
+      grouped[t.source] = (grouped[t.source] || 0) + t.amount;
+    });
+    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [filteredTransactions]);
+
+  const expensesByCategory = useMemo(() => {
+    const grouped = {};
+    filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
+      grouped[t.category] = (grouped[t.category] || 0) + Math.abs(t.amount);
+    });
+    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [filteredTransactions]);
+
+  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
+
+  const handleAddTransaction = () => {
+    if (newTransaction.date && newTransaction.description && newTransaction.amount) {
+      const transaction = {
+        id: Date.now(),
+        ...newTransaction,
+        amount: parseFloat(newTransaction.amount) * (newTransaction.type === 'expense' ? -1 : 1)
+      };
+      setTransactions([...transactions, transaction]);
+      setNewTransaction({ date: '', description: '', amount: '', type: 'expense', category: '', source: '' });
     }
   };
 
-  const filteredTransactions = useMemo(() => {
-    if (filterType === 'all') return transactions;
-    return transactions.filter(t => t.type === filterType);
-  }, [filterType, transactions]);
+  const handleDeleteTransaction = (id) => {
+    setTransactions(transactions.filter(t => t.id !== id));
+  };
 
-  const totalIncome = useMemo(() => {
-    return transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-  }, [transactions]);
+  const handleFileUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const text = event.target.result;
+          const lines = text.split('\n');
+          const newTransactions = [];
+          
+          for (let i = 1; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (!line) continue;
+            
+            const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
+            if (parts.length >= 4) {
+              newTransactions.push({
+                id: Date.now() + i,
+                date: parts[0],
+                description: parts[1],
+                amount: parseFloat(parts[2]),
+                type: parseFloat(parts[2]) > 0 ? 'income' : 'expense',
+                category: parts[3] || 'Uncategorized',
+                source: parts[4] || 'Unknown'
+              });
+            }
+          }
+          
+          if (newTransactions.length > 0) {
+            setTransactions([...transactions, ...newTransactions]);
+          }
+        } catch (error) {
+          alert('Error parsing CSV file. Please ensure it follows the correct format.');
+        }
+      };
+      reader.readAsText(file);
+    }
+  };
 
-  const totalExpenses = useMemo(() => {
-    return Math.abs(transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0));
-  }, [transactions]);
-
-  const balance = useMemo(() => {
-    return totalIncome - totalExpenses;
-  }, [totalIncome, totalExpenses]);
-
-  const expensesByCategory = useMemo(() => {
-    const expenses = transactions.filter(t => t.type === 'expense');
-    const grouped = expenses.reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + Math.abs(t.amount);
-      return acc;
-    }, {});
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [transactions]);
+  const exportCPAData = () => {
+    const headers = ['Date', 'Description', 'Amount', 'Type', 'Category', 'Source', 'Tax Deductible'];
+    const rows = transactions.map(t => [
+      t.date,
+      t.description,
+      Math.abs(t.amount).toFixed(2),
+      t.type,
+      t.category,
+      t.source,
+      t.category === 'Healthcare' || t.category === 'Insurance' ? 'Yes' : 'No'
+    ]);
+    
+    const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'cpa-export.csv';
+    a.click();
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">Family Finance Dashboard</h1>
-        
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Income</p>
-                <p className="text-2xl font-bold text-green-600">${totalIncome.toFixed(2)}</p>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="container mx-auto p-6">
+        <header className="mb-8">
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                Family Finance Dashboard
+              </h1>
+              <p className="text-slate-300">Track income, expenses, and retirement goals</p>
+            </div>
+            <div className="text-right">
+              <div className="flex items-center gap-2 text-slate-300 mb-1">
+                <Calendar size={20} />
+                <span className="text-sm">Current Date</span>
               </div>
-              <TrendingUp className="text-green-600" size={32} />
+              <p className="text-xl font-semibold text-white">
+                {currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
             </div>
           </div>
-          
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-600">${totalExpenses.toFixed(2)}</p>
-              </div>
-              <TrendingDown className="text-red-600" size={32} />
-            </div>
-          </div>
-          
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-500 text-sm">Balance</p>
-                <p className={`text-2xl font-bold ${balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  ${balance.toFixed(2)}
-                </p>
-              </div>
-              <DollarSign className={balance >= 0 ? 'text-green-600' : 'text-red-600'} size={32} />
-            </div>
-          </div>
+        </header>
+
+        {/* Tab Navigation */}
+        <div className="flex gap-2 mb-6 border-b border-slate-700">
+          {['dashboard', 'transactions', 'retirement', 'cpa'].map(tab => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-6 py-3 font-medium capitalize transition-all ${
+                activeTab === tab
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              {tab === 'cpa' ? 'CPA Export' : tab}
+            </button>
+          ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* Add Transaction Form */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Add Transaction</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+        {/* Dashboard Tab */}
+        {activeTab === 'dashboard' && (
+          <div className="space-y-6">
+            {/* Date Selector */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-lg font-semibold mb-4">Select Period</h3>
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm text-slate-300 mb-2">Month</label>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, index) => (
+                      <option key={index} value={index}>{month}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm text-slate-300 mb-2">Year</label>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    {[2023, 2024, 2025, 2026].map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm border border-green-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-green-300">Total Income</h3>
+                  <TrendingUp className="text-green-400" />
+                </div>
+                <p className="text-3xl font-bold text-white">${totals.income.toLocaleString()}</p>
+              </div>
+
+              <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 backdrop-blur-sm border border-red-500/30 rounded-xl p-6 shadow-lg">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-semibold text-red-300">Total Expenses</h3>
+                  <TrendingDown className="text-red-400" />
+                </div>
+                <p className="text-3xl font-bold text-white">${totals.expenses.toLocaleString()}</p>
+              </div>
+
+              <div className={`bg-gradient-to-br ${totals.netIncome >= 0 ? 'from-blue-500/20 to-blue-600/20 border-blue-500/30' : 'from-orange-500/20 to-orange-600/20 border-orange-500/30'} backdrop-blur-sm border rounded-xl p-6 shadow-lg`}>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className={`text-lg font-semibold ${totals.netIncome >= 0 ? 'text-blue-300' : 'text-orange-300'}`}>Net Income</h3>
+                  <DollarSign className={totals.netIncome >= 0 ? 'text-blue-400' : 'text-orange-400'} />
+                </div>
+                <p className="text-3xl font-bold text-white">${totals.netIncome.toLocaleString()}</p>
+              </div>
+            </div>
+
+            {/* Charts */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-xl font-semibold mb-4">Income by Source</h3>
+                {incomeBySource.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <PieChart>
+                      <Pie
+                        data={incomeBySource}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={false}
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        outerRadius={80}
+                        fill="#8884d8"
+                        dataKey="value"
+                      >
+                        {incomeBySource.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-slate-400">
+                    No income data for selected period
+                  </div>
+                )}
+              </div>
+
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-xl font-semibold mb-4">Expenses by Category</h3>
+                {expensesByCategory.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={300}>
+                    <BarChart data={expensesByCategory}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="name" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
+                      <YAxis stroke="#9CA3AF" />
+                      <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                      <Bar dataKey="value" fill="#8B5CF6" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-[300px] flex items-center justify-center text-slate-400">
+                    No expense data for selected period
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Comparison Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold mb-4">Month over Month</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">This Month</span>
+                    <span className="font-semibold">${comparisonData.monthOverMonth.current.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Last Month</span>
+                    <span className="font-semibold">${comparisonData.monthOverMonth.previous.toLocaleString()}</span>
+                  </div>
+                  <div className="pt-3 border-t border-slate-700">
+                    <div className={`flex items-center justify-between ${comparisonData.monthOverMonth.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className="font-semibold">Change</span>
+                      <div className="flex items-center gap-2">
+                        {comparisonData.monthOverMonth.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
+                        <span className="font-bold">{Math.abs(comparisonData.monthOverMonth.change).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold mb-4">Quarter over Quarter</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">This Quarter</span>
+                    <span className="font-semibold">${comparisonData.quarterOverQuarter.current.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Last Quarter</span>
+                    <span className="font-semibold">${comparisonData.quarterOverQuarter.previous.toLocaleString()}</span>
+                  </div>
+                  <div className="pt-3 border-t border-slate-700">
+                    <div className={`flex items-center justify-between ${comparisonData.quarterOverQuarter.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className="font-semibold">Change</span>
+                      <div className="flex items-center gap-2">
+                        {comparisonData.quarterOverQuarter.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
+                        <span className="font-bold">{Math.abs(comparisonData.quarterOverQuarter.change).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-lg font-semibold mb-4">Year over Year</h3>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">This Year</span>
+                    <span className="font-semibold">${comparisonData.yearOverYear.current.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-slate-400">Last Year</span>
+                    <span className="font-semibold">${comparisonData.yearOverYear.previous.toLocaleString()}</span>
+                  </div>
+                  <div className="pt-3 border-t border-slate-700">
+                    <div className={`flex items-center justify-between ${comparisonData.yearOverYear.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      <span className="font-semibold">Change</span>
+                      <div className="flex items-center gap-2">
+                        {comparisonData.yearOverYear.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
+                        <span className="font-bold">{Math.abs(comparisonData.yearOverYear.change).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Expense Trends Line Chart */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold mb-4">Expense Trends - {selectedYear} vs {selectedYear - 1}</h3>
+              <ResponsiveContainer width="100%" height={350}>
+                <LineChart data={trendData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="month" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip 
+                    formatter={(value) => `$${value.toLocaleString()}`} 
+                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} 
+                  />
+                  <Legend />
+                  <Line 
+                    type="monotone" 
+                    dataKey="currentYear" 
+                    stroke="#8B5CF6" 
+                    strokeWidth={3}
+                    name={`${selectedYear}`}
+                    dot={{ fill: '#8B5CF6', r: 5 }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="lastYear" 
+                    stroke="#3B82F6" 
+                    strokeWidth={3}
+                    name={`${selectedYear - 1}`}
+                    dot={{ fill: '#3B82F6', r: 5 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* Transactions Tab */}
+        {activeTab === 'transactions' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-semibold">Add Transaction</h3>
+                <label className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
+                  <Upload size={20} />
+                  <span>Import CSV</span>
+                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+                </label>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
                 <input
                   type="date"
-                  name="date"
-                  value={formData.date}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
+                  value={newTransaction.date}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <input
                   type="text"
-                  name="description"
-                  value={formData.description}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter description"
-                  required
+                  placeholder="Description"
+                  value={newTransaction.description}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount</label>
                 <input
                   type="number"
-                  name="amount"
-                  value={formData.amount}
-                  onChange={handleInputChange}
-                  step="0.01"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="0.00"
-                  required
+                  placeholder="Amount"
+                  value={newTransaction.amount}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, amount: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
                 <select
-                  name="type"
-                  value={formData.type}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={newTransaction.type}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, type: e.target.value, category: '' })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 >
-                  <option value="expense">Expense</option>
                   <option value="income">Income</option>
+                  <option value="expense">Expense</option>
                 </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <select
+                  value={newTransaction.category}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select Category</option>
+                  {categories[newTransaction.type].map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
                 <input
                   type="text"
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="e.g., Food, Bills, Salary"
-                  required
+                  placeholder="Source"
+                  value={newTransaction.source}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, source: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
               </div>
-              
               <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium"
+                onClick={handleAddTransaction}
+                className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg transition-all"
               >
+                <Plus size={20} />
                 Add Transaction
               </button>
-            </form>
-          </div>
+            </div>
 
-          {/* Expense Chart */}
-          <div className="bg-white rounded-lg shadow-lg p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-4">Expenses by Category</h2>
-            {expensesByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={expensesByCategory}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    {expensesByCategory.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-gray-500 text-center py-12">No expenses to display</p>
-            )}
-          </div>
-        </div>
-
-        {/* Transaction List */}
-        <div className="mt-8 bg-white rounded-lg shadow-lg p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold text-gray-800">Recent Transactions</h2>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setFilterType('all')}
-                className={`px-4 py-2 rounded-md ${filterType === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setFilterType('income')}
-                className={`px-4 py-2 rounded-md ${filterType === 'income' ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                Income
-              </button>
-              <button
-                onClick={() => setFilterType('expense')}
-                className={`px-4 py-2 rounded-md ${filterType === 'expense' ? 'bg-red-600 text-white' : 'bg-gray-200 text-gray-700'}`}
-              >
-                Expenses
-              </button>
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg overflow-x-auto">
+              <h3 className="text-2xl font-semibold mb-4">Transaction History</h3>
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="text-left py-3 px-4">Date</th>
+                    <th className="text-left py-3 px-4">Description</th>
+                    <th className="text-left py-3 px-4">Category</th>
+                    <th className="text-left py-3 px-4">Source</th>
+                    <th className="text-right py-3 px-4">Amount</th>
+                    <th className="text-center py-3 px-4">Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).map(t => (
+                    <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
+                      <td className="py-3 px-4">{t.date}</td>
+                      <td className="py-3 px-4">{t.description}</td>
+                      <td className="py-3 px-4">{t.category}</td>
+                      <td className="py-3 px-4">{t.source}</td>
+                      <td className={`py-3 px-4 text-right font-semibold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                        {t.amount >= 0 ? '+' : ''}{t.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handleDeleteTransaction(t.id)}
+                          className="text-red-400 hover:text-red-300 transition-colors"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           </div>
-          
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Date</th>
-                  <th className="text-left py-3 px-4">Description</th>
-                  <th className="text-left py-3 px-4">Category</th>
-                  <th className="text-right py-3 px-4">Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="border-b hover:bg-gray-50">
-                    <td className="py-3 px-4">{transaction.date}</td>
-                    <td className="py-3 px-4">{transaction.description}</td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2 py-1 rounded-full text-xs ${
-                        transaction.type === 'income' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {transaction.category}
-                      </span>
-                    </td>
-                    <td className={`py-3 px-4 text-right font-semibold ${
-                      transaction.amount >= 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      ${Math.abs(transaction.amount).toFixed(2)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+        )}
+
+        {/* Retirement Tab */}
+        {activeTab === 'retirement' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {investments.map(inv => {
+                const progress = (inv.currentValue / inv.targetValue) * 100;
+                return (
+                  <div key={inv.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-xl font-semibold">{inv.type}</h3>
+                      <Target className="text-purple-400" />
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Current Value</span>
+                          <span className="font-semibold">${inv.currentValue.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Target Value</span>
+                          <span className="font-semibold">${inv.targetValue.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-3">
+                          <span className="text-slate-400">Contribution Rate</span>
+                          <span className="font-semibold">{inv.contributionRate}%</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Progress</span>
+                          <span className="font-semibold text-purple-400">{progress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-3">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
+                            style={{ width: `${Math.min(progress, 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-2xl font-semibold mb-4">Retirement Overview</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={investments}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="type" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip
+                    formatter={(value) => `$${value.toLocaleString()}`}
+                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="currentValue" name="Current Value" fill="#3B82F6" />
+                  <Bar dataKey="targetValue" name="Target Value" fill="#8B5CF6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* CPA Export Tab */}
+        {activeTab === 'cpa' && (
+          <div className="space-y-6">
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-2xl font-semibold mb-4">CPA Export</h3>
+              <p className="text-slate-300 mb-6">
+                Export your transaction data in a format ready for your CPA to import into Xero.
+                The export includes all transactions with tax-relevant categorization.
+              </p>
+              
+              <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-4 mb-6">
+                <h4 className="font-semibold mb-2">Export includes:</h4>
+                <ul className="list-disc list-inside text-slate-300 space-y-1">
+                  <li>Transaction date and description</li>
+                  <li>Amount, type, and category</li>
+                  <li>Source information</li>
+                  <li>Tax deductible indicator</li>
+                </ul>
+              </div>
+
+              <button
+                onClick={exportCPAData}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg transition-all text-lg font-semibold"
+              >
+                <Download size={20} />
+                Export for CPA
+              </button>
+            </div>
+
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg overflow-x-auto">
+              <h3 className="text-xl font-semibold mb-4">Preview</h3>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-slate-600">
+                    <th className="text-left py-2 px-3">Date</th>
+                    <th className="text-left py-2 px-3">Description</th>
+                    <th className="text-right py-2 px-3">Amount</th>
+                    <th className="text-left py-2 px-3">Type</th>
+                    <th className="text-left py-2 px-3">Category</th>
+                    <th className="text-left py-2 px-3">Tax Deductible</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {transactions.slice(0, 10).map(t => (
+                    <tr key={t.id} className="border-b border-slate-700">
+                      <td className="py-2 px-3">{t.date}</td>
+                      <td className="py-2 px-3">{t.description}</td>
+                      <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
+                      <td className="py-2 px-3">{t.type}</td>
+                      <td className="py-2 px-3">{t.category}</td>
+                      <td className="py-2 px-3">
+                        {t.category === 'Healthcare' || t.category === 'Insurance' ? 'Yes' : 'No'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {transactions.length > 10 && (
+                <p className="text-slate-400 text-sm mt-4">Showing 10 of {transactions.length} transactions</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
 
-export default App;
+export default FinanceDashboard;
