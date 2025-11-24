@@ -1,6 +1,6 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar } from 'lucide-react';
+import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown } from 'lucide-react';
 
 const FinanceDashboard = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -8,34 +8,43 @@ const FinanceDashboard = () => {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currentDate] = useState(new Date());
   const [lastImportDate, setLastImportDate] = useState(new Date('2024-11-23'));
-  const [comparisonView, setComparisonView] = useState(''); // '', 'month', 'quarter', 'year'
+  const [comparisonView, setComparisonView] = useState('');
+  const [transactionFilter, setTransactionFilter] = useState('');
+  const [transactionSort, setTransactionSort] = useState('date-desc');
+  const [cpaFilter, setCpaFilter] = useState('');
+  const [cpaSort, setCpaSort] = useState('date-desc');
+  const [marketData, setMarketData] = useState({
+    dow: { value: 44296.51, change: 0.28 },
+    sp500: { value: 5969.34, change: 0.35 },
+    nasdaq: { value: 19003.65, change: 0.63 }
+  });
   
   const [transactions, setTransactions] = useState([
     // Sample data across multiple months for comparison
-    { id: 1, date: '2024-11-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
-    { id: 2, date: '2024-11-15', description: 'Freelance Project', amount: 2000, type: 'income', category: 'Freelance', source: 'Side Business' },
-    { id: 3, date: '2024-11-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
-    { id: 4, date: '2024-11-22', description: 'Grocery Store', amount: -450, type: 'expense', category: 'Food', source: 'Groceries' },
-    { id: 5, date: '2024-11-23', description: 'Electric Bill', amount: -180, type: 'expense', category: 'Utilities', source: 'Electric' },
-    { id: 6, date: '2024-11-25', description: 'Gas Bill', amount: -120, type: 'expense', category: 'Utilities', source: 'Gas' },
-    { id: 7, date: '2024-11-28', description: 'Car Insurance', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
-    { id: 8, date: '2024-11-30', description: 'Restaurant', amount: -85, type: 'expense', category: 'Food', source: 'Dining Out' },
+    { id: 1, date: '2024-11-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 2, date: '2024-11-15', description: 'Freelance Project', vendor: 'ABC Consulting', amount: 2000, type: 'income', category: 'Freelance', source: 'Side Business' },
+    { id: 3, date: '2024-11-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 4, date: '2024-11-22', description: 'Grocery Store', vendor: 'Whole Foods', amount: -450, type: 'expense', category: 'Food', source: 'Groceries' },
+    { id: 5, date: '2024-11-23', description: 'Electric Bill', vendor: 'Georgia Power', amount: -180, type: 'expense', category: 'Utilities', source: 'Electric' },
+    { id: 6, date: '2024-11-25', description: 'Gas Bill', vendor: 'Atlanta Gas Light', amount: -120, type: 'expense', category: 'Utilities', source: 'Gas' },
+    { id: 7, date: '2024-11-28', description: 'Car Insurance', vendor: 'State Farm', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
+    { id: 8, date: '2024-11-30', description: 'Restaurant', vendor: 'The Cheesecake Factory', amount: -85, type: 'expense', category: 'Food', source: 'Dining Out' },
     // October data
-    { id: 9, date: '2024-10-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
-    { id: 10, date: '2024-10-15', description: 'Freelance Project', amount: 1500, type: 'income', category: 'Freelance', source: 'Side Business' },
-    { id: 11, date: '2024-10-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
-    { id: 12, date: '2024-10-22', description: 'Grocery Store', amount: -520, type: 'expense', category: 'Food', source: 'Groceries' },
-    { id: 13, date: '2024-10-28', description: 'Car Insurance', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
+    { id: 9, date: '2024-10-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 10, date: '2024-10-15', description: 'Freelance Project', vendor: 'XYZ Inc', amount: 1500, type: 'income', category: 'Freelance', source: 'Side Business' },
+    { id: 11, date: '2024-10-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 12, date: '2024-10-22', description: 'Grocery Store', vendor: 'Kroger', amount: -520, type: 'expense', category: 'Food', source: 'Groceries' },
+    { id: 13, date: '2024-10-28', description: 'Car Insurance', vendor: 'State Farm', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto' },
     // September data
-    { id: 14, date: '2024-09-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
-    { id: 15, date: '2024-09-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
-    { id: 16, date: '2024-09-22', description: 'Grocery Store', amount: -480, type: 'expense', category: 'Food', source: 'Groceries' },
+    { id: 14, date: '2024-09-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 15, date: '2024-09-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 16, date: '2024-09-22', description: 'Grocery Store', vendor: 'Publix', amount: -480, type: 'expense', category: 'Food', source: 'Groceries' },
     // August data
-    { id: 17, date: '2024-08-15', description: 'Salary - Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
-    { id: 18, date: '2024-08-20', description: 'Mortgage Payment', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 17, date: '2024-08-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 18, date: '2024-08-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage' },
     // 2023 data for year comparison
-    { id: 19, date: '2023-11-15', description: 'Salary - Tech Corp', amount: 7500, type: 'income', category: 'Salary', source: 'Primary Job' },
-    { id: 20, date: '2023-11-20', description: 'Mortgage Payment', amount: -2000, type: 'expense', category: 'Housing', source: 'Mortgage' },
+    { id: 19, date: '2023-11-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 7500, type: 'income', category: 'Salary', source: 'Primary Job' },
+    { id: 20, date: '2023-11-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2000, type: 'expense', category: 'Housing', source: 'Mortgage' },
   ]);
 
   const [investments, setInvestments] = useState([
@@ -48,6 +57,7 @@ const FinanceDashboard = () => {
   const [newTransaction, setNewTransaction] = useState({
     date: '',
     description: '',
+    vendor: '',
     amount: '',
     type: 'expense',
     category: '',
@@ -63,7 +73,6 @@ const FinanceDashboard = () => {
   const mapToGLAccount = (description, category, type) => {
     const desc = description.toLowerCase();
     
-    // Direct matches
     if (desc.includes('mortgage') && desc.includes('interest')) return { number: '6009', description: 'Mortgage Interest (Paid)' };
     if (desc.includes('mortgage')) return { number: '2001', description: 'Mortgage' };
     if (desc.includes('insurance')) return { number: '6006', description: 'Insurance' };
@@ -85,17 +94,14 @@ const FinanceDashboard = () => {
     if (desc.includes('childcare')) return { number: '6015', description: 'Miscellaneous' };
     if (desc.includes('client gifts')) return { number: '6016', description: 'Meals & Entertainment' };
     
-    // Category-based fallback
     if (category === 'Housing') return { number: '2001', description: 'Mortgage' };
     if (category === 'Food') return { number: '6016', description: 'Meals & Entertainment' };
     if (category === 'Transportation') return { number: '1003', description: 'Vehicles' };
     if (category === 'Healthcare') return { number: '6015', description: 'Miscellaneous' };
     if (category === 'Entertainment') return { number: '6016', description: 'Meals & Entertainment' };
     
-    // Type-based fallback
     if (type === 'income') return { number: '4008', description: 'Rental Revenue' };
     
-    // Default
     return { number: '1007', description: 'Cash' };
   };
 
@@ -119,7 +125,7 @@ const FinanceDashboard = () => {
     };
   }, [filteredTransactions]);
 
-  // Helper function to get transactions for a specific period
+  // Helper functions
   const getTransactionsForPeriod = (month, year) => {
     return transactions.filter(t => {
       const date = new Date(t.date);
@@ -127,7 +133,6 @@ const FinanceDashboard = () => {
     });
   };
 
-  // Helper function to get quarter transactions
   const getQuarterTransactions = (quarter, year) => {
     const startMonth = (quarter - 1) * 3;
     const endMonth = startMonth + 2;
@@ -140,16 +145,16 @@ const FinanceDashboard = () => {
 
   // Calculate comparison data
   const comparisonData = useMemo(() => {
-    // Month over month
     const currentMonth = getTransactionsForPeriod(selectedMonth, selectedYear);
     const lastMonth = selectedMonth === 0 
       ? getTransactionsForPeriod(11, selectedYear - 1)
       : getTransactionsForPeriod(selectedMonth - 1, selectedYear);
     
+    const currentMonthIncome = currentMonth.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const lastMonthIncome = lastMonth.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const currentMonthExpenses = currentMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const lastMonthExpenses = lastMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-    // Quarter over quarter
     const currentQuarter = Math.floor(selectedMonth / 3) + 1;
     const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
     const lastQuarterYear = currentQuarter === 1 ? selectedYear - 1 : selectedYear;
@@ -157,36 +162,75 @@ const FinanceDashboard = () => {
     const currentQuarterTrans = getQuarterTransactions(currentQuarter, selectedYear);
     const lastQuarterTrans = getQuarterTransactions(lastQuarter, lastQuarterYear);
     
+    const currentQuarterIncome = currentQuarterTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const lastQuarterIncome = lastQuarterTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const currentQuarterExpenses = currentQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const lastQuarterExpenses = lastQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
-    // Year over year
     const currentYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear);
     const lastYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear - 1);
     
+    const currentYearIncome = currentYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
+    const lastYearIncome = lastYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
     const currentYearExpenses = currentYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
     const lastYearExpenses = lastYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
 
     return {
       monthOverMonth: {
-        current: currentMonthExpenses,
-        previous: lastMonthExpenses,
-        change: lastMonthExpenses > 0 ? ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses * 100) : 0
+        income: { current: currentMonthIncome, previous: lastMonthIncome, change: lastMonthIncome > 0 ? ((currentMonthIncome - lastMonthIncome) / lastMonthIncome * 100) : 0 },
+        expenses: { current: currentMonthExpenses, previous: lastMonthExpenses, change: lastMonthExpenses > 0 ? ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses * 100) : 0 }
       },
       quarterOverQuarter: {
-        current: currentQuarterExpenses,
-        previous: lastQuarterExpenses,
-        change: lastQuarterExpenses > 0 ? ((currentQuarterExpenses - lastQuarterExpenses) / lastQuarterExpenses * 100) : 0
+        income: { current: currentQuarterIncome, previous: lastQuarterIncome, change: lastQuarterIncome > 0 ? ((currentQuarterIncome - lastQuarterIncome) / lastQuarterIncome * 100) : 0 },
+        expenses: { current: currentQuarterExpenses, previous: lastQuarterExpenses, change: lastQuarterExpenses > 0 ? ((currentQuarterExpenses - lastQuarterExpenses) / lastQuarterExpenses * 100) : 0 }
       },
       yearOverYear: {
-        current: currentYearExpenses,
-        previous: lastYearExpenses,
-        change: lastYearExpenses > 0 ? ((currentYearExpenses - lastYearExpenses) / lastYearExpenses * 100) : 0
+        income: { current: currentYearIncome, previous: lastYearIncome, change: lastYearIncome > 0 ? ((currentYearIncome - lastYearIncome) / lastYearIncome * 100) : 0 },
+        expenses: { current: currentYearExpenses, previous: lastYearExpenses, change: lastYearExpenses > 0 ? ((currentYearExpenses - lastYearExpenses) / lastYearExpenses * 100) : 0 }
       }
     };
   }, [transactions, selectedMonth, selectedYear]);
 
-  // Prepare trend data for line charts
+  // Income/Expense by source for comparison view
+  const comparisonSourceData = useMemo(() => {
+    if (!comparisonView) return { income: [], expenses: [] };
+
+    let currentPeriod, previousPeriod;
+
+    if (comparisonView === 'month') {
+      currentPeriod = getTransactionsForPeriod(selectedMonth, selectedYear);
+      previousPeriod = selectedMonth === 0 
+        ? getTransactionsForPeriod(11, selectedYear - 1)
+        : getTransactionsForPeriod(selectedMonth - 1, selectedYear);
+    } else if (comparisonView === 'quarter') {
+      const currentQuarter = Math.floor(selectedMonth / 3) + 1;
+      const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
+      const lastQuarterYear = currentQuarter === 1 ? selectedYear - 1 : selectedYear;
+      currentPeriod = getQuarterTransactions(currentQuarter, selectedYear);
+      previousPeriod = getQuarterTransactions(lastQuarter, lastQuarterYear);
+    } else {
+      currentPeriod = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear);
+      previousPeriod = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear - 1);
+    }
+
+    const incomeBySource = {};
+    const expensesByCategory = {};
+
+    currentPeriod.filter(t => t.type === 'income').forEach(t => {
+      incomeBySource[t.source] = (incomeBySource[t.source] || 0) + t.amount;
+    });
+
+    currentPeriod.filter(t => t.type === 'expense').forEach(t => {
+      expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
+    });
+
+    return {
+      income: Object.entries(incomeBySource).map(([name, value]) => ({ name, value })),
+      expenses: Object.entries(expensesByCategory).map(([name, value]) => ({ name, value }))
+    };
+  }, [comparisonView, transactions, selectedMonth, selectedYear]);
+
+  // Trend data
   const incomeTrendData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
     const data = [];
@@ -229,7 +273,6 @@ const FinanceDashboard = () => {
     return data;
   }, [transactions, selectedYear]);
 
-  // Calculate totals (keep existing logic but use filteredTransactions)
   const incomeBySource = useMemo(() => {
     const grouped = {};
     filteredTransactions.filter(t => t.type === 'income').forEach(t => {
@@ -246,17 +289,67 @@ const FinanceDashboard = () => {
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   }, [filteredTransactions]);
 
+  // Filtered and sorted transactions
+  const filteredAndSortedTransactions = useMemo(() => {
+    let filtered = transactions.filter(t => {
+      if (!transactionFilter) return true;
+      const searchTerm = transactionFilter.toLowerCase();
+      return (
+        t.description.toLowerCase().includes(searchTerm) ||
+        t.vendor.toLowerCase().includes(searchTerm) ||
+        t.category.toLowerCase().includes(searchTerm) ||
+        t.source.toLowerCase().includes(searchTerm)
+      );
+    });
+
+    return filtered.sort((a, b) => {
+      switch (transactionSort) {
+        case 'date-desc': return new Date(b.date) - new Date(a.date);
+        case 'date-asc': return new Date(a.date) - new Date(b.date);
+        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
+        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
+        case 'vendor': return a.vendor.localeCompare(b.vendor);
+        default: return 0;
+      }
+    });
+  }, [transactions, transactionFilter, transactionSort]);
+
+  // CPA filtered and sorted
+  const cpaFilteredAndSorted = useMemo(() => {
+    let filtered = transactions.filter(t => {
+      if (!cpaFilter) return true;
+      const searchTerm = cpaFilter.toLowerCase();
+      const glAccount = mapToGLAccount(t.description, t.category, t.type);
+      return (
+        t.description.toLowerCase().includes(searchTerm) ||
+        t.vendor.toLowerCase().includes(searchTerm) ||
+        glAccount.description.toLowerCase().includes(searchTerm)
+      );
+    });
+
+    return filtered.sort((a, b) => {
+      switch (cpaSort) {
+        case 'date-desc': return new Date(b.date) - new Date(a.date);
+        case 'date-asc': return new Date(a.date) - new Date(b.date);
+        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
+        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
+        case 'vendor': return a.vendor.localeCompare(b.vendor);
+        default: return 0;
+      }
+    });
+  }, [transactions, cpaFilter, cpaSort]);
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
   const handleAddTransaction = () => {
-    if (newTransaction.date && newTransaction.description && newTransaction.amount) {
+    if (newTransaction.date && newTransaction.description && newTransaction.amount && newTransaction.vendor) {
       const transaction = {
         id: Date.now(),
         ...newTransaction,
         amount: parseFloat(newTransaction.amount) * (newTransaction.type === 'expense' ? -1 : 1)
       };
       setTransactions([...transactions, transaction]);
-      setNewTransaction({ date: '', description: '', amount: '', type: 'expense', category: '', source: '' });
+      setNewTransaction({ date: '', description: '', vendor: '', amount: '', type: 'expense', category: '', source: '' });
       setLastImportDate(new Date());
     }
   };
@@ -280,15 +373,16 @@ const FinanceDashboard = () => {
             if (!line) continue;
             
             const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-            if (parts.length >= 4) {
+            if (parts.length >= 5) {
               newTransactions.push({
                 id: Date.now() + i,
                 date: parts[0],
                 description: parts[1],
-                amount: parseFloat(parts[2]),
-                type: parseFloat(parts[2]) > 0 ? 'income' : 'expense',
-                category: parts[3] || 'Uncategorized',
-                source: parts[4] || 'Unknown'
+                vendor: parts[2] || 'Unknown',
+                amount: parseFloat(parts[3]),
+                type: parseFloat(parts[3]) > 0 ? 'income' : 'expense',
+                category: parts[4] || 'Uncategorized',
+                source: parts[5] || 'Unknown'
               });
             }
           }
@@ -306,14 +400,15 @@ const FinanceDashboard = () => {
   };
 
   const exportCPAData = () => {
-    const headers = ['Date', 'Description', 'Amount', 'Outflow/Inflow', 'GL Account', 'GL Account Offset'];
-    const rows = transactions.map(t => {
+    const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Outflow/Inflow', 'GL Account', 'GL Account Offset'];
+    const rows = cpaFilteredAndSorted.map(t => {
       const glAccount = mapToGLAccount(t.description, t.category, t.type);
       const isOutflow = t.amount < 0;
       
       return [
         t.date,
         t.description,
+        t.vendor,
         Math.abs(t.amount).toFixed(2),
         isOutflow ? 'Outflow' : 'Inflow',
         `${glAccount.number} ${glAccount.description}`,
@@ -336,10 +431,17 @@ const FinanceDashboard = () => {
         <header className="mb-8">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-                Family Finance Dashboard
-              </h1>
-              <p className="text-slate-300">Track income, expenses, and retirement goals</p>
+              <div className="flex items-center gap-4 mb-2">
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                  Family Finance Dashboard
+                </h1>
+                <div className="relative">
+                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">
+                    BETA
+                  </div>
+                </div>
+              </div>
+              <p className="text-slate-300">Take charge of your finances to ensure you and your family are taken care of</p>
             </div>
             <div className="text-right">
               <div className="flex items-center gap-2 text-slate-300 mb-1">
@@ -523,86 +625,62 @@ const FinanceDashboard = () => {
               </div>
             </div>
 
-            {/* Comparison Details - Only shown when a comparison is selected */}
-            {comparisonView === 'month' && (
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4">Month over Month Comparison</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">This Month</span>
-                    <span className="font-semibold">${comparisonData.monthOverMonth.current.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Last Month</span>
-                    <span className="font-semibold">${comparisonData.monthOverMonth.previous.toLocaleString()}</span>
-                  </div>
-                  <div className="pt-3 border-t border-slate-700">
-                    <div className={`flex items-center justify-between ${comparisonData.monthOverMonth.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      <span className="font-semibold">Change</span>
-                      <div className="flex items-center gap-2">
-                        {comparisonData.monthOverMonth.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
-                        <span className="font-bold">{Math.abs(comparisonData.monthOverMonth.change).toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {comparisonView === 'quarter' && (
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4">Quarter over Quarter Comparison</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">This Quarter</span>
-                    <span className="font-semibold">${comparisonData.quarterOverQuarter.current.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Last Quarter</span>
-                    <span className="font-semibold">${comparisonData.quarterOverQuarter.previous.toLocaleString()}</span>
-                  </div>
-                  <div className="pt-3 border-t border-slate-700">
-                    <div className={`flex items-center justify-between ${comparisonData.quarterOverQuarter.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      <span className="font-semibold">Change</span>
-                      <div className="flex items-center gap-2">
-                        {comparisonData.quarterOverQuarter.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
-                        <span className="font-bold">{Math.abs(comparisonData.quarterOverQuarter.change).toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {comparisonView === 'year' && (
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4">Year over Year Comparison</h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">This Year</span>
-                    <span className="font-semibold">${comparisonData.yearOverYear.current.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-slate-400">Last Year</span>
-                    <span className="font-semibold">${comparisonData.yearOverYear.previous.toLocaleString()}</span>
-                  </div>
-                  <div className="pt-3 border-t border-slate-700">
-                    <div className={`flex items-center justify-between ${comparisonData.yearOverYear.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
-                      <span className="font-semibold">Change</span>
-                      <div className="flex items-center gap-2">
-                        {comparisonData.yearOverYear.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
-                        <span className="font-bold">{Math.abs(comparisonData.yearOverYear.change).toFixed(1)}%</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Trend Charts - Only shown when a comparison is selected */}
+            {/* Comparison Details */}
             {comparisonView && (
               <>
-                {/* Income Trends Line Chart */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Income
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Current Period</span>
+                        <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.current.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Previous Period</span>
+                        <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.previous.toLocaleString()}</span>
+                      </div>
+                      <div className="pt-3 border-t border-slate-700">
+                        <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          <span className="font-semibold">Change</span>
+                          <div className="flex items-center gap-2">
+                            {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                            <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-lg font-semibold mb-4">
+                      {comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Expenses
+                    </h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Current Period</span>
+                        <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.current.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-400">Previous Period</span>
+                        <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.previous.toLocaleString()}</span>
+                      </div>
+                      <div className="pt-3 border-t border-slate-700">
+                        <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          <span className="font-semibold">Change</span>
+                          <div className="flex items-center gap-2">
+                            {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
+                            <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change).toFixed(1)}%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Income Trends */}
                 <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
                   <h3 className="text-xl font-semibold mb-4">Income Trends - {selectedYear} vs {selectedYear - 1}</h3>
                   <ResponsiveContainer width="100%" height={350}>
@@ -635,7 +713,23 @@ const FinanceDashboard = () => {
                   </ResponsiveContainer>
                 </div>
 
-                {/* Expense Trends Line Chart */}
+                {/* Income Sources Chart */}
+                {comparisonSourceData.income.length > 0 && (
+                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-xl font-semibold mb-4">Top Income Sources - Current Period</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={comparisonSourceData.income}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="name" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
+                        <YAxis stroke="#9CA3AF" />
+                        <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                        <Bar dataKey="value" fill="#10B981" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {/* Expense Trends */}
                 <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
                   <h3 className="text-xl font-semibold mb-4">Expense Trends - {selectedYear} vs {selectedYear - 1}</h3>
                   <ResponsiveContainer width="100%" height={350}>
@@ -667,6 +761,22 @@ const FinanceDashboard = () => {
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
+
+                {/* Expense Categories Chart */}
+                {comparisonSourceData.expenses.length > 0 && (
+                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <h3 className="text-xl font-semibold mb-4">Top Expense Categories - Current Period</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={comparisonSourceData.expenses}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="name" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
+                        <YAxis stroke="#9CA3AF" />
+                        <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
+                        <Bar dataKey="value" fill="#EF4444" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
               </>
             )}
           </div>
@@ -685,7 +795,7 @@ const FinanceDashboard = () => {
                 </label>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-4">
                 <input
                   type="date"
                   value={newTransaction.date}
@@ -697,6 +807,13 @@ const FinanceDashboard = () => {
                   placeholder="Description"
                   value={newTransaction.description}
                   onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })}
+                  className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                />
+                <input
+                  type="text"
+                  placeholder="Vendor"
+                  value={newTransaction.vendor}
+                  onChange={(e) => setNewTransaction({ ...newTransaction, vendor: e.target.value })}
                   className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
                 <input
@@ -741,41 +858,71 @@ const FinanceDashboard = () => {
               </button>
             </div>
 
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg overflow-x-auto">
-              <h3 className="text-2xl font-semibold mb-4">Transaction History</h3>
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-slate-600">
-                    <th className="text-left py-3 px-4">Date</th>
-                    <th className="text-left py-3 px-4">Description</th>
-                    <th className="text-left py-3 px-4">Category</th>
-                    <th className="text-left py-3 px-4">Source</th>
-                    <th className="text-right py-3 px-4">Amount</th>
-                    <th className="text-center py-3 px-4">Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.sort((a, b) => new Date(b.date) - new Date(a.date)).map(t => (
-                    <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
-                      <td className="py-3 px-4">{t.date}</td>
-                      <td className="py-3 px-4">{t.description}</td>
-                      <td className="py-3 px-4">{t.category}</td>
-                      <td className="py-3 px-4">{t.source}</td>
-                      <td className={`py-3 px-4 text-right font-semibold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                        {t.amount >= 0 ? '+' : ''}{t.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => handleDeleteTransaction(t.id)}
-                          className="text-red-400 hover:text-red-300 transition-colors"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-2xl font-semibold">Transaction History</h3>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Filter transactions..."
+                      value={transactionFilter}
+                      onChange={(e) => setTransactionFilter(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <select
+                    value={transactionSort}
+                    onChange={(e) => setTransactionSort(e.target.value)}
+                    className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="date-desc">Date (Newest)</option>
+                    <option value="date-asc">Date (Oldest)</option>
+                    <option value="amount-desc">Amount (High-Low)</option>
+                    <option value="amount-asc">Amount (Low-High)</option>
+                    <option value="vendor">Vendor (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-slate-600">
+                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-3 px-4">Description</th>
+                      <th className="text-left py-3 px-4">Vendor</th>
+                      <th className="text-left py-3 px-4">Category</th>
+                      <th className="text-left py-3 px-4">Source</th>
+                      <th className="text-right py-3 px-4">Amount</th>
+                      <th className="text-center py-3 px-4">Action</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredAndSortedTransactions.map(t => (
+                      <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
+                        <td className="py-3 px-4">{t.date}</td>
+                        <td className="py-3 px-4">{t.description}</td>
+                        <td className="py-3 px-4">{t.vendor}</td>
+                        <td className="py-3 px-4">{t.category}</td>
+                        <td className="py-3 px-4">{t.source}</td>
+                        <td className={`py-3 px-4 text-right font-semibold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {t.amount >= 0 ? '+' : ''}{t.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() => handleDeleteTransaction(t.id)}
+                            className="text-red-400 hover:text-red-300 transition-colors"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -783,6 +930,34 @@ const FinanceDashboard = () => {
         {/* Retirement Tab */}
         {activeTab === 'retirement' && (
           <div className="space-y-6">
+            {/* Market Performance */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold mb-4">Market Performance - {currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm mb-1">Dow Jones</div>
+                  <div className="text-2xl font-bold text-white">{marketData.dow.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className={`text-sm font-semibold ${marketData.dow.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {marketData.dow.change >= 0 ? '+' : ''}{marketData.dow.change}%
+                  </div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm mb-1">S&P 500</div>
+                  <div className="text-2xl font-bold text-white">{marketData.sp500.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className={`text-sm font-semibold ${marketData.sp500.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {marketData.sp500.change >= 0 ? '+' : ''}{marketData.sp500.change}%
+                  </div>
+                </div>
+                <div className="bg-slate-700/50 rounded-lg p-4">
+                  <div className="text-slate-400 text-sm mb-1">NASDAQ</div>
+                  <div className="text-2xl font-bold text-white">{marketData.nasdaq.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                  <div className={`text-sm font-semibold ${marketData.nasdaq.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {marketData.nasdaq.change >= 0 ? '+' : ''}{marketData.nasdaq.change}%
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {investments.map(inv => {
                 const progress = (inv.currentValue / inv.targetValue) * 100;
@@ -858,7 +1033,7 @@ const FinanceDashboard = () => {
               <div className="bg-slate-900/50 border border-slate-600 rounded-lg p-4 mb-6">
                 <h4 className="font-semibold mb-2">Export includes:</h4>
                 <ul className="list-disc list-inside text-slate-300 space-y-1">
-                  <li>Transaction date and description</li>
+                  <li>Transaction date, description, and vendor</li>
                   <li>Amount with outflow/inflow indicator</li>
                   <li>GL Account mapping based on transaction details</li>
                   <li>GL Account Offset (1007 Cash)</li>
@@ -874,38 +1049,68 @@ const FinanceDashboard = () => {
               </button>
             </div>
 
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg overflow-x-auto">
-              <h3 className="text-xl font-semibold mb-4">Preview</h3>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-slate-600">
-                    <th className="text-left py-2 px-3">Date</th>
-                    <th className="text-left py-2 px-3">Description</th>
-                    <th className="text-right py-2 px-3">Amount</th>
-                    <th className="text-left py-2 px-3">Outflow/Inflow</th>
-                    <th className="text-left py-2 px-3">GL Account</th>
-                    <th className="text-left py-2 px-3">GL Account Offset</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {transactions.slice(0, 10).map(t => {
-                    const glAccount = mapToGLAccount(t.description, t.category, t.type);
-                    const isOutflow = t.amount < 0;
-                    return (
-                      <tr key={t.id} className="border-b border-slate-700">
-                        <td className="py-2 px-3">{t.date}</td>
-                        <td className="py-2 px-3">{t.description}</td>
-                        <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
-                        <td className="py-2 px-3">{isOutflow ? 'Outflow' : 'Inflow'}</td>
-                        <td className="py-2 px-3">{glAccount.number} {glAccount.description}</td>
-                        <td className="py-2 px-3">1007 Cash</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-              {transactions.length > 10 && (
-                <p className="text-slate-400 text-sm mt-4">Showing 10 of {transactions.length} transactions</p>
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Preview</h3>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                    <input
+                      type="text"
+                      placeholder="Filter..."
+                      value={cpaFilter}
+                      onChange={(e) => setCpaFilter(e.target.value)}
+                      className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  </div>
+                  <select
+                    value={cpaSort}
+                    onChange={(e) => setCpaSort(e.target.value)}
+                    className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="date-desc">Date (Newest)</option>
+                    <option value="date-asc">Date (Oldest)</option>
+                    <option value="amount-desc">Amount (High-Low)</option>
+                    <option value="amount-asc">Amount (Low-High)</option>
+                    <option value="vendor">Vendor (A-Z)</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-slate-600">
+                      <th className="text-left py-2 px-3">Date</th>
+                      <th className="text-left py-2 px-3">Description</th>
+                      <th className="text-left py-2 px-3">Vendor</th>
+                      <th className="text-right py-2 px-3">Amount</th>
+                      <th className="text-left py-2 px-3">Outflow/Inflow</th>
+                      <th className="text-left py-2 px-3">GL Account</th>
+                      <th className="text-left py-2 px-3">GL Account Offset</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cpaFilteredAndSorted.slice(0, 10).map(t => {
+                      const glAccount = mapToGLAccount(t.description, t.category, t.type);
+                      const isOutflow = t.amount < 0;
+                      return (
+                        <tr key={t.id} className="border-b border-slate-700">
+                          <td className="py-2 px-3">{t.date}</td>
+                          <td className="py-2 px-3">{t.description}</td>
+                          <td className="py-2 px-3">{t.vendor}</td>
+                          <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
+                          <td className="py-2 px-3">{isOutflow ? 'Outflow' : 'Inflow'}</td>
+                          <td className="py-2 px-3">{glAccount.number} {glAccount.description}</td>
+                          <td className="py-2 px-3">1007 Cash</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              {cpaFilteredAndSorted.length > 10 && (
+                <p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>
               )}
             </div>
           </div>
