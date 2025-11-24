@@ -1613,19 +1613,19 @@ const deleteExpense = (id) => {
                   <Bar dataKey="expenses" name="Expenses" fill="#EF4444" />
                   <Bar dataKey="net" name="Net" fill="#3B82F6" />
                 </BarChart>
-              </ResponsiveContainer>
+             </ResponsiveContainer>
             </div>
           </div>
         )}
 
-        {/* Retirement Tab */}
-        {activeTab === 'retirement' && (
+    
   
   
 
 {/* Retirement Tab */}
         {activeTab === 'retirement' && (
           <div className="space-y-6">
+            
             {/* Market Performance */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <h3 className="text-xl font-semibold mb-4">Market Performance - {currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
