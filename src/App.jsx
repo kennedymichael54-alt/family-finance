@@ -35,16 +35,12 @@ const [budgetData, setBudgetData] = useState({
     { id: 4, name: 'Insurance', amount: 220 },
   ]
 });
-
-const [marketData, setMarketData({
-
-
   
-  const [marketData, setMarketData] = useState({
-    dow: { value: 44296.51, change: 0.28 },
-    sp500: { value: 5969.34, change: 0.35 },
-    nasdaq: { value: 19003.65, change: 0.63 }
-  });
+const [marketData, setMarketData] = useState({   
+  dow: { value: 44296.51, change: 0.28 },
+  sp500: { value: 5969.34, change: 0.35 },
+  nasdaq: { value: 19003.65, change: 0.63 }
+});
   
   const [transactions, setTransactions] = useState([
     // Sample data across multiple months for comparison
