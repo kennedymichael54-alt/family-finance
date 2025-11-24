@@ -1815,9 +1815,6 @@ const deleteExpense = (id) => {
           </div>
         )}
 
-        {/* Retirement Tab */}
-        {activeTab === 'retirement' && (  
-
         {/* CPA Export Tab */}
         {activeTab === 'cpa' && (
           <div className="space-y-6">
