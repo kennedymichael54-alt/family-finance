@@ -429,7 +429,21 @@ const retirementByAccountType = useMemo(() => {
   return Object.entries(grouped).map(([name, value]) => ({ name, value }));
 }, [investments]);
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
+const getBudgetSummary = useMemo(() => {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  
+  const totalIncome = budgetData.income.reduce((sum, item) => sum + item.amount, 0);
+  const totalExpenses = budgetData.expenses.reduce((sum, item) => sum + item.amount, 0);
+  
+  return months.map((month) => ({
+    month,
+    income: totalIncome,
+    expenses: totalExpenses,
+    net: totalIncome - totalExpenses
+  }));
+}, [budgetData]);
+
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
   const handleAddTransaction = () => {
     if (newTransaction.date && newTransaction.description && newTransaction.amount && newTransaction.vendor) {
