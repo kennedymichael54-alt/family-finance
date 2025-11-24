@@ -1810,7 +1810,7 @@ const deleteExpense = (id) => {
         )}
 
 
-         </ResponsiveContainer>
+        </ResponsiveContainer>
             </div>
           </div>
         )}
