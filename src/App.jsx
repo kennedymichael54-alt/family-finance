@@ -589,7 +589,6 @@ const handleRetirementFileUpload = async (e) => {
   }
 };
 
-const handleDeleteTransaction = (id) => {
   // ... (existing function continues)
 
   const exportCPAData = () => {
