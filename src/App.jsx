@@ -13,6 +13,7 @@ const FinanceDashboard = () => {
   const [transactionSort, setTransactionSort] = useState('date-desc');
   const [cpaFilter, setCpaFilter] = useState('');
   const [cpaSort, setCpaSort] = useState('date-desc');
+  const [selectedRetirementAccountType, setSelectedRetirementAccountType] = useState(''); 
   const [marketData, setMarketData] = useState({
     dow: { value: 44296.51, change: 0.28 },
     sp500: { value: 5969.34, change: 0.35 },
@@ -48,7 +49,7 @@ const FinanceDashboard = () => {
   ]);
 
   const [investments, setInvestments] = useState([
-    { id: 1, type: '401(k)', accountType: '401k', currentValue: 250000, targetValue: 1000000, contributionRate: 15, uploadDate: new Date().toISOString() },
+  { id: 1, type: '401(k)', accountType: '401k', currentValue: 250000, targetValue: 1000000, contributionRate: 15, uploadDate: new Date().toISOString() },
   { id: 2, type: 'Roth IRA', accountType: 'Roth IRA', currentValue: 85000, targetValue: 500000, contributionRate: 10, uploadDate: new Date().toISOString() },
   { id: 3, type: 'Taxable Brokerage', accountType: 'Traditional IRA', currentValue: 120000, targetValue: 300000, contributionRate: 8, uploadDate: new Date().toISOString() },
   { id: 4, type: 'Real Estate', accountType: 'VUL', currentValue: 180000, targetValue: 500000, contributionRate: 5, uploadDate: new Date().toISOString() },
@@ -69,6 +70,64 @@ const FinanceDashboard = () => {
     expense: ['Housing', 'Food', 'Utilities', 'Transportation', 'Insurance', 'Healthcare', 'Entertainment', 'Other']
   };
 
+  const retirementAccountTypes = ['401k', 'Roth IRA', 'Traditional IRA', 'VUL', 'IUL'];
+
+// Parse CSV file
+const parseCSV = (text) => {
+  const lines = text.split('\n').filter(line => line.trim());
+  if (lines.length === 0) return [];
+  
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  
+  return lines.slice(1).map(line => {
+    const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+    const obj = {};
+    headers.forEach((header, index) => {
+      obj[header] = values[index];
+    });
+    return obj;
+  });
+};
+
+// Parse PDF file (basic text extraction)
+const parsePDF = async (file) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const text = e.target.result;
+        const lines = text.split('\n');
+        const transactions = [];
+        
+        lines.forEach(line => {
+          const dateMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
+          const amountMatch = line.match(/\$?\-?([\d,]+\.\d{2})/);
+          
+          if (dateMatch && amountMatch) {
+            const amountIndex = line.indexOf(amountMatch[0]);
+            const description = line.substring(0, amountIndex).trim();
+            
+            transactions.push({
+              date: dateMatch[1],
+              description: description || 'Transaction',
+              amount: amountMatch[1].replace(/,/g, ''),
+              category: 'Uncategorized'
+            });
+          }
+        });
+        
+        resolve(transactions);
+      } catch (error) {
+        reject(error);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsText(file);
+  });
+};
+
+
+  
   // Map transaction description to GL Account
   const mapToGLAccount = (description, category, type) => {
     const desc = description.toLowerCase();
@@ -339,6 +398,15 @@ const FinanceDashboard = () => {
     });
   }, [transactions, cpaFilter, cpaSort]);
 
+  // ADD THIS NEW useMemo:
+const retirementByAccountType = useMemo(() => {
+  const grouped = {};
+  investments.forEach(inv => {
+    grouped[inv.accountType] = (grouped[inv.accountType] || 0) + inv.currentValue;
+  });
+  return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+}, [investments]);
+
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
   const handleAddTransaction = () => {
@@ -358,31 +426,31 @@ const FinanceDashboard = () => {
     setTransactions(transactions.filter(t => t.id !== id));
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
+  const handleFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  try {
+    if (file.name.toLowerCase().endsWith('.csv')) {
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const text = event.target.result;
-          const lines = text.split('\n');
+          const parsed = parseCSV(text);
           const newTransactions = [];
           
-          for (let i = 1; i < lines.length; i++) {
-            const line = lines[i].trim();
-            if (!line) continue;
-            
-            const parts = line.split(',').map(p => p.trim().replace(/^"|"$/g, ''));
-            if (parts.length >= 5) {
+          for (let i = 0; i < parsed.length; i++) {
+            const row = parsed[i];
+            if (row.date || row.Date) {
               newTransactions.push({
                 id: Date.now() + i,
-                date: parts[0],
-                description: parts[1],
-                vendor: parts[2] || 'Unknown',
-                amount: parseFloat(parts[3]),
-                type: parseFloat(parts[3]) > 0 ? 'income' : 'expense',
-                category: parts[4] || 'Uncategorized',
-                source: parts[5] || 'Unknown'
+                date: row.date || row.Date,
+                description: row.description || row.Description || 'Transaction',
+                vendor: row.vendor || row.Vendor || 'Unknown',
+                amount: parseFloat(row.amount || row.Amount || '0'),
+                type: parseFloat(row.amount || row.Amount || '0') > 0 ? 'income' : 'expense',
+                category: row.category || row.Category || 'Uncategorized',
+                source: row.source || row.Source || 'Unknown'
               });
             }
           }
@@ -390,14 +458,139 @@ const FinanceDashboard = () => {
           if (newTransactions.length > 0) {
             setTransactions([...transactions, ...newTransactions]);
             setLastImportDate(new Date());
+            alert(`Successfully imported ${newTransactions.length} transactions from CSV`);
           }
         } catch (error) {
           alert('Error parsing CSV file. Please ensure it follows the correct format.');
         }
       };
       reader.readAsText(file);
+    } else if (file.name.toLowerCase().endsWith('.pdf')) {
+      const parsed = await parsePDF(file);
+      const newTransactions = [];
+      
+      for (let i = 0; i < parsed.length; i++) {
+        const item = parsed[i];
+        const amount = parseFloat(item.amount);
+        newTransactions.push({
+          id: Date.now() + i,
+          date: item.date,
+          description: item.description,
+          vendor: item.description.split(' ')[0] || 'Unknown',
+          amount: amount,
+          type: amount > 0 ? 'income' : 'expense',
+          category: item.category || 'Uncategorized',
+          source: 'PDF Import'
+        });
+      }
+      
+      if (newTransactions.length > 0) {
+        setTransactions([...transactions, ...newTransactions]);
+        setLastImportDate(new Date());
+        alert(`Successfully imported ${newTransactions.length} transactions from PDF`);
+      } else {
+        alert('No transaction data found in PDF.');
+      }
+    } else {
+      alert('Please upload a CSV or PDF file');
     }
-  };
+  } catch (error) {
+    alert('Error processing file: ' + error.message);
+  }
+};
+
+  // ADD THIS ENTIRE NEW FUNCTION HERE:
+const handleRetirementFileUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  if (!selectedRetirementAccountType) {
+    alert('Please select an account type before uploading');
+    return;
+  }
+
+  try {
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const text = event.target.result;
+          const parsed = parseCSV(text);
+          
+          let totalValue = 0;
+          parsed.forEach(row => {
+            const value = parseFloat(
+              row.value || row.Value || 
+              row.balance || row.Balance || 
+              row.amount || row.Amount || '0'
+            );
+            if (!isNaN(value)) {
+              totalValue += Math.abs(value);
+            }
+          });
+
+          if (totalValue > 0) {
+            const newInvestment = {
+              id: Date.now(),
+              type: selectedRetirementAccountType,
+              accountType: selectedRetirementAccountType,
+              currentValue: totalValue,
+              targetValue: totalValue * 2,
+              contributionRate: 10,
+              uploadDate: new Date().toISOString()
+            };
+            
+            setInvestments([...investments, newInvestment]);
+            setLastImportDate(new Date());
+            alert(`Successfully imported ${selectedRetirementAccountType} account with value $${totalValue.toLocaleString()}`);
+            setSelectedRetirementAccountType('');
+          } else {
+            alert('No valid balance data found in CSV');
+          }
+        } catch (error) {
+          alert('Error parsing CSV file: ' + error.message);
+        }
+      };
+      reader.readAsText(file);
+    } else if (file.name.toLowerCase().endsWith('.pdf')) {
+      const parsed = await parsePDF(file);
+      
+      let totalValue = 0;
+      parsed.forEach(item => {
+        const value = Math.abs(parseFloat(item.amount));
+        if (!isNaN(value)) {
+          totalValue += value;
+        }
+      });
+
+      if (totalValue > 0) {
+        const newInvestment = {
+          id: Date.now(),
+          type: selectedRetirementAccountType,
+          accountType: selectedRetirementAccountType,
+          currentValue: totalValue,
+          targetValue: totalValue * 2,
+          contributionRate: 10,
+          uploadDate: new Date().toISOString()
+        };
+        
+        setInvestments([...investments, newInvestment]);
+        setLastImportDate(new Date());
+        alert(`Successfully imported ${selectedRetirementAccountType} from PDF with value $${totalValue.toLocaleString()}`);
+        setSelectedRetirementAccountType('');
+      } else {
+        alert('No valid balance data found in PDF');
+      }
+    } else {
+      alert('Please upload a CSV or PDF file');
+    }
+  } catch (error) {
+    alert('Error processing file: ' + error.message);
+  }
+};
+
+const handleDeleteTransaction = (id) => {
+  // ... (existing function continues)
 
   const exportCPAData = () => {
     const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Outflow/Inflow', 'GL Account', 'GL Account Offset'];
@@ -790,9 +983,19 @@ const FinanceDashboard = () => {
                 <h3 className="text-2xl font-semibold">Add Transaction</h3>
               <label className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
   <Upload size={20} />
-  <span>Import CSV</span>
-  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
+  <span>Import CSV/PDF</span>
+  <input type="file" accept=".csv,.pdf" onChange={handleFileUpload} className="hidden" />
 </label>
+
+                </label>
+
+<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+  <p className="text-sm text-blue-300">
+    <strong>💡 Enhanced Import:</strong> You can now upload both CSV and PDF files! The system will automatically extract transaction data from your bank statements.
+  </p>
+</div>
+
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4 mb-4">
                 
               
                 
@@ -931,6 +1134,8 @@ const FinanceDashboard = () => {
         )}
 
         {/* Retirement Tab */}
+
+{/* Retirement Tab */}
         {activeTab === 'retirement' && (
           <div className="space-y-6">
             {/* Market Performance */}
@@ -961,13 +1166,53 @@ const FinanceDashboard = () => {
               </div>
             </div>
 
+            {/* Upload Section with Account Type Selector */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+              <h3 className="text-xl font-semibold mb-4">Import Retirement Account Statement</h3>
+              
+              <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6">
+                <p className="text-sm text-blue-300">
+                  <strong>💡 Enhanced Import:</strong> Upload CSV or PDF statements from Ameriprise, Morgan Stanley, Fidelity, and other providers. Select your account type first!
+                </p>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm text-slate-300 mb-2">Account Type</label>
+                <select
+                  value={selectedRetirementAccountType}
+                  onChange={(e) => setSelectedRetirementAccountType(e.target.value)}
+                  className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
+                >
+                  <option value="">Select account type...</option>
+                  {retirementAccountTypes.map(type => (
+                    <option key={type} value={type}>{type}</option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
+                <Upload size={24} />
+                <span className="text-lg font-semibold">Upload Statement (CSV or PDF)</span>
+                <input 
+                  type="file" 
+                  accept=".csv,.pdf" 
+                  onChange={handleRetirementFileUpload} 
+                  className="hidden" 
+                />
+              </label>
+            </div>
+
+            {/* Accounts Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {investments.map(inv => {
                 const progress = (inv.currentValue / inv.targetValue) * 100;
                 return (
                   <div key={inv.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
                     <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-xl font-semibold">{inv.type}</h3>
+                      <div>
+                        <h3 className="text-xl font-semibold">{inv.type}</h3>
+                        <p className="text-sm text-slate-400">Account Type: {inv.accountType}</p>
+                      </div>
                       <Target className="text-purple-400" />
                     </div>
                     <div className="space-y-4">
@@ -983,6 +1228,10 @@ const FinanceDashboard = () => {
                         <div className="flex justify-between text-sm mb-3">
                           <span className="text-slate-400">Contribution Rate</span>
                           <span className="font-semibold">{inv.contributionRate}%</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-3">
+                          <span className="text-slate-400">Last Updated</span>
+                          <span className="font-semibold">{new Date(inv.uploadDate).toLocaleDateString()}</span>
                         </div>
                       </div>
                       <div>
@@ -1003,6 +1252,41 @@ const FinanceDashboard = () => {
               })}
             </div>
 
+            {/* Total Retirement Value */}
+            <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8 shadow-lg text-center">
+              <h3 className="text-2xl font-semibold mb-4">Total Retirement Value</h3>
+              <p className="text-5xl font-bold text-white">
+                ${investments.reduce((sum, inv) => sum + inv.currentValue, 0).toLocaleString()}
+              </p>
+            </div>
+
+            {/* Retirement Breakdown by Account Type */}
+            {retirementByAccountType.length > 0 && (
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-2xl font-semibold mb-4">Breakdown by Account Type</h3>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={retirementByAccountType}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {retirementByAccountType.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* Retirement Overview Bar Chart */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <h3 className="text-2xl font-semibold mb-4">Retirement Overview</h3>
               <ResponsiveContainer width="100%" height={300}>
@@ -1022,6 +1306,8 @@ const FinanceDashboard = () => {
             </div>
           </div>
         )}
+
+        
 
         {/* CPA Export Tab */}
         {activeTab === 'cpa' && (
