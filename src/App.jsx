@@ -1497,6 +1497,65 @@ const deleteExpense = (id) => {
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <h3 className="text-2xl font-semibold mb-6">Yearly Budget Summary</h3>
               
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <div className="text-sm text-slate-400 mb-1">Total Monthly Income</div>
+                  <div className="text-2xl font-bold text-green-400">
+                    ${budgetData.income.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4">
+                  <div className="text-sm text-slate-400 mb-1">Total Monthly Expenses</div>
+                  <div className="text-2xl font-bold text-red-400">
+                    ${budgetData.expenses.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4">
+                  <div className="text-sm text-slate-400 mb-1">Monthly Net</div>
+                  <div className={`text-2xl font-bold ${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
+                    ${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)).toLocaleString()}
+                  </div>
+                </div>
+                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4">
+                  <div className="text-sm text-slate-400 mb-1">Yearly Net</div>
+                  <div className={`text-2xl font-bold ${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) >= 0 ? 'text-purple-400' : 'text-orange-400'}`}>
+                    ${((budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) * 12).toLocaleString()}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-6">
+                {getBudgetSummary.map((month, index) => (
+                  <div key={index} className="bg-slate-700/30 rounded-lg p-4 text-center">
+                    <div className="text-sm font-semibold text-slate-400 mb-2">{month.month}</div>
+                    <div className="text-xs text-green-400 mb-1">+${month.income.toLocaleString()}</div>
+                    <div className="text-xs text-red-400 mb-2">-${month.expenses.toLocaleString()}</div>
+                    <div className={`text-lg font-bold ${month.net >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>
+                      ${Math.abs(month.net).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <ResponsiveContainer width="100%" height={350}>
+                <BarChart data={getBudgetSummary}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                  <XAxis dataKey="month" stroke="#9CA3AF" />
+                  <YAxis stroke="#9CA3AF" />
+                  <Tooltip
+                    formatter={(value) => `$${value.toLocaleString()}`}
+                    contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }}
+                  />
+                  <Legend />
+                  <Bar dataKey="income" name="Income" fill="#10B981" />
+                  <Bar dataKey="expenses" name="Expenses" fill="#EF4444" />
+                  <Bar dataKey="net" name="Net" fill="#3B82F6" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+              
               {/* Summary Cards */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
                 <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
