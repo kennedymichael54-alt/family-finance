@@ -1820,7 +1820,10 @@ const getBudgetSummary = useMemo(() => {
 }, [budgetData]);
 
 const COLORS = ['#0088FE', '#00C49F', ...
-        
+
+                </div>
+          </div>
+        )}      
 
         {/* CPA Export Tab */}
         {activeTab === 'cpa' && (
