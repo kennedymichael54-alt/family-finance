@@ -3,7 +3,7 @@ import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cart
 import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown } from 'lucide-react';
 
 const FinanceDashboard = () => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setactiveTab] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currentDate] = useState(new Date());
@@ -734,7 +734,7 @@ const deleteExpense = (id) => {
   {['dashboard', 'transactions', 'billHistory', 'budget', 'retirement', 'netWorth', 'fire', 'goals', 'cpa'].map(tab => (
     <button
       key={tab}
-      onClick={() => setActiveTab(tab)}
+      onClick={() => setactiveTab(tab)}
       className={`px-6 py-3 font-medium transition-all ${
         activeTab === tab
           ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg'
