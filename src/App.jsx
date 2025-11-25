@@ -1893,7 +1893,7 @@ const deleteExpense = (id) => {
             </div>
           </div>
         )}
-        )
+        
 
         {/* FIRE Calculator Tab - NEW */}
         {activeTab === 'fire' && (
