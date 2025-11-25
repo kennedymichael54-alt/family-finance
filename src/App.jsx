@@ -3,7 +3,6 @@ import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cart
 import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown } from 'lucide-react';
 
 const FinanceDashboard = () => {
-  // ALL useState declarations here at the top
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -16,30 +15,26 @@ const FinanceDashboard = () => {
   const [cpaSort, setCpaSort] = useState('date-desc');
   const [selectedRetirementAccountType, setSelectedRetirementAccountType] = useState('');
 
-  // Then your other state
-  const [billDates, setBillDates] = useState([...]);
-  const [budgetData, setBudgetData] = useState({...});
+  // NEW STATE FOR BILL HISTORY
+  const [billDates, setBillDates] = useState([
+    { id: 1, name: 'Mortgage', amount: 2200, dueDate: '2024-11-20' },
+    { id: 2, name: 'Electric Bill', amount: 180, dueDate: '2024-11-23' },
+    { id: 3, name: 'Car Insurance', amount: 220, dueDate: '2024-11-28' },
+  ]); // ← Correct: ]);
 
-// NEW STATE FOR BILL HISTORY
-const [billDates, setBillDates] = useState([
-  { id: 1, name: 'Mortgage', amount: 2200, dueDate: '2024-11-20' },
-  { id: 2, name: 'Electric Bill', amount: 180, dueDate: '2024-11-23' },
-  { id: 3, name: 'Car Insurance', amount: 220, dueDate: '2024-11-28' },
-]);
-
-// NEW STATE FOR BUDGET
-const [budgetData, setBudgetData] = useState({
-  income: [
-    { id: 1, name: 'Primary Salary', amount: 8500 },
-    { id: 2, name: 'Freelance', amount: 2000 },
-  ],
-  expenses: [
-    { id: 1, name: 'Mortgage', amount: 2200 },
-    { id: 2, name: 'Utilities', amount: 300 },
-    { id: 3, name: 'Groceries', amount: 450 },
-    { id: 4, name: 'Insurance', amount: 220 },
-  ]
-});
+  // NEW STATE FOR BUDGET
+  const [budgetData, setBudgetData] = useState({
+    income: [
+      { id: 1, name: 'Primary Salary', amount: 8500 },
+      { id: 2, name: 'Freelance', amount: 2000 },
+    ],
+    expenses: [
+      { id: 1, name: 'Mortgage', amount: 2200 },
+      { id: 2, name: 'Utilities', amount: 300 },
+      { id: 3, name: 'Groceries', amount: 450 },
+      { id: 4, name: 'Insurance', amount: 220 },
+    ]
+  });
   
 const [marketData, setMarketData] = useState({   
   dow: { value: 44296.51, change: 0.28 },
