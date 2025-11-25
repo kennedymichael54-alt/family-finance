@@ -3,7 +3,8 @@ import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, Cart
 import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown } from 'lucide-react';
 
 const FinanceDashboard = () => {
-  const [activeTab, setactiveTab] = useState('dashboard');
+  // ALL useState declarations here at the top
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currentDate] = useState(new Date());
@@ -14,6 +15,10 @@ const FinanceDashboard = () => {
   const [cpaFilter, setCpaFilter] = useState('');
   const [cpaSort, setCpaSort] = useState('date-desc');
   const [selectedRetirementAccountType, setSelectedRetirementAccountType] = useState('');
+
+  // Then your other state
+  const [billDates, setBillDates] = useState([...]);
+  const [budgetData, setBudgetData] = useState({...});
 
 // NEW STATE FOR BILL HISTORY
 const [billDates, setBillDates] = useState([
