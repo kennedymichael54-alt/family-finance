@@ -613,7 +613,8 @@ const handleRetirementFileUpload = async (e) => {
           contributionRate: 10,
           uploadDate: new Date().toISOString()
         };
-        
+
+      
         setInvestments([...investments, newInvestment]);
         setLastImportDate(new Date());
         alert(`Successfully imported ${selectedRetirementAccountType} from PDF with value $${totalValue.toLocaleString()}`);
