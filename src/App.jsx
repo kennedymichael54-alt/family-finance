@@ -1006,12 +1006,63 @@ const deleteExpense = (id) => {
           </div>
         </div>
 
-        {/* Rest of comparison views - only shown when comparisonView is active */}
-        {comparisonView && (
-          // ... existing comparison code remains the same ...
-        )}
-      </>
-    )}
+        {/* Comparison Details - only shown when comparisonView is active */}
+{comparisonView && (
+  <>
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+        <h3 className="text-lg font-semibold mb-4">
+          {comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Income
+        </h3>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Current Period</span>
+            <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.current.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Previous Period</span>
+            <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.previous.toLocaleString()}</span>
+          </div>
+          <div className="pt-3 border-t border-slate-700">
+            <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span className="font-semibold">Change</span>
+              <div className="flex items-center gap-2">
+                {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
+                <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+        <h3 className="text-lg font-semibold mb-4">
+          {comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Expenses
+        </h3>
+        <div className="space-y-3">
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Current Period</span>
+            <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.current.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-slate-400">Previous Period</span>
+            <span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.previous.toLocaleString()}</span>
+          </div>
+          <div className="pt-3 border-t border-slate-700">
+            <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
+              <span className="font-semibold">Change</span>
+              <div className="flex items-center gap-2">
+                {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
+                <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change).toFixed(1)}%</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </>
+)}
+        
   </div>
 )}
 
