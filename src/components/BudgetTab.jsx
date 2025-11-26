@@ -1,489 +1,327 @@
 import React, { useState } from 'react';
 
+/**
+ * BudgetTab Component - REDESIGNED to match Family Finance aesthetic
+ * 
+ * Clean, modern budget management with:
+ * - Income/Expense tracking
+ * - Category management
+ * - Real-time balance calculation
+ * - Glassmorphic design
+ */
+
 const BudgetTab = () => {
-  // State for transactions
-  const [transactions, setTransactions] = useState([
-    { id: 1, date: '2024-01-15', type: 'expense', category: 'Groceries', amount: 125.50, description: 'Weekly shopping' },
-    { id: 2, date: '2024-01-20', type: 'income', category: 'Salary', amount: 3500, description: 'Monthly salary' },
+  // Sample data - replace with your actual data source
+  const [categories, setCategories] = useState([
+    { id: 1, name: 'Housing', emoji: '🏠', budget: 1900, spent: 1850, type: 'expense' },
+    { id: 2, name: 'Food', emoji: '🍔', budget: 600, spent: 620, type: 'expense' },
+    { id: 3, name: 'Transport', emoji: '🚗', budget: 400, spent: 380, type: 'expense' },
+    { id: 4, name: 'Shopping', emoji: '🛍️', budget: 400, spent: 445, type: 'expense' },
+    { id: 5, name: 'Salary', emoji: '💰', budget: 0, spent: 7200, type: 'income' }
   ]);
 
-  // State for categories
-  const [categories, setCategories] = useState({
-    expense: ['Groceries', 'Utilities', 'Transportation', 'Entertainment', 'Healthcare', 'Shopping', 'Dining Out'],
-    income: ['Salary', 'Freelance', 'Investment', 'Gift', 'Other'],
-  });
-
-  // Form state
-  const [formData, setFormData] = useState({
-    type: 'expense',
-    category: '',
-    amount: '',
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-  });
-
-  // Category management state
-  const [showCategoryModal, setShowCategoryModal] = useState(false);
-  const [newCategory, setNewCategory] = useState({ type: 'expense', name: '' });
-  const [editingCategory, setEditingCategory] = useState(null);
-
-  // Add transaction
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    
-    if (!formData.category || !formData.amount) {
-      alert('Please fill in all required fields');
-      return;
-    }
-
-    const newTransaction = {
-      id: Date.now(),
-      ...formData,
-      amount: parseFloat(formData.amount),
-    };
-
-    setTransactions([newTransaction, ...transactions]);
-    
-    // Reset form
-    setFormData({
-      type: 'expense',
-      category: '',
-      amount: '',
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-    });
-  };
-
-  // Delete transaction
-  const deleteTransaction = (id) => {
-    if (confirm('Are you sure you want to delete this transaction?')) {
-      setTransactions(transactions.filter(t => t.id !== id));
-    }
-  };
-
-  // Add new category
-  const addCategory = () => {
-    if (!newCategory.name.trim()) {
-      alert('Please enter a category name');
-      return;
-    }
-
-    const categoryType = newCategory.type;
-    if (!categories[categoryType].includes(newCategory.name)) {
-      setCategories({
-        ...categories,
-        [categoryType]: [...categories[categoryType], newCategory.name],
-      });
-      setNewCategory({ type: 'expense', name: '' });
-      setShowCategoryModal(false);
-    } else {
-      alert('This category already exists');
-    }
-  };
-
-  // Delete category
-  const deleteCategory = (type, categoryName) => {
-    if (confirm(`Delete category "${categoryName}"? This cannot be undone.`)) {
-      setCategories({
-        ...categories,
-        [type]: categories[type].filter(c => c !== categoryName),
-      });
-    }
-  };
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategory, setNewCategory] = useState({ name: '', emoji: '📦', budget: '', type: 'expense' });
 
   // Calculate totals
-  const totalIncome = transactions
-    .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const totalIncome = categories
+    .filter(c => c.type === 'income')
+    .reduce((sum, c) => sum + c.spent, 0);
+  
+  const totalExpenses = categories
+    .filter(c => c.type === 'expense')
+    .reduce((sum, c) => sum + c.spent, 0);
+  
+  const balance = totalIncome - totalExpenses;
 
-  const totalExpense = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+  const addCategory = () => {
+    if (!newCategory.name || !newCategory.budget) return;
+    
+    setCategories([...categories, {
+      id: Date.now(),
+      name: newCategory.name,
+      emoji: newCategory.emoji,
+      budget: parseFloat(newCategory.budget),
+      spent: 0,
+      type: newCategory.type
+    }]);
+    
+    setNewCategory({ name: '', emoji: '📦', budget: '', type: 'expense' });
+    setShowAddCategory(false);
+  };
 
-  const balance = totalIncome - totalExpense;
-
-  // Get expense breakdown by category
-  const expensesByCategory = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
-      return acc;
-    }, {});
+  const deleteCategory = (id) => {
+    setCategories(categories.filter(c => c.id !== id));
+  };
 
   return (
-    <div className="max-w-7xl mx-auto p-6">
-      {/* Header with Summary */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">Budget Manager</h1>
-        
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-green-600 font-medium">Total Income</p>
-                <p className="text-2xl font-bold text-green-700">
-                  ${totalIncome.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="text-3xl">💰</div>
-            </div>
+    <div style={{ animation: 'slideIn 0.3s ease' }}>
+      {/* Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        {/* Income Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, #10B981, #14B8A6)',
+          borderRadius: '16px',
+          padding: '20px',
+          color: 'white'
+        }}>
+          <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>💰 Income</div>
+          <div style={{ fontSize: '28px', fontWeight: '700' }}>
+            ${totalIncome.toLocaleString()}
           </div>
+        </div>
 
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-red-600 font-medium">Total Expenses</p>
-                <p className="text-2xl font-bold text-red-700">
-                  ${totalExpense.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="text-3xl">💸</div>
-            </div>
+        {/* Expenses Card */}
+        <div style={{
+          background: 'linear-gradient(135deg, #EF4444, #F87171)',
+          borderRadius: '16px',
+          padding: '20px',
+          color: 'white'
+        }}>
+          <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>💸 Expenses</div>
+          <div style={{ fontSize: '28px', fontWeight: '700' }}>
+            ${totalExpenses.toLocaleString()}
           </div>
+        </div>
 
-          <div className={`${balance >= 0 ? 'bg-blue-50 border-blue-200' : 'bg-orange-50 border-orange-200'} border rounded-lg p-4`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium" style={{ color: balance >= 0 ? '#2563eb' : '#ea580c' }}>
-                  Balance
-                </p>
-                <p className="text-2xl font-bold" style={{ color: balance >= 0 ? '#1e40af' : '#c2410c' }}>
-                  ${Math.abs(balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-              <div className="text-3xl">{balance >= 0 ? '✅' : '⚠️'}</div>
-            </div>
+        {/* Balance Card */}
+        <div style={{
+          background: balance >= 0 
+            ? 'linear-gradient(135deg, #8B5CF6, #EC4899)'
+            : 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+          borderRadius: '16px',
+          padding: '20px',
+          color: 'white'
+        }}>
+          <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>
+            {balance >= 0 ? '✨ Surplus' : '⚠️ Deficit'}
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '700' }}>
+            {balance >= 0 ? '+' : '-'}${Math.abs(balance).toLocaleString()}
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left Column: Transaction Form */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-6">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-800">Add Transaction</h2>
-              <button
-                onClick={() => setShowCategoryModal(true)}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-              >
-                + Category
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Transaction Type */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Type
-                </label>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type: 'expense', category: '' })}
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                      formData.type === 'expense'
-                        ? 'bg-red-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Expense
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, type: 'income', category: '' })}
-                    className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                      formData.type === 'income'
-                        ? 'bg-green-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    Income
-                  </button>
-                </div>
-              </div>
-
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Category *
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  required
-                >
-                  <option value="">Select category</option>
-                  {categories[formData.type].map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Amount */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Amount *
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-2 text-gray-500">$</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    className="w-full pl-8 pr-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="0.00"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Date
-                </label>
-                <input
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Description */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                  rows="3"
-                  placeholder="Optional notes..."
-                />
-              </div>
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                className={`w-full py-3 px-4 rounded-md font-medium text-white transition-colors ${
-                  formData.type === 'expense'
-                    ? 'bg-red-600 hover:bg-red-700'
-                    : 'bg-green-600 hover:bg-green-700'
-                }`}
-              >
-                Add {formData.type === 'expense' ? 'Expense' : 'Income'}
-              </button>
-            </form>
-          </div>
+      {/* Categories */}
+      <div style={{
+        background: 'rgba(30, 27, 56, 0.8)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: '20px',
+        padding: '24px',
+        border: '1px solid rgba(255,255,255,0.1)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '600', color: 'white' }}>Categories</h2>
+          <button
+            onClick={() => setShowAddCategory(true)}
+            style={{
+              padding: '8px 16px',
+              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+              border: 'none',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px'
+            }}
+          >
+            <span style={{ fontSize: '16px' }}>+</span> Add Category
+          </button>
         </div>
 
-        {/* Right Column: Transactions List & Category Breakdown */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Category Breakdown */}
-          {Object.keys(expensesByCategory).length > 0 && (
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Expenses by Category</h2>
-              <div className="space-y-3">
-                {Object.entries(expensesByCategory)
-                  .sort(([, a], [, b]) => b - a)
-                  .map(([category, amount]) => {
-                    const percentage = (amount / totalExpense) * 100;
-                    return (
-                      <div key={category} className="space-y-1">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="font-medium text-gray-700">{category}</span>
-                          <span className="text-gray-600">
-                            ${amount.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({percentage.toFixed(1)}%)
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
-          )}
-
-          {/* Transactions List */}
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Recent Transactions</h2>
-            
-            {transactions.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <p className="text-lg mb-2">No transactions yet</p>
-                <p className="text-sm">Add your first transaction to get started!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {transactions.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-2xl ${
-                        transaction.type === 'income' ? 'bg-green-100' : 'bg-red-100'
-                      }`}>
-                        {transaction.type === 'income' ? '💰' : '💸'}
-                      </div>
-                      
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-semibold text-gray-800">{transaction.category}</h3>
-                          <span className={`text-xs px-2 py-1 rounded-full ${
-                            transaction.type === 'income'
-                              ? 'bg-green-100 text-green-700'
-                              : 'bg-red-100 text-red-700'
-                          }`}>
-                            {transaction.type}
-                          </span>
-                        </div>
-                        {transaction.description && (
-                          <p className="text-sm text-gray-600 mt-1">{transaction.description}</p>
-                        )}
-                        <p className="text-xs text-gray-500 mt-1">
-                          {new Date(transaction.date).toLocaleDateString('en-US', {
-                            month: 'short',
-                            day: 'numeric',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4">
-                      <div className={`text-lg font-bold ${
-                        transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                      }`}>
-                        {transaction.type === 'income' ? '+' : '-'}${transaction.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                      </div>
-                      
-                      <button
-                        onClick={() => deleteTransaction(transaction.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  </div>
+        {/* Add Category Form */}
+        {showAddCategory && (
+          <div style={{
+            background: 'rgba(139, 92, 246, 0.1)',
+            border: '1px solid rgba(139, 92, 246, 0.3)',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '16px'
+          }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '60px 1fr 120px 120px auto', gap: '12px', alignItems: 'center' }}>
+              <select
+                value={newCategory.emoji}
+                onChange={(e) => setNewCategory({ ...newCategory, emoji: e.target.value })}
+                style={{
+                  padding: '10px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '20px',
+                  cursor: 'pointer'
+                }}
+              >
+                {['📦', '🏠', '🍔', '🚗', '🛍️', '🎬', '💡', '🏥', '✈️', '💰', '💳'].map(e => (
+                  <option key={e} value={e}>{e}</option>
                 ))}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Category Management Modal */}
-      {showCategoryModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">Manage Categories</h2>
-              <button
-                onClick={() => setShowCategoryModal(false)}
-                className="text-gray-500 hover:text-gray-700"
+              </select>
+              
+              <input
+                placeholder="Category name"
+                value={newCategory.name}
+                onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
+                style={{
+                  padding: '10px 14px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '14px'
+                }}
+              />
+              
+              <input
+                type="number"
+                placeholder="Budget"
+                value={newCategory.budget}
+                onChange={(e) => setNewCategory({ ...newCategory, budget: e.target.value })}
+                style={{
+                  padding: '10px 14px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '14px'
+                }}
+              />
+              
+              <select
+                value={newCategory.type}
+                onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })}
+                style={{
+                  padding: '10px 14px',
+                  background: 'rgba(255,255,255,0.1)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  borderRadius: '8px',
+                  color: 'white',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-
-            {/* Add New Category */}
-            <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-              <h3 className="font-semibold text-gray-700 mb-3">Add New Category</h3>
-              <div className="flex gap-3">
-                <select
-                  value={newCategory.type}
-                  onChange={(e) => setNewCategory({ ...newCategory, type: e.target.value })}
-                  className="px-4 py-2 border border-gray-300 rounded-md"
-                >
-                  <option value="expense">Expense</option>
-                  <option value="income">Income</option>
-                </select>
-                <input
-                  type="text"
-                  value={newCategory.name}
-                  onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })}
-                  placeholder="Category name"
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md"
-                  onKeyPress={(e) => e.key === 'Enter' && addCategory()}
-                />
+                <option value="expense">Expense</option>
+                <option value="income">Income</option>
+              </select>
+              
+              <div style={{ display: 'flex', gap: '8px' }}>
                 <button
                   onClick={addCategory}
-                  className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  style={{
+                    padding: '10px 16px',
+                    background: 'linear-gradient(135deg, #10B981, #14B8A6)',
+                    border: 'none',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '13px',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
                 >
                   Add
                 </button>
-              </div>
-            </div>
-
-            {/* Existing Categories */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Expense Categories */}
-              <div>
-                <h3 className="font-semibold text-red-700 mb-3">Expense Categories</h3>
-                <div className="space-y-2">
-                  {categories.expense.map((cat) => (
-                    <div
-                      key={cat}
-                      className="flex justify-between items-center p-3 bg-red-50 rounded-md group"
-                    >
-                      <span className="text-gray-800">{cat}</span>
-                      <button
-                        onClick={() => deleteCategory('expense', cat)}
-                        className="text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Income Categories */}
-              <div>
-                <h3 className="font-semibold text-green-700 mb-3">Income Categories</h3>
-                <div className="space-y-2">
-                  {categories.income.map((cat) => (
-                    <div
-                      key={cat}
-                      className="flex justify-between items-center p-3 bg-green-50 rounded-md group"
-                    >
-                      <span className="text-gray-800">{cat}</span>
-                      <button
-                        onClick={() => deleteCategory('income', cat)}
-                        className="text-green-400 hover:text-green-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-                </div>
+                <button
+                  onClick={() => setShowAddCategory(false)}
+                  style={{
+                    padding: '10px 16px',
+                    background: 'rgba(255,255,255,0.1)',
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    borderRadius: '8px',
+                    color: 'white',
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Cancel
+                </button>
               </div>
             </div>
           </div>
+        )}
+
+        {/* Category List */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {categories.map((cat) => {
+            const percentage = cat.budget > 0 ? (cat.spent / cat.budget) * 100 : 0;
+            const isOver = percentage > 100;
+            const isIncome = cat.type === 'income';
+
+            return (
+              <div
+                key={cat.id}
+                style={{
+                  background: 'rgba(255,255,255,0.05)',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  border: isOver ? '1px solid rgba(239, 68, 68, 0.3)' : 'none'
+                }}
+              >
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>{cat.emoji}</span>
+                    <div>
+                      <div style={{ fontSize: '15px', fontWeight: '500', color: 'white' }}>
+                        {cat.name}
+                      </div>
+                      {!isIncome && (
+                        <div style={{ fontSize: '13px', color: isOver ? '#EF4444' : 'rgba(255,255,255,0.6)' }}>
+                          ${cat.spent} / ${cat.budget}
+                        </div>
+                      )}
+                      {isIncome && (
+                        <div style={{ fontSize: '13px', color: '#10B981' }}>
+                          ${cat.spent}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  
+                  <button
+                    onClick={() => deleteCategory(cat.id)}
+                    style={{
+                      padding: '6px 12px',
+                      background: 'rgba(239, 68, 68, 0.2)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      borderRadius: '6px',
+                      color: '#EF4444',
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+                
+                {!isIncome && (
+                  <div style={{
+                    height: '8px',
+                    background: 'rgba(255,255,255,0.1)',
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                  }}>
+                    <div style={{
+                      width: `${Math.min(percentage, 100)}%`,
+                      height: '100%',
+                      background: isOver ? '#EF4444' : 'linear-gradient(90deg, #8B5CF6, #EC4899)',
+                      borderRadius: '4px',
+                      transition: 'width 0.5s ease'
+                    }} />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
+
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateY(20px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
+        }
+      `}</style>
     </div>
   );
 };
