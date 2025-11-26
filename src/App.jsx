@@ -19,6 +19,7 @@ const FinanceDashboard = () => {
     lastImportDate,
     loading: dataLoading,
     saving,
+    error,
     setBudgetData,
     addTransaction,
     deleteTransaction,
@@ -85,13 +86,39 @@ const FinanceDashboard = () => {
     return <AuthPage />;
   }
 
-  // Show loading while fetching user data
-  if (dataLoading) {
+  // Show loading while fetching user data (with timeout fallback)
+  if (dataLoading && !error) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
           <p className="text-white text-lg">Loading your data...</p>
+          <p className="text-slate-400 text-sm mt-2">If this takes too long, try refreshing the page.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if there's an error
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 border border-red-500/30 rounded-xl p-8 max-w-md text-center">
+          <h2 className="text-xl font-semibold text-red-400 mb-4">Error Loading Data</h2>
+          <p className="text-slate-300 mb-4">{error}</p>
+          <p className="text-slate-400 text-sm mb-6">This might be because the database tables haven't been set up yet.</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors mr-2"
+          >
+            Retry
+          </button>
+          <button 
+            onClick={() => signOut()} 
+            className="px-6 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg transition-colors"
+          >
+            Sign Out
+          </button>
         </div>
       </div>
     );
