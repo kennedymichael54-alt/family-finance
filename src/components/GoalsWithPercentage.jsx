@@ -1,195 +1,206 @@
 import React from 'react';
 
+/**
+ * GoalsWithPercentage Component - REDESIGNED to match Family Finance aesthetic
+ * 
+ * Features:
+ * - Clean progress bars with shimmer animation
+ * - Color-coded percentage badges (red → yellow → green based on progress)
+ * - Glassmorphic design matching the app
+ * - No clunky buttons - just beautiful progress display
+ * 
+ * Props:
+ * @param {Array} goals - Array of goal objects with structure:
+ *   - id: unique identifier
+ *   - name: goal name
+ *   - emoji: goal icon
+ *   - current: current amount saved
+ *   - target: target amount
+ *   - color: (optional) custom color for progress bar
+ */
+
 const GoalsWithPercentage = ({ goals = [] }) => {
-  const calculatePercentage = (current, target) => {
+  // Helper: Calculate percentage
+  const getPercentage = (current, target) => {
     if (!target || target === 0) return 0;
-    const percentage = (current / target) * 100;
-    return Math.min(Math.round(percentage), 100); // Cap at 100%
+    return Math.min((current / target) * 100, 100);
   };
 
-  const getPercentageColor = (percentage) => {
-    if (percentage >= 100) return 'bg-green-500';
-    if (percentage >= 75) return 'bg-blue-500';
-    if (percentage >= 50) return 'bg-yellow-500';
-    if (percentage >= 25) return 'bg-orange-500';
-    return 'bg-red-500';
+  // Helper: Get badge color based on progress
+  const getBadgeStyle = (percentage) => {
+    if (percentage >= 90) {
+      return {
+        background: 'rgba(16, 185, 129, 0.15)',
+        color: '#10B981',
+        border: '1px solid rgba(16, 185, 129, 0.3)'
+      };
+    } else if (percentage >= 70) {
+      return {
+        background: 'rgba(139, 92, 246, 0.15)',
+        color: '#8B5CF6',
+        border: '1px solid rgba(139, 92, 246, 0.3)'
+      };
+    } else if (percentage >= 40) {
+      return {
+        background: 'rgba(251, 191, 36, 0.15)',
+        color: '#FBBF24',
+        border: '1px solid rgba(251, 191, 36, 0.3)'
+      };
+    } else {
+      return {
+        background: 'rgba(239, 68, 68, 0.15)',
+        color: '#EF4444',
+        border: '1px solid rgba(239, 68, 68, 0.3)'
+      };
+    }
   };
 
-  const getProgressBarColor = (percentage) => {
-    if (percentage >= 100) return 'bg-green-600';
-    if (percentage >= 75) return 'bg-blue-600';
-    if (percentage >= 50) return 'bg-yellow-600';
-    if (percentage >= 25) return 'bg-orange-600';
-    return 'bg-red-600';
+  // Helper: Get progress bar gradient
+  const getProgressGradient = (percentage) => {
+    if (percentage >= 90) {
+      return 'linear-gradient(90deg, #10B981, #14B8A6)';
+    } else if (percentage >= 70) {
+      return 'linear-gradient(90deg, #8B5CF6, #A78BFA)';
+    } else if (percentage >= 40) {
+      return 'linear-gradient(90deg, #F59E0B, #FBBF24)';
+    } else {
+      return 'linear-gradient(90deg, #EF4444, #F87171)';
+    }
   };
+
+  if (!goals || goals.length === 0) {
+    return (
+      <div style={{ 
+        textAlign: 'center', 
+        padding: '32px', 
+        color: 'rgba(255,255,255,0.5)',
+        fontSize: '14px'
+      }}>
+        No goals yet. Start tracking your financial goals!
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
       {goals.map((goal) => {
-        const percentage = calculatePercentage(goal.current, goal.target);
-        const remaining = goal.target - goal.current;
-        
+        const percentage = getPercentage(goal.current, goal.target);
+        const badgeStyle = getBadgeStyle(percentage);
+        const progressGradient = getProgressGradient(percentage);
+        const remaining = Math.max(goal.target - goal.current, 0);
+
         return (
           <div
             key={goal.id}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200 relative overflow-hidden"
+            style={{
+              background: 'rgba(255,255,255,0.05)',
+              borderRadius: '12px',
+              padding: '14px 16px',
+              transition: 'all 0.3s ease',
+              cursor: 'pointer'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+            }}
           >
-            {/* Percentage Badge - Top Right */}
-            <div className="absolute top-4 right-4">
-              <div
-                className={`${getPercentageColor(percentage)} text-white text-xs font-bold px-3 py-1 rounded-full shadow-md flex items-center gap-1`}
-              >
-                {percentage >= 100 ? (
-                  <>
-                    <svg 
-                      className="w-4 h-4" 
-                      fill="currentColor" 
-                      viewBox="0 0 20 20"
-                    >
-                      <path 
-                        fillRule="evenodd" 
-                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                        clipRule="evenodd" 
-                      />
-                    </svg>
-                    <span>100%</span>
-                  </>
-                ) : (
-                  <span>{percentage}%</span>
-                )}
-              </div>
-            </div>
-
-            {/* Goal Icon */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="text-3xl">{goal.icon || '🎯'}</div>
-              <div className="flex-1">
-                <h3 className="text-lg font-semibold text-gray-800 mb-1">
+            {/* Header: Name + Percentage Badge */}
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'space-between', 
+              alignItems: 'center',
+              marginBottom: '10px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '18px' }}>{goal.emoji || '🎯'}</span>
+                <span style={{ 
+                  fontSize: '14px', 
+                  fontWeight: '500',
+                  color: 'rgba(255,255,255,0.9)'
+                }}>
                   {goal.name}
-                </h3>
-                {goal.description && (
-                  <p className="text-sm text-gray-500">{goal.description}</p>
-                )}
-              </div>
-            </div>
-
-            {/* Progress Information */}
-            <div className="space-y-3 mb-4">
-              {/* Current vs Target */}
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-gray-600">Progress</span>
-                <span className="font-semibold text-gray-800">
-                  ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
                 </span>
               </div>
-
-              {/* Remaining Amount */}
-              {remaining > 0 && (
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-gray-600">Remaining</span>
-                  <span className="font-semibold text-red-600">
-                    ${remaining.toLocaleString()}
-                  </span>
-                </div>
-              )}
-
-              {/* Goal Achievement Status */}
-              {percentage >= 100 && (
-                <div className="flex items-center gap-2 text-sm text-green-600 font-medium">
-                  <svg 
-                    className="w-5 h-5" 
-                    fill="currentColor" 
-                    viewBox="0 0 20 20"
-                  >
-                    <path 
-                      fillRule="evenodd" 
-                      d="M6.267 3.455a3.066 3.066 0 001.745-.723 3.066 3.066 0 013.976 0 3.066 3.066 0 001.745.723 3.066 3.066 0 012.812 2.812c.051.643.304 1.254.723 1.745a3.066 3.066 0 010 3.976 3.066 3.066 0 00-.723 1.745 3.066 3.066 0 01-2.812 2.812 3.066 3.066 0 00-1.745.723 3.066 3.066 0 01-3.976 0 3.066 3.066 0 00-1.745-.723 3.066 3.066 0 01-2.812-2.812 3.066 3.066 0 00-.723-1.745 3.066 3.066 0 010-3.976 3.066 3.066 0 00.723-1.745 3.066 3.066 0 012.812-2.812zm7.44 5.252a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                      clipRule="evenodd" 
-                    />
-                  </svg>
-                  Goal Achieved!
-                </div>
-              )}
-            </div>
-
-            {/* Progress Bar */}
-            <div className="relative">
-              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
-                <div
-                  className={`${getProgressBarColor(percentage)} h-3 rounded-full transition-all duration-500 ease-out relative overflow-hidden`}
-                  style={{ width: `${percentage}%` }}
-                >
-                  {/* Animated shine effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30 animate-shimmer"></div>
-                </div>
-              </div>
               
-              {/* Progress Text on Bar (for larger percentages) */}
-              {percentage > 15 && (
-                <div className="absolute inset-0 flex items-center justify-start pl-3">
-                  <span className="text-xs font-bold text-white drop-shadow">
-                    {percentage}%
-                  </span>
-                </div>
-              )}
+              {/* Percentage Badge */}
+              <div style={{
+                padding: '4px 10px',
+                borderRadius: '6px',
+                fontSize: '13px',
+                fontWeight: '600',
+                ...badgeStyle
+              }}>
+                {Math.round(percentage)}%
+              </div>
             </div>
 
-            {/* Optional: Action Buttons */}
-            <div className="flex gap-2 mt-4">
-              <button className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-sm font-medium py-2 px-3 rounded-md transition-colors">
-                Add Funds
-              </button>
-              <button className="bg-gray-50 hover:bg-gray-100 text-gray-600 text-sm font-medium py-2 px-3 rounded-md transition-colors">
-                Edit
-              </button>
+            {/* Progress Bar with Shimmer */}
+            <div style={{
+              height: '8px',
+              background: 'rgba(255,255,255,0.1)',
+              borderRadius: '4px',
+              overflow: 'hidden',
+              position: 'relative',
+              marginBottom: '8px'
+            }}>
+              {/* Actual Progress */}
+              <div style={{
+                width: `${percentage}%`,
+                height: '100%',
+                background: progressGradient,
+                borderRadius: '4px',
+                position: 'relative',
+                overflow: 'hidden',
+                transition: 'width 0.5s ease'
+              }}>
+                {/* Shimmer Effect */}
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: '-100%',
+                  width: '100%',
+                  height: '100%',
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                  animation: 'shimmer 2s infinite'
+                }} />
+              </div>
+            </div>
+
+            {/* Footer: Current / Target + Remaining */}
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              fontSize: '12px'
+            }}>
+              <span style={{ color: 'rgba(255,255,255,0.6)' }}>
+                ${goal.current?.toLocaleString() || 0} / ${goal.target?.toLocaleString() || 0}
+              </span>
+              {remaining > 0 && (
+                <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  ${remaining.toLocaleString()} to go
+                </span>
+              )}
+              {percentage >= 100 && (
+                <span style={{ color: '#10B981', fontWeight: '600' }}>
+                  ✓ Achieved!
+                </span>
+              )}
             </div>
           </div>
         );
       })}
+
+      <style>{`
+        @keyframes shimmer {
+          0% { transform: translateX(-100%); }
+          100% { transform: translateX(100%); }
+        }
+      `}</style>
     </div>
   );
 };
 
-// Add this to your global CSS for the shimmer animation
-const shimmerStyles = `
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%);
-  }
-  100% {
-    transform: translateX(100%);
-  }
-}
-
-.animate-shimmer {
-  animation: shimmer 2s infinite;
-}
-`;
-
 export default GoalsWithPercentage;
-
-// Example usage:
-// const exampleGoals = [
-//   {
-//     id: 1,
-//     name: 'Emergency Fund',
-//     description: 'Save for 6 months expenses',
-//     icon: '🏦',
-//     current: 8500,
-//     target: 15000,
-//   },
-//   {
-//     id: 2,
-//     name: 'Vacation Fund',
-//     icon: '✈️',
-//     current: 3200,
-//     target: 5000,
-//   },
-//   {
-//     id: 3,
-//     name: 'New Car',
-//     icon: '🚗',
-//     current: 12000,
-//     target: 12000, // Completed goal
-//   },
-// ];
