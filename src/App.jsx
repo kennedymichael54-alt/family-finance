@@ -1125,11 +1125,6 @@ function HomeTab({ data, netWorthHidden, setNetWorthHidden }) {
   <GoalsWithPercentage goals={data.goals} />
 </div>
 
-          
-        
-        </div>
-
-
         
         {/* Savings Rate */}
         <div style={{ background: 'rgba(30, 27, 56, 0.8)', backdropFilter: 'blur(20px)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
