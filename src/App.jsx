@@ -1,12 +1,20 @@
 import React, { useState, useEffect, useRef, createContext, useContext } from 'react';
-import { createClient } from '@supabase/supabase-js';
 
 // ============================================
-// SUPABASE CLIENT
+// SUPABASE CLIENT (Safe initialization)
 // ============================================
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+let supabase = null;
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (supabaseUrl && supabaseAnonKey) {
+    import('@supabase/supabase-js').then(({ createClient }) => {
+      supabase = createClient(supabaseUrl, supabaseAnonKey);
+    }).catch(err => console.warn('Supabase not available:', err));
+  }
+} catch (e) {
+  console.warn('Supabase init error:', e);
+}
 
 // ============================================
 // AUTH CONTEXT
