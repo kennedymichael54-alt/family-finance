@@ -1063,8 +1063,6 @@ const deleteExpense = (id) => {
   </>
 )}
         
-  </div>
-)}
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -2281,8 +2279,8 @@ const deleteExpense = (id) => {
         </table>
       </div>
       {cpaFilteredAndSorted.length > 10 && (
-        <p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>
-      )}
+  <p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>
+)}
     </div>
   </div>
 )}
