@@ -1,6 +1,6 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown, LogOut, User, Loader2 } from 'lucide-react';
+import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Search, LogOut, User, Loader2 } from 'lucide-react';
 import { NetWorthDashboard } from './components/NetWorthDashboard';
 import { FIRECalculator } from './components/FIRECalculator';
 import { GoalsTracker } from './components/GoalsTracker';
@@ -8,8 +8,8 @@ import { AuthPage } from './components/AuthPage';
 import { useAuth } from './contexts/AuthContext';
 import { useUserData } from './hooks/useUserData';
 
-const FinanceDashboard = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+// Main Dashboard Component - only rendered when authenticated
+const Dashboard = ({ user, signOut }) => {
   const {
     budgetData,
     billDates,
@@ -29,17 +29,12 @@ const FinanceDashboard = () => {
     addInvestment,
     updateInvestment,
     deleteInvestment,
-    setTransactions,
-    setInvestments,
-    setBillDates,
-    setLastImportDate,
   } = useUserData();
 
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currentDate] = useState(new Date());
-  const [comparisonView, setComparisonView] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('');
   const [transactionSort, setTransactionSort] = useState('date-desc');
   const [cpaFilter, setCpaFilter] = useState('');
@@ -69,60 +64,104 @@ const FinanceDashboard = () => {
   const retirementAccountTypes = ['401k', 'Roth IRA', 'Traditional IRA', 'VUL', 'IUL'];
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
 
-  // Show loading screen while checking auth
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // ALL useMemo hooks MUST be defined before any conditional returns
+  const filteredTransactions = useMemo(() => {
+    if (!transactions || transactions.length === 0) return [];
+    if (selectedMonth === -1) {
+      return transactions.filter(t => {
+        const transactionDate = new Date(t.date);
+        return transactionDate.getFullYear() === selectedYear;
+      });
+    }
+    return transactions.filter(t => {
+      const transactionDate = new Date(t.date);
+      return transactionDate.getMonth() === selectedMonth && 
+             transactionDate.getFullYear() === selectedYear;
+    });
+  }, [transactions, selectedMonth, selectedYear]);
 
-  // Show login page if not authenticated
-  if (!user) {
-    return <AuthPage />;
-  }
+  const totals = useMemo(() => {
+    const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + (t.amount || 0), 0);
+    const expenses = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount || 0), 0);
+    return { income, expenses, netIncome: income - expenses };
+  }, [filteredTransactions]);
 
-  // Show loading while fetching user data (with timeout fallback)
-  if (dataLoading && !error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
-          <p className="text-white text-lg">Loading your data...</p>
-          <p className="text-slate-400 text-sm mt-2">If this takes too long, try refreshing the page.</p>
-        </div>
-      </div>
-    );
-  }
+  const incomeBySource = useMemo(() => {
+    const grouped = {};
+    filteredTransactions.filter(t => t.type === 'income').forEach(t => {
+      const source = t.source || 'Other';
+      grouped[source] = (grouped[source] || 0) + (t.amount || 0);
+    });
+    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [filteredTransactions]);
 
-  // Show error state if there's an error
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
-        <div className="bg-slate-800/50 border border-red-500/30 rounded-xl p-8 max-w-md text-center">
-          <h2 className="text-xl font-semibold text-red-400 mb-4">Error Loading Data</h2>
-          <p className="text-slate-300 mb-4">{error}</p>
-          <p className="text-slate-400 text-sm mb-6">This might be because the database tables haven't been set up yet.</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors mr-2"
-          >
-            Retry
-          </button>
-          <button 
-            onClick={() => signOut()} 
-            className="px-6 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg transition-colors"
-          >
-            Sign Out
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const expensesByCategory = useMemo(() => {
+    const grouped = {};
+    filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
+      const category = t.category || 'Other';
+      grouped[category] = (grouped[category] || 0) + Math.abs(t.amount || 0);
+    });
+    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+  }, [filteredTransactions]);
+
+  const filteredAndSortedTransactions = useMemo(() => {
+    if (!transactions) return [];
+    let filtered = transactions.filter(t => {
+      if (!transactionFilter) return true;
+      const searchTerm = transactionFilter.toLowerCase();
+      return (
+        (t.description || '').toLowerCase().includes(searchTerm) ||
+        (t.vendor || '').toLowerCase().includes(searchTerm) ||
+        (t.category || '').toLowerCase().includes(searchTerm) ||
+        (t.source || '').toLowerCase().includes(searchTerm)
+      );
+    });
+    return filtered.sort((a, b) => {
+      switch (transactionSort) {
+        case 'date-desc': return new Date(b.date) - new Date(a.date);
+        case 'date-asc': return new Date(a.date) - new Date(b.date);
+        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
+        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
+        case 'vendor': return (a.vendor || '').localeCompare(b.vendor || '');
+        case 'category': return (a.category || '').localeCompare(b.category || '');
+        default: return 0;
+      }
+    });
+  }, [transactions, transactionFilter, transactionSort]);
+
+  const cpaFilteredAndSorted = useMemo(() => {
+    if (!transactions) return [];
+    let filtered = transactions.filter(t => {
+      if (!cpaFilter) return true;
+      const searchTerm = cpaFilter.toLowerCase();
+      return (
+        (t.description || '').toLowerCase().includes(searchTerm) ||
+        (t.vendor || '').toLowerCase().includes(searchTerm)
+      );
+    });
+    return filtered.sort((a, b) => {
+      switch (cpaSort) {
+        case 'date-desc': return new Date(b.date) - new Date(a.date);
+        case 'date-asc': return new Date(a.date) - new Date(b.date);
+        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
+        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
+        default: return 0;
+      }
+    });
+  }, [transactions, cpaFilter, cpaSort]);
+
+  // Helper function for GL Account mapping
+  const mapToGLAccount = (description, category, type) => {
+    const desc = (description || '').toLowerCase();
+    if (desc.includes('mortgage')) return { number: '2001', description: 'Mortgage' };
+    if (desc.includes('insurance')) return { number: '6006', description: 'Insurance' };
+    if (desc.includes('utilities') || desc.includes('electric') || desc.includes('gas')) return { number: '6013', description: 'Utilities' };
+    if (desc.includes('salary')) return { number: '4007', description: 'Payroll' };
+    if (category === 'Housing') return { number: '2001', description: 'Mortgage' };
+    if (category === 'Food') return { number: '6016', description: 'Meals & Entertainment' };
+    if (type === 'income') return { number: '4008', description: 'Revenue' };
+    return { number: '1007', description: 'Cash' };
+  };
 
   // Parse CSV file
   const parseCSV = (text) => {
@@ -138,308 +177,6 @@ const FinanceDashboard = () => {
       return obj;
     });
   };
-
-  // Parse PDF file
-  const parsePDF = async (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = async (e) => {
-        try {
-          const text = e.target.result;
-          const lines = text.split('\n');
-          const transactionsList = [];
-          lines.forEach(line => {
-            const dateMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
-            const amountMatch = line.match(/\$?\-?([\d,]+\.\d{2})/);
-            if (dateMatch && amountMatch) {
-              const amountIndex = line.indexOf(amountMatch[0]);
-              const description = line.substring(0, amountIndex).trim();
-              transactionsList.push({
-                date: dateMatch[1],
-                description: description || 'Transaction',
-                amount: amountMatch[1].replace(/,/g, ''),
-                category: 'Uncategorized'
-              });
-            }
-          });
-          resolve(transactionsList);
-        } catch (error) {
-          reject(error);
-        }
-      };
-      reader.onerror = reject;
-      reader.readAsText(file);
-    });
-  };
-
-  // Map transaction description to GL Account
-  const mapToGLAccount = (description, category, type) => {
-    const desc = description.toLowerCase();
-    if (desc.includes('mortgage') && desc.includes('interest')) return { number: '6009', description: 'Mortgage Interest (Paid)' };
-    if (desc.includes('mortgage')) return { number: '2001', description: 'Mortgage' };
-    if (desc.includes('insurance')) return { number: '6006', description: 'Insurance' };
-    if (desc.includes('utilities') || desc.includes('electric') || desc.includes('gas') || desc.includes('water')) return { number: '6013', description: 'Utilities' };
-    if (desc.includes('maintenance') || desc.includes('repair')) return { number: '6004', description: 'Maintenance' };
-    if (desc.includes('travel') || desc.includes('conference')) return { number: '6003', description: 'Travel' };
-    if (desc.includes('restaurant') || desc.includes('meal') || desc.includes('dining')) return { number: '6016', description: 'Meals & Entertainment' };
-    if (desc.includes('tax')) return { number: '6012', description: 'Taxes' };
-    if (desc.includes('salary') || desc.includes('payroll')) return { number: '4007', description: 'Payroll' };
-    if (desc.includes('rent')) return { number: '4004', description: 'Rent' };
-    if (desc.includes('vehicle') || desc.includes('car')) return { number: '1003', description: 'Vehicles' };
-    if (desc.includes('cleaning')) return { number: '6002', description: 'Cleaning Fees' };
-    if (desc.includes('advertising')) return { number: '6001', description: 'Advertising' };
-    if (desc.includes('commission')) return { number: '6005', description: 'Commissions' };
-    if (desc.includes('legal') || desc.includes('professional')) return { number: '6007', description: 'Legal / Professional Fees' };
-    if (desc.includes('management')) return { number: '6008', description: 'Management Fees' };
-    if (desc.includes('office')) return { number: '6011', description: 'Office Supplies' };
-    if (desc.includes('grocery') || desc.includes('groceries')) return { number: '6016', description: 'Meals & Entertainment' };
-    if (desc.includes('childcare')) return { number: '6015', description: 'Miscellaneous' };
-    if (desc.includes('client gifts')) return { number: '6016', description: 'Meals & Entertainment' };
-    if (category === 'Housing') return { number: '2001', description: 'Mortgage' };
-    if (category === 'Food') return { number: '6016', description: 'Meals & Entertainment' };
-    if (category === 'Transportation') return { number: '1003', description: 'Vehicles' };
-    if (category === 'Healthcare') return { number: '6015', description: 'Miscellaneous' };
-    if (category === 'Entertainment') return { number: '6016', description: 'Meals & Entertainment' };
-    if (type === 'income') return { number: '4008', description: 'Rental Revenue' };
-    return { number: '1007', description: 'Cash' };
-  };
-
-  // Filtered transactions - handles "All Months" option
-  const filteredTransactions = useMemo(() => {
-    if (selectedMonth === -1) {
-      return transactions.filter(t => {
-        const transactionDate = new Date(t.date);
-        return transactionDate.getFullYear() === selectedYear;
-      });
-    }
-    return transactions.filter(t => {
-      const transactionDate = new Date(t.date);
-      return transactionDate.getMonth() === selectedMonth && 
-             transactionDate.getFullYear() === selectedYear;
-    });
-  }, [transactions, selectedMonth, selectedYear]);
-
-  // Calculate totals
-  const totals = useMemo(() => {
-    const income = filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const expenses = filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    return { income, expenses, netIncome: income - expenses };
-  }, [filteredTransactions]);
-
-  // Helper functions
-  const getTransactionsForPeriod = (month, year) => {
-    return transactions.filter(t => {
-      const date = new Date(t.date);
-      return date.getMonth() === month && date.getFullYear() === year;
-    });
-  };
-
-  const getQuarterTransactions = (quarter, year) => {
-    const startMonth = (quarter - 1) * 3;
-    const endMonth = startMonth + 2;
-    return transactions.filter(t => {
-      const date = new Date(t.date);
-      const month = date.getMonth();
-      return date.getFullYear() === year && month >= startMonth && month <= endMonth;
-    });
-  };
-
-  // Comparison data
-  const comparisonData = useMemo(() => {
-    const currentMonth = getTransactionsForPeriod(selectedMonth, selectedYear);
-    const lastMonth = selectedMonth === 0 
-      ? getTransactionsForPeriod(11, selectedYear - 1)
-      : getTransactionsForPeriod(selectedMonth - 1, selectedYear);
-    
-    const currentMonthIncome = currentMonth.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const lastMonthIncome = lastMonth.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const currentMonthExpenses = currentMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const lastMonthExpenses = lastMonth.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const currentQuarter = Math.floor(selectedMonth / 3) + 1;
-    const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
-    const lastQuarterYear = currentQuarter === 1 ? selectedYear - 1 : selectedYear;
-    
-    const currentQuarterTrans = getQuarterTransactions(currentQuarter, selectedYear);
-    const lastQuarterTrans = getQuarterTransactions(lastQuarter, lastQuarterYear);
-    
-    const currentQuarterIncome = currentQuarterTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const lastQuarterIncome = lastQuarterTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const currentQuarterExpenses = currentQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const lastQuarterExpenses = lastQuarterTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    const currentYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear);
-    const lastYearTrans = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear - 1);
-    
-    const currentYearIncome = currentYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const lastYearIncome = lastYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
-    const currentYearExpenses = currentYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-    const lastYearExpenses = lastYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0);
-
-    return {
-      monthOverMonth: {
-        income: { current: currentMonthIncome, previous: lastMonthIncome, change: lastMonthIncome > 0 ? ((currentMonthIncome - lastMonthIncome) / lastMonthIncome * 100) : 0 },
-        expenses: { current: currentMonthExpenses, previous: lastMonthExpenses, change: lastMonthExpenses > 0 ? ((currentMonthExpenses - lastMonthExpenses) / lastMonthExpenses * 100) : 0 }
-      },
-      quarterOverQuarter: {
-        income: { current: currentQuarterIncome, previous: lastQuarterIncome, change: lastQuarterIncome > 0 ? ((currentQuarterIncome - lastQuarterIncome) / lastQuarterIncome * 100) : 0 },
-        expenses: { current: currentQuarterExpenses, previous: lastQuarterExpenses, change: lastQuarterExpenses > 0 ? ((currentQuarterExpenses - lastQuarterExpenses) / lastQuarterExpenses * 100) : 0 }
-      },
-      yearOverYear: {
-        income: { current: currentYearIncome, previous: lastYearIncome, change: lastYearIncome > 0 ? ((currentYearIncome - lastYearIncome) / lastYearIncome * 100) : 0 },
-        expenses: { current: currentYearExpenses, previous: lastYearExpenses, change: lastYearExpenses > 0 ? ((currentYearExpenses - lastYearExpenses) / lastYearExpenses * 100) : 0 }
-      }
-    };
-  }, [transactions, selectedMonth, selectedYear]);
-
-  // Comparison source data
-  const comparisonSourceData = useMemo(() => {
-    if (!comparisonView) return { income: [], expenses: [] };
-    let currentPeriod, previousPeriod;
-    if (comparisonView === 'month') {
-      currentPeriod = getTransactionsForPeriod(selectedMonth, selectedYear);
-      previousPeriod = selectedMonth === 0 
-        ? getTransactionsForPeriod(11, selectedYear - 1)
-        : getTransactionsForPeriod(selectedMonth - 1, selectedYear);
-    } else if (comparisonView === 'quarter') {
-      const currentQuarter = Math.floor(selectedMonth / 3) + 1;
-      const lastQuarter = currentQuarter === 1 ? 4 : currentQuarter - 1;
-      const lastQuarterYear = currentQuarter === 1 ? selectedYear - 1 : selectedYear;
-      currentPeriod = getQuarterTransactions(currentQuarter, selectedYear);
-      previousPeriod = getQuarterTransactions(lastQuarter, lastQuarterYear);
-    } else {
-      currentPeriod = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear);
-      previousPeriod = transactions.filter(t => new Date(t.date).getFullYear() === selectedYear - 1);
-    }
-    const incomeBySource = {};
-    const expensesByCategory = {};
-    currentPeriod.filter(t => t.type === 'income').forEach(t => {
-      incomeBySource[t.source] = (incomeBySource[t.source] || 0) + t.amount;
-    });
-    currentPeriod.filter(t => t.type === 'expense').forEach(t => {
-      expensesByCategory[t.category] = (expensesByCategory[t.category] || 0) + Math.abs(t.amount);
-    });
-    return {
-      income: Object.entries(incomeBySource).map(([name, value]) => ({ name, value })),
-      expenses: Object.entries(expensesByCategory).map(([name, value]) => ({ name, value }))
-    };
-  }, [comparisonView, transactions, selectedMonth, selectedYear]);
-
-  // Trend data
-  const incomeTrendData = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.map((month, i) => {
-      const currentYearTrans = getTransactionsForPeriod(i, selectedYear);
-      const lastYearTrans = getTransactionsForPeriod(i, selectedYear - 1);
-      return {
-        month,
-        currentYear: currentYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0),
-        lastYear: lastYearTrans.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0)
-      };
-    });
-  }, [transactions, selectedYear]);
-
-  const expenseTrendData = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    return months.map((month, i) => {
-      const currentYearTrans = getTransactionsForPeriod(i, selectedYear);
-      const lastYearTrans = getTransactionsForPeriod(i, selectedYear - 1);
-      return {
-        month,
-        currentYear: currentYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0),
-        lastYear: lastYearTrans.filter(t => t.type === 'expense').reduce((sum, t) => sum + Math.abs(t.amount), 0)
-      };
-    });
-  }, [transactions, selectedYear]);
-
-  const incomeBySource = useMemo(() => {
-    const grouped = {};
-    filteredTransactions.filter(t => t.type === 'income').forEach(t => {
-      grouped[t.source || 'Other'] = (grouped[t.source || 'Other'] || 0) + t.amount;
-    });
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [filteredTransactions]);
-
-  const expensesByCategory = useMemo(() => {
-    const grouped = {};
-    filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
-      grouped[t.category || 'Other'] = (grouped[t.category || 'Other'] || 0) + Math.abs(t.amount);
-    });
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [filteredTransactions]);
-
-  // Filtered and sorted transactions
-  const filteredAndSortedTransactions = useMemo(() => {
-    let filtered = transactions.filter(t => {
-      if (!transactionFilter) return true;
-      const searchTerm = transactionFilter.toLowerCase();
-      return (
-        (t.description || '').toLowerCase().includes(searchTerm) ||
-        (t.vendor || '').toLowerCase().includes(searchTerm) ||
-        (t.category || '').toLowerCase().includes(searchTerm) ||
-        (t.source || '').toLowerCase().includes(searchTerm) ||
-        (t.institution && t.institution.toLowerCase().includes(searchTerm))
-      );
-    });
-    return filtered.sort((a, b) => {
-      switch (transactionSort) {
-        case 'date-desc': return new Date(b.date) - new Date(a.date);
-        case 'date-asc': return new Date(a.date) - new Date(b.date);
-        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
-        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
-        case 'vendor': return (a.vendor || '').localeCompare(b.vendor || '');
-        case 'description': return (a.description || '').localeCompare(b.description || '');
-        case 'category': return (a.category || '').localeCompare(b.category || '');
-        case 'source': return (a.source || '').localeCompare(b.source || '');
-        case 'institution': return (a.institution || '').localeCompare(b.institution || '');
-        default: return 0;
-      }
-    });
-  }, [transactions, transactionFilter, transactionSort]);
-
-  // CPA filtered and sorted
-  const cpaFilteredAndSorted = useMemo(() => {
-    let filtered = transactions.filter(t => {
-      if (!cpaFilter) return true;
-      const searchTerm = cpaFilter.toLowerCase();
-      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
-      return (
-        (t.description || '').toLowerCase().includes(searchTerm) ||
-        (t.vendor || '').toLowerCase().includes(searchTerm) ||
-        glAccount.description.toLowerCase().includes(searchTerm)
-      );
-    });
-    return filtered.sort((a, b) => {
-      switch (cpaSort) {
-        case 'date-desc': return new Date(b.date) - new Date(a.date);
-        case 'date-asc': return new Date(a.date) - new Date(b.date);
-        case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
-        case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
-        case 'vendor': return (a.vendor || '').localeCompare(b.vendor || '');
-        default: return 0;
-      }
-    });
-  }, [transactions, cpaFilter, cpaSort]);
-
-  const retirementByAccountType = useMemo(() => {
-    const grouped = {};
-    investments.forEach(inv => {
-      grouped[inv.accountType] = (grouped[inv.accountType] || 0) + inv.currentValue;
-    });
-    return Object.entries(grouped).map(([name, value]) => ({ name, value }));
-  }, [investments]);
-
-  const getBudgetSummary = useMemo(() => {
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const totalIncome = budgetData.income.reduce((sum, item) => sum + item.amount, 0);
-    const totalExpenses = budgetData.expenses.reduce((sum, item) => sum + item.amount, 0);
-    return months.map((month) => ({
-      month,
-      income: totalIncome,
-      expenses: totalExpenses,
-      net: totalIncome - totalExpenses
-    }));
-  }, [budgetData]);
 
   // Event handlers
   const handleAddTransaction = async () => {
@@ -461,23 +198,17 @@ const FinanceDashboard = () => {
       
       if (newTransaction.recurring && newTransaction.type === 'expense') {
         const transactionDate = new Date(newTransaction.date);
-        const getNextDate = (date, frequency) => {
-          const next = new Date(date);
-          switch (frequency) {
-            case 'weekly': next.setDate(next.getDate() + 7); break;
-            case 'bi-weekly': next.setDate(next.getDate() + 14); break;
-            case 'monthly': default: next.setMonth(next.getMonth() + 1); break;
-          }
-          return next;
-        };
-        const nextDueDate = getNextDate(transactionDate, newTransaction.frequency);
+        const nextDueDate = new Date(transactionDate);
+        nextDueDate.setMonth(nextDueDate.getMonth() + 1);
+        
         await addBillDate({
           name: newTransaction.description,
           amount: Math.abs(parseFloat(newTransaction.amount)),
           dueDate: nextDueDate.toISOString().split('T')[0]
         });
-        alert(`✅ Transaction added and scheduled as recurring ${newTransaction.frequency} bill starting ${nextDueDate.toLocaleDateString()}`);
+        alert(`✅ Transaction added and scheduled as recurring bill`);
       }
+      
       setNewTransaction({ date: '', description: '', vendor: '', amount: '', type: 'expense', category: '', source: '', institution: '', recurring: false, frequency: 'monthly' });
     }
   };
@@ -489,183 +220,89 @@ const FinanceDashboard = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    try {
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const text = event.target.result;
-            const parsed = parseCSV(text);
-            const newTransactions = [];
-            for (let i = 0; i < parsed.length; i++) {
-              const row = parsed[i];
-              if (row.date || row.Date) {
-                newTransactions.push({
-                  date: row.date || row.Date,
-                  description: row.description || row.Description || 'Transaction',
-                  vendor: row.vendor || row.Vendor || 'Unknown',
-                  amount: parseFloat(row.amount || row.Amount || '0'),
-                  type: parseFloat(row.amount || row.Amount || '0') > 0 ? 'income' : 'expense',
-                  category: row.category || row.Category || 'Uncategorized',
-                  source: row.source || row.Source || 'Unknown',
-                  institution: '',
-                  recurring: false,
-                  frequency: 'monthly'
-                });
-              }
-            }
-            if (newTransactions.length > 0) {
-              await bulkImportTransactions(newTransactions);
-              alert(`Successfully imported ${newTransactions.length} transactions from CSV`);
-            }
-          } catch (error) {
-            alert('Error parsing CSV file. Please ensure it follows the correct format.');
+    
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const text = event.target.result;
+          const parsed = parseCSV(text);
+          const newTransactions = parsed
+            .filter(row => row.date || row.Date)
+            .map(row => ({
+              date: row.date || row.Date,
+              description: row.description || row.Description || 'Transaction',
+              vendor: row.vendor || row.Vendor || 'Unknown',
+              amount: parseFloat(row.amount || row.Amount || '0'),
+              type: parseFloat(row.amount || row.Amount || '0') > 0 ? 'income' : 'expense',
+              category: row.category || row.Category || 'Uncategorized',
+              source: row.source || row.Source || 'Import',
+              institution: '',
+              recurring: false,
+              frequency: 'monthly'
+            }));
+          
+          if (newTransactions.length > 0) {
+            await bulkImportTransactions(newTransactions);
+            alert(`Successfully imported ${newTransactions.length} transactions`);
           }
-        };
-        reader.readAsText(file);
-      } else if (file.name.toLowerCase().endsWith('.pdf')) {
-        const parsed = await parsePDF(file);
-        const newTransactions = [];
-        for (let i = 0; i < parsed.length; i++) {
-          const item = parsed[i];
-          const amount = parseFloat(item.amount);
-          newTransactions.push({
-            date: item.date,
-            description: item.description,
-            vendor: item.description.split(' ')[0] || 'Unknown',
-            amount: amount,
-            type: amount > 0 ? 'income' : 'expense',
-            category: item.category || 'Uncategorized',
-            source: 'PDF Import',
-            institution: '',
-            recurring: false,
-            frequency: 'monthly'
-          });
+        } catch (error) {
+          alert('Error parsing CSV file');
         }
-        if (newTransactions.length > 0) {
-          await bulkImportTransactions(newTransactions);
-          alert(`Successfully imported ${newTransactions.length} transactions from PDF`);
-        } else {
-          alert('No transaction data found in PDF.');
-        }
-      } else {
-        alert('Please upload a CSV or PDF file');
-      }
-    } catch (error) {
-      alert('Error processing file: ' + error.message);
+      };
+      reader.readAsText(file);
+    } else {
+      alert('Please upload a CSV file');
     }
   };
 
   const handleRetirementFileUpload = async (e) => {
     const file = e.target.files[0];
-    if (!file) return;
-    if (!selectedRetirementAccountType) {
-      alert('Please select an account type before uploading');
+    if (!file || !selectedRetirementAccountType) {
+      alert('Please select an account type first');
       return;
     }
-    try {
-      if (file.name.toLowerCase().endsWith('.csv')) {
-        const reader = new FileReader();
-        reader.onload = async (event) => {
-          try {
-            const text = event.target.result;
-            const parsed = parseCSV(text);
-            let totalValue = 0;
-            parsed.forEach(row => {
-              const value = parseFloat(row.value || row.Value || row.balance || row.Balance || row.amount || row.Amount || '0');
-              if (!isNaN(value)) totalValue += Math.abs(value);
-            });
-            if (totalValue > 0) {
-              await addInvestment({
-                type: selectedRetirementAccountType,
-                accountType: selectedRetirementAccountType,
-                currentValue: totalValue,
-                targetValue: totalValue * 2
-              });
-              alert(`Successfully imported ${selectedRetirementAccountType} account with value $${totalValue.toLocaleString()}`);
-              setSelectedRetirementAccountType('');
-            } else {
-              alert('No valid balance data found in CSV');
-            }
-          } catch (error) {
-            alert('Error parsing CSV file: ' + error.message);
-          }
-        };
-        reader.readAsText(file);
-      } else if (file.name.toLowerCase().endsWith('.pdf')) {
-        const parsed = await parsePDF(file);
-        let totalValue = 0;
-        parsed.forEach(item => {
-          const value = Math.abs(parseFloat(item.amount));
-          if (!isNaN(value)) totalValue += value;
-        });
-        if (totalValue > 0) {
-          await addInvestment({
-            type: selectedRetirementAccountType,
-            accountType: selectedRetirementAccountType,
-            currentValue: totalValue,
-            targetValue: totalValue * 2
+    
+    if (file.name.toLowerCase().endsWith('.csv')) {
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const text = event.target.result;
+          const parsed = parseCSV(text);
+          let totalValue = 0;
+          parsed.forEach(row => {
+            const value = parseFloat(row.value || row.Value || row.balance || row.Balance || row.amount || row.Amount || '0');
+            if (!isNaN(value)) totalValue += Math.abs(value);
           });
-          alert(`Successfully imported ${selectedRetirementAccountType} from PDF with value $${totalValue.toLocaleString()}`);
-          setSelectedRetirementAccountType('');
-        } else {
-          alert('No valid balance data found in PDF');
+          
+          if (totalValue > 0) {
+            await addInvestment({
+              type: selectedRetirementAccountType,
+              accountType: selectedRetirementAccountType,
+              currentValue: totalValue,
+              targetValue: totalValue * 2
+            });
+            alert(`Successfully imported ${selectedRetirementAccountType} with value $${totalValue.toLocaleString()}`);
+            setSelectedRetirementAccountType('');
+          }
+        } catch (error) {
+          alert('Error parsing file');
         }
-      } else {
-        alert('Please upload a CSV or PDF file');
-      }
-    } catch (error) {
-      alert('Error processing file: ' + error.message);
+      };
+      reader.readAsText(file);
     }
   };
 
-  const handleAddBillDate = async (bill) => {
-    await addBillDate(bill);
-  };
-  
   const handleDeleteBill = async (id) => {
     await deleteBillDate(id);
   };
 
-  const addIncome = async (income) => {
-    const newBudget = { 
-      ...budgetData, 
-      income: [...budgetData.income, { ...income, id: Date.now() }] 
-    };
-    await setBudgetData(newBudget);
-  };
-
-  const deleteIncome = async (id) => {
-    const newBudget = { 
-      ...budgetData, 
-      income: budgetData.income.filter(item => item.id !== id) 
-    };
-    await setBudgetData(newBudget);
-  };
-
-  const addExpense = async (expense) => {
-    const newBudget = { 
-      ...budgetData, 
-      expenses: [...budgetData.expenses, { ...expense, id: Date.now() }] 
-    };
-    await setBudgetData(newBudget);
-  };
-
-  const deleteExpense = async (id) => {
-    const newBudget = { 
-      ...budgetData, 
-      expenses: budgetData.expenses.filter(item => item.id !== id) 
-    };
-    await setBudgetData(newBudget);
-  };
-
   const exportCPAData = () => {
-    const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Outflow/Inflow', 'GL Account', 'GL Account Offset'];
-    const rows = cpaFilteredAndSorted.map(t => {
-      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
-      const isOutflow = t.amount < 0;
-      return [t.date, t.description, t.vendor, Math.abs(t.amount).toFixed(2), isOutflow ? 'Outflow' : 'Inflow', `${glAccount.number} ${glAccount.description}`, '1007 Cash'];
-    });
+    const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Type', 'Category'];
+    const rows = cpaFilteredAndSorted.map(t => [
+      t.date, t.description, t.vendor, Math.abs(t.amount).toFixed(2), 
+      t.amount < 0 ? 'Expense' : 'Income', t.category
+    ]);
     const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = window.URL.createObjectURL(blob);
@@ -679,11 +316,35 @@ const FinanceDashboard = () => {
     await signOut();
   };
 
+  // NOW we can have conditional returns - AFTER all hooks
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading your data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center p-4">
+        <div className="bg-slate-800/50 border border-red-500/30 rounded-xl p-8 max-w-md text-center">
+          <h2 className="text-xl font-semibold text-red-400 mb-4">Error Loading Data</h2>
+          <p className="text-slate-300 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg mr-2">Retry</button>
+          <button onClick={handleSignOut} className="px-6 py-2 bg-slate-600 hover:bg-slate-700 rounded-lg">Sign Out</button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
-      {/* Saving Indicator */}
       {saving && (
-        <div className="fixed top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 z-50 shadow-lg">
+        <div className="fixed top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 z-50">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>Saving...</span>
         </div>
@@ -695,47 +356,33 @@ const FinanceDashboard = () => {
             <div>
               <div className="flex items-center gap-4 mb-2">
                 <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">HomeBudget Hub</h1>
-                <div className="relative">
-                  <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 rounded-full text-xs font-bold text-white shadow-lg transform -rotate-3 hover:rotate-0 transition-transform">BETA</div>
-                </div>
+                <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 rounded-full text-xs font-bold text-white">BETA</div>
               </div>
               <p className="text-slate-300">🌱 Grow your finances now, safeguard your family forever.</p>
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-4 mb-3">
-                {/* User Menu */}
-                <div className="relative">
-                  <button
-                    onClick={() => setShowUserMenu(!showUserMenu)}
-                    className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-lg transition-colors"
-                  >
-                    <User size={18} />
-                    <span className="text-sm max-w-[150px] truncate">{user.email}</span>
-                  </button>
-                  {showUserMenu && (
-                    <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
-                      <button
-                        onClick={handleSignOut}
-                        className="w-full flex items-center gap-2 px-4 py-3 text-left text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
-                      >
-                        <LogOut size={18} />
-                        <span>Sign Out</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
+              <div className="relative mb-3">
+                <button
+                  onClick={() => setShowUserMenu(!showUserMenu)}
+                  className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-lg"
+                >
+                  <User size={18} />
+                  <span className="text-sm max-w-[150px] truncate">{user.email}</span>
+                </button>
+                {showUserMenu && (
+                  <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+                    <button onClick={handleSignOut} className="w-full flex items-center gap-2 px-4 py-3 text-red-400 hover:bg-slate-700 rounded-lg">
+                      <LogOut size={18} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2 text-slate-300 mb-1">
                 <Calendar size={20} />
                 <span className="text-sm">Current Date</span>
               </div>
-              <p className="text-xl font-semibold text-white mb-3">{currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              {lastImportDate && (
-                <div className="text-sm text-slate-400">
-                  <span>Last Import: </span>
-                  <span className="text-slate-300">{new Date(lastImportDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                </div>
-              )}
+              <p className="text-xl font-semibold text-white">{currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
             </div>
           </div>
         </header>
@@ -748,7 +395,7 @@ const FinanceDashboard = () => {
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-3 font-medium transition-all whitespace-nowrap ${activeTab === tab ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg' : 'text-slate-400 hover:text-white'}`}
             >
-              {tab === 'cpa' ? 'CPA Export' : tab === 'billHistory' ? 'Bill History' : tab === 'netWorth' ? 'Net Worth' : tab === 'fire' ? 'FIRE' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'cpa' ? 'CPA Export' : tab === 'billHistory' ? 'Bills' : tab === 'netWorth' ? 'Net Worth' : tab === 'fire' ? 'FIRE' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -756,13 +403,12 @@ const FinanceDashboard = () => {
         {/* Dashboard Tab */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            {/* Date Selector */}
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
               <h3 className="text-lg font-semibold mb-4">Select Period</h3>
               <div className="flex gap-4">
                 <div className="flex-1">
                   <label className="block text-sm text-slate-300 mb-2">Month</label>
-                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <select value={selectedMonth} onChange={(e) => setSelectedMonth(parseInt(e.target.value))} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                     <option value={-1}>All Months</option>
                     {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month, index) => (
                       <option key={index} value={index}>{month}</option>
@@ -771,86 +417,72 @@ const FinanceDashboard = () => {
                 </div>
                 <div className="flex-1">
                   <label className="block text-sm text-slate-300 mb-2">Year</label>
-                  <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <select value={selectedYear} onChange={(e) => setSelectedYear(parseInt(e.target.value))} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                     {[2023, 2024, 2025, 2026].map(year => (<option key={year} value={year}>{year}</option>))}
                   </select>
                 </div>
               </div>
-              {selectedMonth === -1 && (
-                <div className="mt-3 bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
-                  <p className="text-sm text-blue-300">📊 Showing totals for entire year {selectedYear}. Comparison views are disabled for full-year view.</p>
-                </div>
-              )}
             </div>
 
-            {/* Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 backdrop-blur-sm border border-green-500/30 rounded-xl p-6 shadow-lg">
+              <div className="bg-gradient-to-br from-green-500/20 to-green-600/20 border border-green-500/30 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-green-300">Total Income</h3>
                   <TrendingUp className="text-green-400" />
                 </div>
                 <p className="text-3xl font-bold text-white">${totals.income.toLocaleString()}</p>
-                {selectedMonth === -1 && <p className="text-sm text-green-300 mt-2">Full year {selectedYear}</p>}
               </div>
-              <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 backdrop-blur-sm border border-red-500/30 rounded-xl p-6 shadow-lg">
+              <div className="bg-gradient-to-br from-red-500/20 to-red-600/20 border border-red-500/30 rounded-xl p-6">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-semibold text-red-300">Total Expenses</h3>
                   <TrendingDown className="text-red-400" />
                 </div>
                 <p className="text-3xl font-bold text-white">${totals.expenses.toLocaleString()}</p>
-                {selectedMonth === -1 && <p className="text-sm text-red-300 mt-2">Full year {selectedYear}</p>}
               </div>
-              <div className={`bg-gradient-to-br ${totals.netIncome >= 0 ? 'from-blue-500/20 to-blue-600/20 border-blue-500/30' : 'from-orange-500/20 to-orange-600/20 border-orange-500/30'} backdrop-blur-sm border rounded-xl p-6 shadow-lg`}>
+              <div className={`bg-gradient-to-br ${totals.netIncome >= 0 ? 'from-blue-500/20 to-blue-600/20 border-blue-500/30' : 'from-orange-500/20 to-orange-600/20 border-orange-500/30'} border rounded-xl p-6`}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className={`text-lg font-semibold ${totals.netIncome >= 0 ? 'text-blue-300' : 'text-orange-300'}`}>Net Income</h3>
                   <DollarSign className={totals.netIncome >= 0 ? 'text-blue-400' : 'text-orange-400'} />
                 </div>
                 <p className="text-3xl font-bold text-white">${totals.netIncome.toLocaleString()}</p>
-                {selectedMonth === -1 && <p className="text-sm text-blue-300 mt-2">Full year {selectedYear}</p>}
               </div>
             </div>
 
-            {/* Charts */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-xl font-semibold mb-4">Income by Source{selectedMonth === -1 && ` (${selectedYear} Total)`}</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-xl font-semibold mb-4">Income by Source</h3>
                 {incomeBySource.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={incomeBySource} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`} outerRadius={80} fill="#8884d8" dataKey="value">
+                      <Pie data={incomeBySource} cx="50%" cy="50%" outerRadius={80} fill="#8884d8" dataKey="value" label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}>
                         {incomeBySource.map((entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />))}
                       </Pie>
                       <Tooltip formatter={(value) => `$${value.toLocaleString()}`} />
                     </PieChart>
                   </ResponsiveContainer>
-                ) : (<div className="h-[300px] flex items-center justify-center text-slate-400">No income data for selected period</div>)}
+                ) : (<div className="h-[300px] flex items-center justify-center text-slate-400">No income data</div>)}
               </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-xl font-semibold mb-4">Expenses by Category{selectedMonth === -1 && ` (${selectedYear} Total)`}</h3>
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                <h3 className="text-xl font-semibold mb-4">Expenses by Category</h3>
                 {expensesByCategory.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={expensesByCategory}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="name" stroke="#9CA3AF" angle={-45} textAnchor="end" height={100} />
+                      <XAxis dataKey="name" stroke="#9CA3AF" />
                       <YAxis stroke="#9CA3AF" />
                       <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
                       <Bar dataKey="value" fill="#8B5CF6" />
                     </BarChart>
                   </ResponsiveContainer>
-                ) : (<div className="h-[300px] flex items-center justify-center text-slate-400">No expense data for selected period</div>)}
+                ) : (<div className="h-[300px] flex items-center justify-center text-slate-400">No expense data</div>)}
               </div>
             </div>
 
-            {/* Getting Started for new users */}
             {transactions.length === 0 && (
               <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-xl p-8 text-center">
                 <h3 className="text-2xl font-semibold mb-4">Welcome to HomeBudget Hub! 🎉</h3>
-                <p className="text-slate-300 mb-6">Get started by adding your first transaction or importing data from a CSV file.</p>
-                <button
-                  onClick={() => setActiveTab('transactions')}
-                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg font-semibold transition-all"
-                >
+                <p className="text-slate-300 mb-6">Get started by adding your first transaction.</p>
+                <button onClick={() => setActiveTab('transactions')} className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg font-semibold">
                   Add Your First Transaction
                 </button>
               </div>
@@ -861,64 +493,51 @@ const FinanceDashboard = () => {
         {/* Transactions Tab */}
         {activeTab === 'transactions' && (
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
               <h3 className="text-xl font-semibold mb-4">Add New Transaction</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="text" placeholder="Description" value={newTransaction.description} onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="text" placeholder="Vendor" value={newTransaction.vendor} onChange={(e) => setNewTransaction({...newTransaction, vendor: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="number" placeholder="Amount" value={newTransaction.amount} onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <select value={newTransaction.type} onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value, category: '', source: ''})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
+                <input type="text" placeholder="Description" value={newTransaction.description} onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
+                <input type="text" placeholder="Vendor" value={newTransaction.vendor} onChange={(e) => setNewTransaction({...newTransaction, vendor: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
+                <input type="number" placeholder="Amount" value={newTransaction.amount} onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
+                <select value={newTransaction.type} onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                   <option value="expense">Expense</option>
                   <option value="income">Income</option>
                 </select>
-                <select value={newTransaction.category} onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <select value={newTransaction.category} onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                   <option value="">Select Category</option>
                   {categories[newTransaction.type].map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                 </select>
-                <input type="text" placeholder="Source" value={newTransaction.source} onChange={(e) => setNewTransaction({...newTransaction, source: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="text" placeholder="Institution (optional)" value={newTransaction.institution} onChange={(e) => setNewTransaction({...newTransaction, institution: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-              </div>
-              <div className="flex items-center gap-6 mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={newTransaction.recurring} onChange={(e) => setNewTransaction({...newTransaction, recurring: e.target.checked})} className="w-5 h-5 rounded bg-slate-700 border-slate-600 text-purple-500 focus:ring-purple-500" />
-                  <span>Recurring Transaction</span>
+                <input type="text" placeholder="Source" value={newTransaction.source} onChange={(e) => setNewTransaction({...newTransaction, source: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
+                <label className="flex items-center gap-2 px-4 py-2">
+                  <input type="checkbox" checked={newTransaction.recurring} onChange={(e) => setNewTransaction({...newTransaction, recurring: e.target.checked})} className="w-5 h-5" />
+                  <span>Recurring</span>
                 </label>
-                {newTransaction.recurring && (
-                  <select value={newTransaction.frequency} onChange={(e) => setNewTransaction({...newTransaction, frequency: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                )}
               </div>
               <div className="flex gap-4">
-                <button onClick={handleAddTransaction} disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg transition-all disabled:opacity-50">
+                <button onClick={handleAddTransaction} disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 rounded-lg disabled:opacity-50">
                   <Plus size={20} /> Add Transaction
                 </button>
-                <label className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg cursor-pointer transition-colors">
-                  <Upload size={20} /><span>Import CSV/PDF</span>
-                  <input type="file" accept=".csv,.pdf" onChange={handleFileUpload} className="hidden" />
+                <label className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg cursor-pointer">
+                  <Upload size={20} /><span>Import CSV</span>
+                  <input type="file" accept=".csv" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
             </div>
 
-            {/* Transaction List */}
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-xl font-semibold">Transactions ({filteredAndSortedTransactions.length})</h3>
                 <div className="flex gap-3">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-                    <input type="text" placeholder="Search..." value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                    <input type="text" placeholder="Search..." value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg" />
                   </div>
-                  <select value={transactionSort} onChange={(e) => setTransactionSort(e.target.value)} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <select value={transactionSort} onChange={(e) => setTransactionSort(e.target.value)} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                     <option value="date-desc">Date (Newest)</option>
                     <option value="date-asc">Date (Oldest)</option>
-                    <option value="amount-desc">Amount (High-Low)</option>
-                    <option value="amount-asc">Amount (Low-High)</option>
-                    <option value="vendor">Vendor (A-Z)</option>
-                    <option value="category">Category (A-Z)</option>
+                    <option value="amount-desc">Amount (High)</option>
+                    <option value="amount-asc">Amount (Low)</option>
                   </select>
                 </div>
               </div>
@@ -945,7 +564,7 @@ const FinanceDashboard = () => {
                           {t.amount >= 0 ? '+' : ''}${Math.abs(t.amount).toLocaleString()}
                         </td>
                         <td className="py-3 px-4 text-center">
-                          <button onClick={() => handleDeleteTransaction(t.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
+                          <button onClick={() => handleDeleteTransaction(t.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg">
                             <Trash2 size={18} />
                           </button>
                         </td>
@@ -954,11 +573,8 @@ const FinanceDashboard = () => {
                   </tbody>
                 </table>
               </div>
-              {filteredAndSortedTransactions.length > 20 && (
-                <p className="text-slate-400 text-sm mt-4">Showing 20 of {filteredAndSortedTransactions.length} transactions</p>
-              )}
               {filteredAndSortedTransactions.length === 0 && (
-                <p className="text-slate-400 text-center py-8">No transactions found. Add your first transaction above!</p>
+                <p className="text-slate-400 text-center py-8">No transactions yet. Add your first one above!</p>
               )}
             </div>
           </div>
@@ -966,74 +582,60 @@ const FinanceDashboard = () => {
 
         {/* Bill History Tab */}
         {activeTab === 'billHistory' && (
-          <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4">Upcoming Bills</h3>
-              {billDates.length > 0 ? (
-                <div className="space-y-3">
-                  {billDates.map(bill => (
-                    <div key={bill.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
-                      <div>
-                        <p className="font-semibold">{bill.name}</p>
-                        <p className="text-sm text-slate-400">Due: {bill.dueDate}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-bold text-red-400">${bill.amount.toLocaleString()}</span>
-                        <button onClick={() => handleDeleteBill(bill.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
-                          <Trash2 size={18} />
-                        </button>
-                      </div>
+          <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+            <h3 className="text-xl font-semibold mb-4">Upcoming Bills</h3>
+            {billDates && billDates.length > 0 ? (
+              <div className="space-y-3">
+                {billDates.map(bill => (
+                  <div key={bill.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                    <div>
+                      <p className="font-semibold">{bill.name}</p>
+                      <p className="text-sm text-slate-400">Due: {bill.dueDate}</p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-slate-400 text-center py-8">No upcoming bills. Add recurring transactions to see them here!</p>
-              )}
-            </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-red-400">${bill.amount?.toLocaleString()}</span>
+                      <button onClick={() => handleDeleteBill(bill.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg">
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-slate-400 text-center py-8">No upcoming bills. Add recurring transactions to see them here!</p>
+            )}
           </div>
         )}
 
         {/* Budget Tab */}
         {activeTab === 'budget' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-xl font-semibold mb-4">Monthly Income Budget</h3>
-                <div className="space-y-3">
-                  {budgetData.income.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <span>{item.name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-green-400 font-semibold">${item.amount.toLocaleString()}</span>
-                        <button onClick={() => deleteIncome(item.id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-600">
-                  <p className="text-lg font-semibold">Total: <span className="text-green-400">${budgetData.income.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span></p>
-                </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-4">Monthly Income</h3>
+              <div className="space-y-3">
+                {budgetData?.income?.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <span>{item.name}</span>
+                    <span className="text-green-400 font-semibold">${item.amount?.toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-xl font-semibold mb-4">Monthly Expense Budget</h3>
-                <div className="space-y-3">
-                  {budgetData.expenses.map(item => (
-                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                      <span>{item.name}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-red-400 font-semibold">${item.amount.toLocaleString()}</span>
-                        <button onClick={() => deleteExpense(item.id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded">
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 pt-4 border-t border-slate-600">
-                  <p className="text-lg font-semibold">Total: <span className="text-red-400">${budgetData.expenses.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span></p>
-                </div>
+              <div className="mt-4 pt-4 border-t border-slate-600">
+                <p className="text-lg font-semibold">Total: <span className="text-green-400">${budgetData?.income?.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()}</span></p>
+              </div>
+            </div>
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-4">Monthly Expenses</h3>
+              <div className="space-y-3">
+                {budgetData?.expenses?.map(item => (
+                  <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                    <span>{item.name}</span>
+                    <span className="text-red-400 font-semibold">${item.amount?.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-600">
+                <p className="text-lg font-semibold">Total: <span className="text-red-400">${budgetData?.expenses?.reduce((sum, i) => sum + (i.amount || 0), 0).toLocaleString()}</span></p>
               </div>
             </div>
           </div>
@@ -1042,67 +644,59 @@ const FinanceDashboard = () => {
         {/* Retirement Tab */}
         {activeTab === 'retirement' && (
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4">Import Retirement Account Statement</h3>
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-4">Import Retirement Account</h3>
               <div className="mb-4">
-                <label className="block text-sm text-slate-300 mb-2">Account Type</label>
-                <select value={selectedRetirementAccountType} onChange={(e) => setSelectedRetirementAccountType(e.target.value)} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <select value={selectedRetirementAccountType} onChange={(e) => setSelectedRetirementAccountType(e.target.value)} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg">
                   <option value="">Select account type...</option>
                   {retirementAccountTypes.map(type => (<option key={type} value={type}>{type}</option>))}
                 </select>
               </div>
-              <label className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
+              <label className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer">
                 <Upload size={24} />
-                <span className="text-lg font-semibold">Upload Statement (CSV or PDF)</span>
-                <input type="file" accept=".csv,.pdf" onChange={handleRetirementFileUpload} className="hidden" />
+                <span className="text-lg font-semibold">Upload Statement (CSV)</span>
+                <input type="file" accept=".csv" onChange={handleRetirementFileUpload} className="hidden" />
               </label>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {investments.map(inv => {
-                const progress = (inv.currentValue / inv.targetValue) * 100;
-                return (
-                  <div key={inv.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h3 className="text-xl font-semibold">{inv.type}</h3>
-                        <p className="text-sm text-slate-400">Account Type: {inv.accountType}</p>
+            
+            {investments && investments.length > 0 && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {investments.map(inv => (
+                    <div key={inv.id} className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-xl font-semibold">{inv.type}</h3>
+                          <p className="text-sm text-slate-400">{inv.accountType}</p>
+                        </div>
+                        <Target className="text-purple-400" />
                       </div>
-                      <Target className="text-purple-400" />
-                    </div>
-                    <div className="space-y-4">
-                      <div>
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-slate-400">Current Value</span>
-                          <span className="font-semibold">${inv.currentValue.toLocaleString()}</span>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Current</span>
+                          <span className="font-semibold">${inv.currentValue?.toLocaleString()}</span>
                         </div>
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-slate-400">Target Value</span>
-                          <span className="font-semibold">${inv.targetValue.toLocaleString()}</span>
+                        <div className="flex justify-between">
+                          <span className="text-slate-400">Target</span>
+                          <span className="font-semibold">${inv.targetValue?.toLocaleString()}</span>
                         </div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between text-sm mb-2">
-                          <span className="text-slate-400">Progress</span>
-                          <span className="font-semibold text-purple-400">{progress.toFixed(1)}%</span>
-                        </div>
-                        <div className="w-full bg-slate-700 rounded-full h-3">
-                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500" style={{ width: `${Math.min(progress, 100)}%` }} />
+                        <div className="w-full bg-slate-700 rounded-full h-3 mt-2">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full" style={{ width: `${Math.min((inv.currentValue / inv.targetValue) * 100, 100)}%` }} />
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-            {investments.length > 0 && (
-              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8 shadow-lg text-center">
-                <h3 className="text-2xl font-semibold mb-4">Total Retirement Value</h3>
-                <p className="text-5xl font-bold text-white">${investments.reduce((sum, inv) => sum + inv.currentValue, 0).toLocaleString()}</p>
-              </div>
+                  ))}
+                </div>
+                <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-xl p-8 text-center">
+                  <h3 className="text-2xl font-semibold mb-4">Total Retirement Value</h3>
+                  <p className="text-5xl font-bold">${investments.reduce((sum, inv) => sum + (inv.currentValue || 0), 0).toLocaleString()}</p>
+                </div>
+              </>
             )}
-            {investments.length === 0 && (
+            
+            {(!investments || investments.length === 0) && (
               <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
-                <p className="text-slate-400">No retirement accounts yet. Upload a statement above to get started!</p>
+                <p className="text-slate-400">No retirement accounts yet. Upload a statement above!</p>
               </div>
             )}
           </div>
@@ -1111,31 +705,15 @@ const FinanceDashboard = () => {
         {/* CPA Export Tab */}
         {activeTab === 'cpa' && (
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
               <h3 className="text-2xl font-semibold mb-4">CPA Export</h3>
-              <p className="text-slate-300 mb-6">Export your transaction data in a format ready for your accountant or tax professional.</p>
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-slate-300 mb-2">Export Format</label>
-                <select value={cpaExportSoftware} onChange={(e) => setCpaExportSoftware(e.target.value)} className="w-full md:w-64 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg">
-                  <option value="quickbooks">QuickBooks</option>
-                  <option value="xero">Xero</option>
-                  <option value="turbotax">TurboTax</option>
-                </select>
-              </div>
-              <button onClick={exportCPAData} disabled={transactions.length === 0} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg transition-all text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
-                <Download size={20} /> Export for {cpaExportSoftware === 'quickbooks' ? 'QuickBooks' : cpaExportSoftware === 'xero' ? 'Xero' : 'TurboTax'}
+              <p className="text-slate-300 mb-6">Export your transactions for your accountant.</p>
+              <button onClick={exportCPAData} disabled={!transactions || transactions.length === 0} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg font-semibold disabled:opacity-50">
+                <Download size={20} /> Export CSV
               </button>
             </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">Preview</h3>
-                <div className="flex gap-3">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-                    <input type="text" placeholder="Filter..." value={cpaFilter} onChange={(e) => setCpaFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                  </div>
-                </div>
-              </div>
+            <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-6">
+              <h3 className="text-xl font-semibold mb-4">Preview ({cpaFilteredAndSorted.length} transactions)</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <thead>
@@ -1144,47 +722,59 @@ const FinanceDashboard = () => {
                       <th className="text-left py-2 px-3">Description</th>
                       <th className="text-left py-2 px-3">Vendor</th>
                       <th className="text-right py-2 px-3">Amount</th>
-                      <th className="text-left py-2 px-3">Outflow/Inflow</th>
-                      <th className="text-left py-2 px-3">GL Account</th>
+                      <th className="text-left py-2 px-3">Type</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {cpaFilteredAndSorted.slice(0, 10).map(t => {
-                      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
-                      const isOutflow = t.amount < 0;
-                      return (
-                        <tr key={t.id} className="border-b border-slate-700">
-                          <td className="py-2 px-3">{t.date}</td>
-                          <td className="py-2 px-3">{t.description}</td>
-                          <td className="py-2 px-3">{t.vendor}</td>
-                          <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
-                          <td className="py-2 px-3">{isOutflow ? 'Outflow' : 'Inflow'}</td>
-                          <td className="py-2 px-3">{glAccount.number} {glAccount.description}</td>
-                        </tr>
-                      );
-                    })}
+                    {cpaFilteredAndSorted.slice(0, 10).map(t => (
+                      <tr key={t.id} className="border-b border-slate-700">
+                        <td className="py-2 px-3">{t.date}</td>
+                        <td className="py-2 px-3">{t.description}</td>
+                        <td className="py-2 px-3">{t.vendor}</td>
+                        <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
+                        <td className="py-2 px-3">{t.amount < 0 ? 'Expense' : 'Income'}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
-              {cpaFilteredAndSorted.length > 10 && (
-                <p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>
-              )}
             </div>
           </div>
         )}
 
         {/* Net Worth Tab */}
-        {activeTab === 'netWorth' && (<NetWorthDashboard />)}
+        {activeTab === 'netWorth' && <NetWorthDashboard />}
 
         {/* FIRE Calculator Tab */}
-        {activeTab === 'fire' && (<FIRECalculator />)}
+        {activeTab === 'fire' && <FIRECalculator />}
 
         {/* Goals Tab */}
-        {activeTab === 'goals' && (<GoalsTracker />)}
-
+        {activeTab === 'goals' && <GoalsTracker />}
       </div>
     </div>
   );
+};
+
+// Wrapper component handles auth state
+const FinanceDashboard = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  return <Dashboard user={user} signOut={signOut} />;
 };
 
 export default FinanceDashboard;
