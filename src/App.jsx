@@ -1,4 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
+// ADD THESE IMPORTS HERE:
+import GoalsWithPercentage from './components/GoalsWithPercentage';
+import BudgetTab from './components/BudgetTab';
+import BillsCalendarView from './components/BillsCalendarView';
+import GoalsTimelineWithCelebration from './components/GoalsTimelineWithCelebration';
+import DataUploadSystem from './components/DataUploadSystem';
 
 // ============================================================================
 // FAMILY FINANCE - COMPREHENSIVE APP WITH FULL DASHBOARD FUNCTIONALITY
@@ -808,6 +814,8 @@ function Dashboard({ user, setView, data, setData }) {
 
   return (
     <div style={{ minHeight: '100vh', background: '#0c0a1d', color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+
+      
       {/* Header */}
       <header style={{ background: 'rgba(30, 27, 56, 0.8)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(255,255,255,0.1)', padding: '16px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
@@ -824,14 +832,22 @@ function Dashboard({ user, setView, data, setData }) {
         </button>
       </header>
 
+      
+
       {/* Navigation Tabs */}
       <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', gap: '8px' }}>
         {[
-          { id: 'home', label: '🏠 Home' },
-          { id: 'budget', label: '🎯 Budget' },
-          { id: 'bills', label: '📅 Bills' },
-          { id: 'goals', label: '🎯 Goals' },
-          { id: 'settings', label: '⚙️ Settings' }
+        
+
+{ id: 'home', label: '🏠 Home' },
+{ id: 'budget', label: '💰 Budget' },
+{ id: 'bills', label: '📅 Bills' },
+{ id: 'goals', label: '🎯 Goals' },
+{ id: 'import', label: '📂 Import' },
+{ id: 'settings', label: '⚙️ Settings'  }
+
+
+      
         ].map(tab => (
           <button
             key={tab.id}
@@ -855,12 +871,18 @@ function Dashboard({ user, setView, data, setData }) {
       {/* Main Content */}
       <main style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
         {activeTab === 'home' && <HomeTab data={data} netWorthHidden={netWorthHidden} setNetWorthHidden={setNetWorthHidden} />}
-        {activeTab === 'budget' && <BudgetTab data={data} />}
-        {activeTab === 'bills' && <BillsTab data={data} setData={setData} />}
-        {activeTab === 'goals' && <GoalsTab data={data} setData={setData} />}
-        {activeTab === 'settings' && <SettingsTab />}
+{activeTab === 'budget' && <BudgetTab />}
+{activeTab === 'bills' && <BillsCalendarView />}
+{activeTab === 'goals' && <GoalsTimelineWithCelebration />}
+{activeTab === 'import' && <DataUploadSystem onImportComplete={(transactions) => {
+  console.log('Imported:', transactions);
+  alert(`Successfully imported ${transactions.length} transactions!`);
+}} />}
+{activeTab === 'settings' && <SettingsTab />}
       </main>
 
+
+      
       {/* Floating Action Button */}
       <button
         onClick={() => setShowAddModal(true)}
@@ -880,9 +902,32 @@ function Dashboard({ user, setView, data, setData }) {
       {showAddModal && <AddModal onClose={() => setShowAddModal(false)} data={data} setData={setData} />}
 
       <style>{`
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
-        @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-      `}</style>
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.6; } }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  
+  /* NEW ANIMATIONS FOR ENHANCED FEATURES */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+  @keyframes confetti {
+    0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+  @keyframes bounce-in {
+    0% { transform: scale(0); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes spin-slow {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+  .animate-shimmer { animation: shimmer 2s infinite; }
+  .animate-confetti { animation: confetti linear forwards; }
+  .animate-bounce-in { animation: bounce-in 0.5s ease-out; }
+  .animate-spin-slow { animation: spin-slow 2s linear infinite; }
+`}</style>
     </div>
   );
 }
@@ -1067,24 +1112,20 @@ function HomeTab({ data, netWorthHidden, setNetWorthHidden }) {
         </div>
 
         {/* Goals */}
-        <div style={{ background: 'rgba(30, 27, 56, 0.8)', backdropFilter: 'blur(20px)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-            <span style={{ fontSize: '20px' }}>🎯</span>
-            <span style={{ fontWeight: '600' }}>Goals</span>
-          </div>
-          {data.goals.map(goal => (
-            <div key={goal.id} style={{ marginBottom: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '14px' }}>
-                <span>{goal.emoji} {goal.name}</span>
-                <span style={{ color: 'rgba(255,255,255,0.6)' }}>${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}</span>
-              </div>
-              <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
-                <div style={{ width: `${(goal.current / goal.target) * 100}%`, height: '100%', background: goal.color, borderRadius: '4px', transition: 'width 0.5s ease' }} />
-              </div>
-            </div>
-          ))}
+<div style={{ background: 'rgba(30, 27, 56, 0.8)', backdropFilter: 'blur(20px)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+    <span style={{ fontSize: '20px' }}>🎯</span>
+    <span style={{ fontWeight: '600' }}>Goals</span>
+  </div>
+  <GoalsWithPercentage goals={data.goals} />
+</div>
+
+          
+        
         </div>
 
+
+        
         {/* Savings Rate */}
         <div style={{ background: 'rgba(30, 27, 56, 0.8)', backdropFilter: 'blur(20px)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
