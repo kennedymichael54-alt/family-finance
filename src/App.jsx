@@ -1,16 +1,43 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown } from 'lucide-react';
+import { Upload, Plus, Trash2, Download, TrendingUp, TrendingDown, DollarSign, Target, Calendar, Filter, Search, ArrowUpDown, LogOut, User, Loader2 } from 'lucide-react';
 import { NetWorthDashboard } from './components/NetWorthDashboard';
 import { FIRECalculator } from './components/FIRECalculator';
 import { GoalsTracker } from './components/GoalsTracker';
+import { AuthPage } from './components/AuthPage';
+import { useAuth } from './contexts/AuthContext';
+import { useUserData } from './hooks/useUserData';
 
 const FinanceDashboard = () => {
+  const { user, loading: authLoading, signOut } = useAuth();
+  const {
+    budgetData,
+    billDates,
+    transactions,
+    investments,
+    marketData,
+    lastImportDate,
+    loading: dataLoading,
+    saving,
+    setBudgetData,
+    addTransaction,
+    deleteTransaction,
+    bulkImportTransactions,
+    addBillDate,
+    deleteBillDate,
+    addInvestment,
+    updateInvestment,
+    deleteInvestment,
+    setTransactions,
+    setInvestments,
+    setBillDates,
+    setLastImportDate,
+  } = useUserData();
+
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [currentDate] = useState(new Date());
-  const [lastImportDate, setLastImportDate] = useState(new Date('2024-11-23'));
   const [comparisonView, setComparisonView] = useState('');
   const [transactionFilter, setTransactionFilter] = useState('');
   const [transactionSort, setTransactionSort] = useState('date-desc');
@@ -18,61 +45,7 @@ const FinanceDashboard = () => {
   const [cpaSort, setCpaSort] = useState('date-desc');
   const [selectedRetirementAccountType, setSelectedRetirementAccountType] = useState('');
   const [cpaExportSoftware, setCpaExportSoftware] = useState('xero');
-
-  const [billDates, setBillDates] = useState([
-    { id: 1, name: 'Mortgage', amount: 2200, dueDate: '2024-11-20' },
-    { id: 2, name: 'Electric Bill', amount: 180, dueDate: '2024-11-23' },
-    { id: 3, name: 'Car Insurance', amount: 220, dueDate: '2024-11-28' }
-  ]);
-
-  const [budgetData, setBudgetData] = useState({
-    income: [
-      { id: 1, name: 'Primary Salary', amount: 8500 },
-      { id: 2, name: 'Freelance', amount: 2000 }
-    ],
-    expenses: [
-      { id: 1, name: 'Mortgage', amount: 2200 },
-      { id: 2, name: 'Utilities', amount: 300 },
-      { id: 3, name: 'Groceries', amount: 450 },
-      { id: 4, name: 'Insurance', amount: 220 }
-    ]
-  });
-  
-  const [marketData, setMarketData] = useState({   
-    dow: { value: 44296.51, change: 0.28 },
-    sp500: { value: 5969.34, change: 0.35 },
-    nasdaq: { value: 19003.65, change: 0.63 }
-  });
-  
-  const [transactions, setTransactions] = useState([
-    { id: 1, date: '2024-11-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 2, date: '2024-11-15', description: 'Freelance Project', vendor: 'ABC Consulting', amount: 2000, type: 'income', category: 'Freelance', source: 'Side Business', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 3, date: '2024-11-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage', institution: 'Bank of America', recurring: true, frequency: 'monthly' },
-    { id: 4, date: '2024-11-22', description: 'Grocery Store', vendor: 'Whole Foods', amount: -450, type: 'expense', category: 'Food', source: 'Groceries', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 5, date: '2024-11-23', description: 'Electric Bill', vendor: 'Georgia Power', amount: -180, type: 'expense', category: 'Utilities', source: 'Electric', institution: '', recurring: true, frequency: 'monthly' },
-    { id: 6, date: '2024-11-25', description: 'Gas Bill', vendor: 'Atlanta Gas Light', amount: -120, type: 'expense', category: 'Utilities', source: 'Gas', institution: '', recurring: true, frequency: 'monthly' },
-    { id: 7, date: '2024-11-28', description: 'Car Insurance', vendor: 'State Farm', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto', institution: 'State Farm', recurring: true, frequency: 'monthly' },
-    { id: 8, date: '2024-11-30', description: 'Restaurant', vendor: 'The Cheesecake Factory', amount: -85, type: 'expense', category: 'Food', source: 'Dining Out', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 9, date: '2024-10-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 10, date: '2024-10-15', description: 'Freelance Project', vendor: 'XYZ Inc', amount: 1500, type: 'income', category: 'Freelance', source: 'Side Business', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 11, date: '2024-10-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage', institution: 'Bank of America', recurring: true, frequency: 'monthly' },
-    { id: 12, date: '2024-10-22', description: 'Grocery Store', vendor: 'Kroger', amount: -520, type: 'expense', category: 'Food', source: 'Groceries', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 13, date: '2024-10-28', description: 'Car Insurance', vendor: 'State Farm', amount: -220, type: 'expense', category: 'Insurance', source: 'Auto', institution: 'State Farm', recurring: true, frequency: 'monthly' },
-    { id: 14, date: '2024-09-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 15, date: '2024-09-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage', institution: 'Bank of America', recurring: true, frequency: 'monthly' },
-    { id: 16, date: '2024-09-22', description: 'Grocery Store', vendor: 'Publix', amount: -480, type: 'expense', category: 'Food', source: 'Groceries', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 17, date: '2024-08-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 8500, type: 'income', category: 'Salary', source: 'Primary Job', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 18, date: '2024-08-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2200, type: 'expense', category: 'Housing', source: 'Mortgage', institution: 'Bank of America', recurring: true, frequency: 'monthly' },
-    { id: 19, date: '2023-11-15', description: 'Salary - Tech Corp', vendor: 'Tech Corp', amount: 7500, type: 'income', category: 'Salary', source: 'Primary Job', institution: '', recurring: false, frequency: 'monthly' },
-    { id: 20, date: '2023-11-20', description: 'Mortgage Payment', vendor: 'Bank of America', amount: -2000, type: 'expense', category: 'Housing', source: 'Mortgage', institution: 'Bank of America', recurring: true, frequency: 'monthly' },
-  ]);
-
-  const [investments, setInvestments] = useState([
-    { id: 1, type: '401(k)', accountType: '401k', currentValue: 250000, targetValue: 1000000, contributionRate: 15, uploadDate: new Date().toISOString() },
-    { id: 2, type: 'Roth IRA', accountType: 'Roth IRA', currentValue: 85000, targetValue: 500000, contributionRate: 10, uploadDate: new Date().toISOString() },
-    { id: 3, type: 'Taxable Brokerage', accountType: 'Traditional IRA', currentValue: 120000, targetValue: 300000, contributionRate: 8, uploadDate: new Date().toISOString() },
-    { id: 4, type: 'Real Estate', accountType: 'VUL', currentValue: 180000, targetValue: 500000, contributionRate: 5, uploadDate: new Date().toISOString() },
-  ]);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const [newTransaction, setNewTransaction] = useState({
     date: '',
@@ -94,6 +67,35 @@ const FinanceDashboard = () => {
 
   const retirementAccountTypes = ['401k', 'Roth IRA', 'Traditional IRA', 'VUL', 'IUL'];
   const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF6B9D'];
+
+  // Show loading screen while checking auth
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show login page if not authenticated
+  if (!user) {
+    return <AuthPage />;
+  }
+
+  // Show loading while fetching user data
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 text-purple-500 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading your data...</p>
+        </div>
+      </div>
+    );
+  }
 
   // Parse CSV file
   const parseCSV = (text) => {
@@ -118,14 +120,14 @@ const FinanceDashboard = () => {
         try {
           const text = e.target.result;
           const lines = text.split('\n');
-          const transactions = [];
+          const transactionsList = [];
           lines.forEach(line => {
             const dateMatch = line.match(/(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})/);
             const amountMatch = line.match(/\$?\-?([\d,]+\.\d{2})/);
             if (dateMatch && amountMatch) {
               const amountIndex = line.indexOf(amountMatch[0]);
               const description = line.substring(0, amountIndex).trim();
-              transactions.push({
+              transactionsList.push({
                 date: dateMatch[1],
                 description: description || 'Transaction',
                 amount: amountMatch[1].replace(/,/g, ''),
@@ -133,7 +135,7 @@ const FinanceDashboard = () => {
               });
             }
           });
-          resolve(transactions);
+          resolve(transactionsList);
         } catch (error) {
           reject(error);
         }
@@ -326,7 +328,7 @@ const FinanceDashboard = () => {
   const incomeBySource = useMemo(() => {
     const grouped = {};
     filteredTransactions.filter(t => t.type === 'income').forEach(t => {
-      grouped[t.source] = (grouped[t.source] || 0) + t.amount;
+      grouped[t.source || 'Other'] = (grouped[t.source || 'Other'] || 0) + t.amount;
     });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   }, [filteredTransactions]);
@@ -334,7 +336,7 @@ const FinanceDashboard = () => {
   const expensesByCategory = useMemo(() => {
     const grouped = {};
     filteredTransactions.filter(t => t.type === 'expense').forEach(t => {
-      grouped[t.category] = (grouped[t.category] || 0) + Math.abs(t.amount);
+      grouped[t.category || 'Other'] = (grouped[t.category || 'Other'] || 0) + Math.abs(t.amount);
     });
     return Object.entries(grouped).map(([name, value]) => ({ name, value }));
   }, [filteredTransactions]);
@@ -345,10 +347,10 @@ const FinanceDashboard = () => {
       if (!transactionFilter) return true;
       const searchTerm = transactionFilter.toLowerCase();
       return (
-        t.description.toLowerCase().includes(searchTerm) ||
-        t.vendor.toLowerCase().includes(searchTerm) ||
-        t.category.toLowerCase().includes(searchTerm) ||
-        t.source.toLowerCase().includes(searchTerm) ||
+        (t.description || '').toLowerCase().includes(searchTerm) ||
+        (t.vendor || '').toLowerCase().includes(searchTerm) ||
+        (t.category || '').toLowerCase().includes(searchTerm) ||
+        (t.source || '').toLowerCase().includes(searchTerm) ||
         (t.institution && t.institution.toLowerCase().includes(searchTerm))
       );
     });
@@ -358,10 +360,10 @@ const FinanceDashboard = () => {
         case 'date-asc': return new Date(a.date) - new Date(b.date);
         case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
         case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
-        case 'vendor': return a.vendor.localeCompare(b.vendor);
-        case 'description': return a.description.localeCompare(b.description);
-        case 'category': return a.category.localeCompare(b.category);
-        case 'source': return a.source.localeCompare(b.source);
+        case 'vendor': return (a.vendor || '').localeCompare(b.vendor || '');
+        case 'description': return (a.description || '').localeCompare(b.description || '');
+        case 'category': return (a.category || '').localeCompare(b.category || '');
+        case 'source': return (a.source || '').localeCompare(b.source || '');
         case 'institution': return (a.institution || '').localeCompare(b.institution || '');
         default: return 0;
       }
@@ -373,10 +375,10 @@ const FinanceDashboard = () => {
     let filtered = transactions.filter(t => {
       if (!cpaFilter) return true;
       const searchTerm = cpaFilter.toLowerCase();
-      const glAccount = mapToGLAccount(t.description, t.category, t.type);
+      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
       return (
-        t.description.toLowerCase().includes(searchTerm) ||
-        t.vendor.toLowerCase().includes(searchTerm) ||
+        (t.description || '').toLowerCase().includes(searchTerm) ||
+        (t.vendor || '').toLowerCase().includes(searchTerm) ||
         glAccount.description.toLowerCase().includes(searchTerm)
       );
     });
@@ -386,7 +388,7 @@ const FinanceDashboard = () => {
         case 'date-asc': return new Date(a.date) - new Date(b.date);
         case 'amount-desc': return Math.abs(b.amount) - Math.abs(a.amount);
         case 'amount-asc': return Math.abs(a.amount) - Math.abs(b.amount);
-        case 'vendor': return a.vendor.localeCompare(b.vendor);
+        case 'vendor': return (a.vendor || '').localeCompare(b.vendor || '');
         default: return 0;
       }
     });
@@ -413,14 +415,23 @@ const FinanceDashboard = () => {
   }, [budgetData]);
 
   // Event handlers
-  const handleAddTransaction = () => {
+  const handleAddTransaction = async () => {
     if (newTransaction.date && newTransaction.description && newTransaction.amount && newTransaction.vendor) {
       const transaction = {
-        id: Date.now(),
-        ...newTransaction,
-        amount: parseFloat(newTransaction.amount) * (newTransaction.type === 'expense' ? -1 : 1)
+        date: newTransaction.date,
+        description: newTransaction.description,
+        vendor: newTransaction.vendor,
+        amount: parseFloat(newTransaction.amount) * (newTransaction.type === 'expense' ? -1 : 1),
+        type: newTransaction.type,
+        category: newTransaction.category,
+        source: newTransaction.source,
+        institution: newTransaction.institution,
+        recurring: newTransaction.recurring,
+        frequency: newTransaction.frequency
       };
-      setTransactions([...transactions, transaction]);
+      
+      await addTransaction(transaction);
+      
       if (newTransaction.recurring && newTransaction.type === 'expense') {
         const transactionDate = new Date(newTransaction.date);
         const getNextDate = (date, frequency) => {
@@ -433,24 +444,19 @@ const FinanceDashboard = () => {
           return next;
         };
         const nextDueDate = getNextDate(transactionDate, newTransaction.frequency);
-        const newBill = {
-          id: Date.now() + 1,
+        await addBillDate({
           name: newTransaction.description,
           amount: Math.abs(parseFloat(newTransaction.amount)),
-          dueDate: nextDueDate.toISOString().split('T')[0],
-          recurring: true,
-          frequency: newTransaction.frequency
-        };
-        setBillDates([...billDates, newBill]);
+          dueDate: nextDueDate.toISOString().split('T')[0]
+        });
         alert(`✅ Transaction added and scheduled as recurring ${newTransaction.frequency} bill starting ${nextDueDate.toLocaleDateString()}`);
       }
       setNewTransaction({ date: '', description: '', vendor: '', amount: '', type: 'expense', category: '', source: '', institution: '', recurring: false, frequency: 'monthly' });
-      setLastImportDate(new Date());
     }
   };
 
-  const handleDeleteTransaction = (id) => {
-    setTransactions(transactions.filter(t => t.id !== id));
+  const handleDeleteTransaction = async (id) => {
+    await deleteTransaction(id);
   };
 
   const handleFileUpload = async (e) => {
@@ -459,7 +465,7 @@ const FinanceDashboard = () => {
     try {
       if (file.name.toLowerCase().endsWith('.csv')) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           try {
             const text = event.target.result;
             const parsed = parseCSV(text);
@@ -468,7 +474,6 @@ const FinanceDashboard = () => {
               const row = parsed[i];
               if (row.date || row.Date) {
                 newTransactions.push({
-                  id: Date.now() + i,
                   date: row.date || row.Date,
                   description: row.description || row.Description || 'Transaction',
                   vendor: row.vendor || row.Vendor || 'Unknown',
@@ -483,8 +488,7 @@ const FinanceDashboard = () => {
               }
             }
             if (newTransactions.length > 0) {
-              setTransactions([...transactions, ...newTransactions]);
-              setLastImportDate(new Date());
+              await bulkImportTransactions(newTransactions);
               alert(`Successfully imported ${newTransactions.length} transactions from CSV`);
             }
           } catch (error) {
@@ -499,7 +503,6 @@ const FinanceDashboard = () => {
           const item = parsed[i];
           const amount = parseFloat(item.amount);
           newTransactions.push({
-            id: Date.now() + i,
             date: item.date,
             description: item.description,
             vendor: item.description.split(' ')[0] || 'Unknown',
@@ -513,8 +516,7 @@ const FinanceDashboard = () => {
           });
         }
         if (newTransactions.length > 0) {
-          setTransactions([...transactions, ...newTransactions]);
-          setLastImportDate(new Date());
+          await bulkImportTransactions(newTransactions);
           alert(`Successfully imported ${newTransactions.length} transactions from PDF`);
         } else {
           alert('No transaction data found in PDF.');
@@ -537,7 +539,7 @@ const FinanceDashboard = () => {
     try {
       if (file.name.toLowerCase().endsWith('.csv')) {
         const reader = new FileReader();
-        reader.onload = (event) => {
+        reader.onload = async (event) => {
           try {
             const text = event.target.result;
             const parsed = parseCSV(text);
@@ -547,17 +549,12 @@ const FinanceDashboard = () => {
               if (!isNaN(value)) totalValue += Math.abs(value);
             });
             if (totalValue > 0) {
-              const newInvestment = {
-                id: Date.now(),
+              await addInvestment({
                 type: selectedRetirementAccountType,
                 accountType: selectedRetirementAccountType,
                 currentValue: totalValue,
-                targetValue: totalValue * 2,
-                contributionRate: 10,
-                uploadDate: new Date().toISOString()
-              };
-              setInvestments([...investments, newInvestment]);
-              setLastImportDate(new Date());
+                targetValue: totalValue * 2
+              });
               alert(`Successfully imported ${selectedRetirementAccountType} account with value $${totalValue.toLocaleString()}`);
               setSelectedRetirementAccountType('');
             } else {
@@ -576,17 +573,12 @@ const FinanceDashboard = () => {
           if (!isNaN(value)) totalValue += value;
         });
         if (totalValue > 0) {
-          const newInvestment = {
-            id: Date.now(),
+          await addInvestment({
             type: selectedRetirementAccountType,
             accountType: selectedRetirementAccountType,
             currentValue: totalValue,
-            targetValue: totalValue * 2,
-            contributionRate: 10,
-            uploadDate: new Date().toISOString()
-          };
-          setInvestments([...investments, newInvestment]);
-          setLastImportDate(new Date());
+            targetValue: totalValue * 2
+          });
           alert(`Successfully imported ${selectedRetirementAccountType} from PDF with value $${totalValue.toLocaleString()}`);
           setSelectedRetirementAccountType('');
         } else {
@@ -600,17 +592,50 @@ const FinanceDashboard = () => {
     }
   };
 
-  const addBillDate = (bill) => setBillDates([...billDates, { ...bill, id: Date.now() }]);
-  const deleteBill = (id) => setBillDates(billDates.filter(bill => bill.id !== id));
-  const addIncome = (income) => setBudgetData({ ...budgetData, income: [...budgetData.income, { ...income, id: Date.now() }] });
-  const deleteIncome = (id) => setBudgetData({ ...budgetData, income: budgetData.income.filter(item => item.id !== id) });
-  const addExpense = (expense) => setBudgetData({ ...budgetData, expenses: [...budgetData.expenses, { ...expense, id: Date.now() }] });
-  const deleteExpense = (id) => setBudgetData({ ...budgetData, expenses: budgetData.expenses.filter(item => item.id !== id) });
+  const handleAddBillDate = async (bill) => {
+    await addBillDate(bill);
+  };
+  
+  const handleDeleteBill = async (id) => {
+    await deleteBillDate(id);
+  };
+
+  const addIncome = async (income) => {
+    const newBudget = { 
+      ...budgetData, 
+      income: [...budgetData.income, { ...income, id: Date.now() }] 
+    };
+    await setBudgetData(newBudget);
+  };
+
+  const deleteIncome = async (id) => {
+    const newBudget = { 
+      ...budgetData, 
+      income: budgetData.income.filter(item => item.id !== id) 
+    };
+    await setBudgetData(newBudget);
+  };
+
+  const addExpense = async (expense) => {
+    const newBudget = { 
+      ...budgetData, 
+      expenses: [...budgetData.expenses, { ...expense, id: Date.now() }] 
+    };
+    await setBudgetData(newBudget);
+  };
+
+  const deleteExpense = async (id) => {
+    const newBudget = { 
+      ...budgetData, 
+      expenses: budgetData.expenses.filter(item => item.id !== id) 
+    };
+    await setBudgetData(newBudget);
+  };
 
   const exportCPAData = () => {
     const headers = ['Date', 'Description', 'Vendor', 'Amount', 'Outflow/Inflow', 'GL Account', 'GL Account Offset'];
     const rows = cpaFilteredAndSorted.map(t => {
-      const glAccount = mapToGLAccount(t.description, t.category, t.type);
+      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
       const isOutflow = t.amount < 0;
       return [t.date, t.description, t.vendor, Math.abs(t.amount).toFixed(2), isOutflow ? 'Outflow' : 'Inflow', `${glAccount.number} ${glAccount.description}`, '1007 Cash'];
     });
@@ -623,8 +648,20 @@ const FinanceDashboard = () => {
     a.click();
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      {/* Saving Indicator */}
+      {saving && (
+        <div className="fixed top-4 right-4 bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 z-50 shadow-lg">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          <span>Saving...</span>
+        </div>
+      )}
+
       <div className="container mx-auto p-6">
         <header className="mb-8">
           <div className="flex justify-between items-start">
@@ -638,28 +675,53 @@ const FinanceDashboard = () => {
               <p className="text-slate-300">🌱 Grow your finances now, safeguard your family forever.</p>
             </div>
             <div className="text-right">
+              <div className="flex items-center gap-4 mb-3">
+                {/* User Menu */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowUserMenu(!showUserMenu)}
+                    className="flex items-center gap-2 px-4 py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-600 rounded-lg transition-colors"
+                  >
+                    <User size={18} />
+                    <span className="text-sm max-w-[150px] truncate">{user.email}</span>
+                  </button>
+                  {showUserMenu && (
+                    <div className="absolute right-0 mt-2 w-48 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50">
+                      <button
+                        onClick={handleSignOut}
+                        className="w-full flex items-center gap-2 px-4 py-3 text-left text-red-400 hover:bg-slate-700 rounded-lg transition-colors"
+                      >
+                        <LogOut size={18} />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
               <div className="flex items-center gap-2 text-slate-300 mb-1">
                 <Calendar size={20} />
                 <span className="text-sm">Current Date</span>
               </div>
               <p className="text-xl font-semibold text-white mb-3">{currentDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-              <div className="text-sm text-slate-400">
-                <span>Last Import: </span>
-                <span className="text-slate-300">{lastImportDate.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-              </div>
+              {lastImportDate && (
+                <div className="text-sm text-slate-400">
+                  <span>Last Import: </span>
+                  <span className="text-slate-300">{new Date(lastImportDate).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
         {/* Tab Navigation */}
-        <div className="flex gap-2 mb-6 border-b border-slate-700">
-          {['dashboard', 'transactions', 'billHistory', 'budget', 'retirement', 'cpa'].map(tab => (
+        <div className="flex gap-2 mb-6 border-b border-slate-700 overflow-x-auto">
+          {['dashboard', 'transactions', 'billHistory', 'budget', 'retirement', 'cpa', 'netWorth', 'fire', 'goals'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 font-medium transition-all ${activeTab === tab ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg' : 'text-slate-400 hover:text-white'}`}
+              className={`px-6 py-3 font-medium transition-all whitespace-nowrap ${activeTab === tab ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-t-lg' : 'text-slate-400 hover:text-white'}`}
             >
-              {tab === 'cpa' ? 'CPA Export' : tab === 'billHistory' ? 'Bill History' : tab.charAt(0).toUpperCase() + tab.slice(1)}
+              {tab === 'cpa' ? 'CPA Export' : tab === 'billHistory' ? 'Bill History' : tab === 'netWorth' ? 'Net Worth' : tab === 'fire' ? 'FIRE' : tab.charAt(0).toUpperCase() + tab.slice(1)}
             </button>
           ))}
         </div>
@@ -753,87 +815,18 @@ const FinanceDashboard = () => {
               </div>
             </div>
 
-            {/* Comparison Selector - Only show if NOT viewing all months */}
-            {selectedMonth !== -1 && (
-              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                <h3 className="text-lg font-semibold mb-4">View Comparisons</h3>
-                <div className="flex gap-3">
-                  <button onClick={() => setComparisonView(comparisonView === 'month' ? '' : 'month')} className={`px-6 py-3 rounded-lg transition-all ${comparisonView === 'month' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>Month over Month</button>
-                  <button onClick={() => setComparisonView(comparisonView === 'quarter' ? '' : 'quarter')} className={`px-6 py-3 rounded-lg transition-all ${comparisonView === 'quarter' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>Quarter over Quarter</button>
-                  <button onClick={() => setComparisonView(comparisonView === 'year' ? '' : 'year')} className={`px-6 py-3 rounded-lg transition-all ${comparisonView === 'year' ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white' : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>Year over Year</button>
-                </div>
+            {/* Getting Started for new users */}
+            {transactions.length === 0 && (
+              <div className="bg-gradient-to-r from-purple-500/20 to-blue-500/20 border border-purple-500/30 rounded-xl p-8 text-center">
+                <h3 className="text-2xl font-semibold mb-4">Welcome to HomeBudget Hub! 🎉</h3>
+                <p className="text-slate-300 mb-6">Get started by adding your first transaction or importing data from a CSV file.</p>
+                <button
+                  onClick={() => setActiveTab('transactions')}
+                  className="px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 rounded-lg font-semibold transition-all"
+                >
+                  Add Your First Transaction
+                </button>
               </div>
-            )}
-
-            {/* Comparison Details */}
-            {comparisonView && selectedMonth !== -1 && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                    <h3 className="text-lg font-semibold mb-4">{comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Income</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center"><span className="text-slate-400">Current Period</span><span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.current.toLocaleString()}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-400">Previous Period</span><span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.previous.toLocaleString()}</span></div>
-                      <div className="pt-3 border-t border-slate-700">
-                        <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          <span className="font-semibold">Change</span>
-                          <div className="flex items-center gap-2">
-                            {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change >= 0 ? <TrendingUp size={20} /> : <TrendingDown size={20} />}
-                            <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].income.change).toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                    <h3 className="text-lg font-semibold mb-4">{comparisonView === 'month' ? 'Month over Month' : comparisonView === 'quarter' ? 'Quarter over Quarter' : 'Year over Year'} - Expenses</h3>
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center"><span className="text-slate-400">Current Period</span><span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.current.toLocaleString()}</span></div>
-                      <div className="flex justify-between items-center"><span className="text-slate-400">Previous Period</span><span className="font-semibold">${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.previous.toLocaleString()}</span></div>
-                      <div className="pt-3 border-t border-slate-700">
-                        <div className={`flex items-center justify-between ${comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          <span className="font-semibold">Change</span>
-                          <div className="flex items-center gap-2">
-                            {comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change < 0 ? <TrendingDown size={20} /> : <TrendingUp size={20} />}
-                            <span className="font-bold">{Math.abs(comparisonData[comparisonView === 'month' ? 'monthOverMonth' : comparisonView === 'quarter' ? 'quarterOverQuarter' : 'yearOverYear'].expenses.change).toFixed(1)}%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Trend Charts */}
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                  <h3 className="text-xl font-semibold mb-4">Income Trends - {selectedYear} vs {selectedYear - 1}</h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={incomeTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="month" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                      <Legend />
-                      <Line type="monotone" dataKey="currentYear" stroke="#10B981" strokeWidth={3} name={`${selectedYear}`} dot={{ fill: '#10B981', r: 5 }} />
-                      <Line type="monotone" dataKey="lastYear" stroke="#34D399" strokeWidth={3} name={`${selectedYear - 1}`} dot={{ fill: '#34D399', r: 5 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-
-                <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-                  <h3 className="text-xl font-semibold mb-4">Expense Trends - {selectedYear} vs {selectedYear - 1}</h3>
-                  <ResponsiveContainer width="100%" height={350}>
-                    <LineChart data={expenseTrendData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="month" stroke="#9CA3AF" />
-                      <YAxis stroke="#9CA3AF" />
-                      <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                      <Legend />
-                      <Line type="monotone" dataKey="currentYear" stroke="#8B5CF6" strokeWidth={3} name={`${selectedYear}`} dot={{ fill: '#8B5CF6', r: 5 }} />
-                      <Line type="monotone" dataKey="lastYear" stroke="#3B82F6" strokeWidth={3} name={`${selectedYear - 1}`} dot={{ fill: '#3B82F6', r: 5 }} />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </>
             )}
           </div>
         )}
@@ -842,95 +835,104 @@ const FinanceDashboard = () => {
         {activeTab === 'transactions' && (
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-4">Add Transaction</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="text" placeholder="Description" value={newTransaction.description} onChange={(e) => setNewTransaction({ ...newTransaction, description: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="text" placeholder="Vendor" value={newTransaction.vendor} onChange={(e) => setNewTransaction({ ...newTransaction, vendor: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <input type="number" placeholder="Amount" value={newTransaction.amount} onChange={(e) => setNewTransaction({ ...newTransaction, amount: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <select value={newTransaction.type} onChange={(e) => setNewTransaction({ ...newTransaction, type: e.target.value, category: '' })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="income">Income</option>
+              <h3 className="text-xl font-semibold mb-4">Add New Transaction</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                <input type="date" value={newTransaction.date} onChange={(e) => setNewTransaction({...newTransaction, date: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input type="text" placeholder="Description" value={newTransaction.description} onChange={(e) => setNewTransaction({...newTransaction, description: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input type="text" placeholder="Vendor" value={newTransaction.vendor} onChange={(e) => setNewTransaction({...newTransaction, vendor: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input type="number" placeholder="Amount" value={newTransaction.amount} onChange={(e) => setNewTransaction({...newTransaction, amount: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <select value={newTransaction.type} onChange={(e) => setNewTransaction({...newTransaction, type: e.target.value, category: '', source: ''})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                   <option value="expense">Expense</option>
+                  <option value="income">Income</option>
                 </select>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-                <select value={newTransaction.category} onChange={(e) => setNewTransaction({ ...newTransaction, category: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                <select value={newTransaction.category} onChange={(e) => setNewTransaction({...newTransaction, category: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                   <option value="">Select Category</option>
                   {categories[newTransaction.type].map(cat => (<option key={cat} value={cat}>{cat}</option>))}
                 </select>
-                <input type="text" placeholder="Source" value={newTransaction.source} onChange={(e) => setNewTransaction({ ...newTransaction, source: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
-                <select value={newTransaction.institution} onChange={(e) => setNewTransaction({ ...newTransaction, institution: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="">Institution</option>
-                  <option value="Chase">Chase</option>
-                  <option value="Bank of America">Bank of America</option>
-                  <option value="Wells Fargo">Wells Fargo</option>
-                  <option value="Citi">Citi</option>
-                  <option value="Capital One">Capital One</option>
-                  <option value="American Express">American Express</option>
-                  <option value="Discover">Discover</option>
-                  <option value="Other">Other</option>
-                </select>
-                <select value={newTransaction.recurring ? 'recurring' : 'one-time'} onChange={(e) => setNewTransaction({ ...newTransaction, recurring: e.target.value === 'recurring' })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option value="one-time">One-time</option>
-                  <option value="recurring">Recurring</option>
-                </select>
+                <input type="text" placeholder="Source" value={newTransaction.source} onChange={(e) => setNewTransaction({...newTransaction, source: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <input type="text" placeholder="Institution (optional)" value={newTransaction.institution} onChange={(e) => setNewTransaction({...newTransaction, institution: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+              </div>
+              <div className="flex items-center gap-6 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={newTransaction.recurring} onChange={(e) => setNewTransaction({...newTransaction, recurring: e.target.checked})} className="w-5 h-5 rounded bg-slate-700 border-slate-600 text-purple-500 focus:ring-purple-500" />
+                  <span>Recurring Transaction</span>
+                </label>
                 {newTransaction.recurring && (
-                  <select value={newTransaction.frequency} onChange={(e) => setNewTransaction({ ...newTransaction, frequency: e.target.value })} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <select value={newTransaction.frequency} onChange={(e) => setNewTransaction({...newTransaction, frequency: e.target.value})} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
                     <option value="weekly">Weekly</option>
-                    <option value="bi-weekly">Bi-weekly</option>
+                    <option value="bi-weekly">Bi-Weekly</option>
                     <option value="monthly">Monthly</option>
                   </select>
                 )}
               </div>
               <div className="flex gap-4">
-                <button onClick={handleAddTransaction} className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg transition-all">
+                <button onClick={handleAddTransaction} disabled={saving} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg transition-all disabled:opacity-50">
                   <Plus size={20} /> Add Transaction
                 </button>
-                <label className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
-                  <Upload size={20} /> Import CSV/PDF
+                <label className="flex items-center gap-2 px-6 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg cursor-pointer transition-colors">
+                  <Upload size={20} /><span>Import CSV/PDF</span>
                   <input type="file" accept=".csv,.pdf" onChange={handleFileUpload} className="hidden" />
                 </label>
               </div>
             </div>
 
+            {/* Transaction List */}
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="text-2xl font-semibold">Transaction History</h3>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
-                  <input type="text" placeholder="Filter transactions..." value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                <h3 className="text-xl font-semibold">Transactions ({filteredAndSortedTransactions.length})</h3>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                    <input type="text" placeholder="Search..." value={transactionFilter} onChange={(e) => setTransactionFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  </div>
+                  <select value={transactionSort} onChange={(e) => setTransactionSort(e.target.value)} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                    <option value="date-desc">Date (Newest)</option>
+                    <option value="date-asc">Date (Oldest)</option>
+                    <option value="amount-desc">Amount (High-Low)</option>
+                    <option value="amount-asc">Amount (Low-High)</option>
+                    <option value="vendor">Vendor (A-Z)</option>
+                    <option value="category">Category (A-Z)</option>
+                  </select>
                 </div>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-slate-600">
-                      <th className="text-left py-3 px-4"><button onClick={() => setTransactionSort(transactionSort === 'date-desc' ? 'date-asc' : 'date-desc')} className="flex items-center gap-2 hover:text-purple-400 transition-colors">Date <ArrowUpDown size={16} /></button></th>
-                      <th className="text-left py-3 px-4"><button onClick={() => setTransactionSort('description')} className="flex items-center gap-2 hover:text-purple-400 transition-colors">Description <ArrowUpDown size={16} /></button></th>
-                      <th className="text-left py-3 px-4"><button onClick={() => setTransactionSort('vendor')} className="flex items-center gap-2 hover:text-purple-400 transition-colors">Vendor <ArrowUpDown size={16} /></button></th>
-                      <th className="text-left py-3 px-4"><button onClick={() => setTransactionSort('category')} className="flex items-center gap-2 hover:text-purple-400 transition-colors">Category <ArrowUpDown size={16} /></button></th>
-                      <th className="text-left py-3 px-4"><button onClick={() => setTransactionSort('institution')} className="flex items-center gap-2 hover:text-purple-400 transition-colors">Institution <ArrowUpDown size={16} /></button></th>
-                      <th className="text-left py-3 px-4">Recurring</th>
-                      <th className="text-right py-3 px-4"><button onClick={() => setTransactionSort(transactionSort === 'amount-desc' ? 'amount-asc' : 'amount-desc')} className="flex items-center gap-2 ml-auto hover:text-purple-400 transition-colors">Amount <ArrowUpDown size={16} /></button></th>
-                      <th className="text-center py-3 px-4">Action</th>
+                      <th className="text-left py-3 px-4">Date</th>
+                      <th className="text-left py-3 px-4">Description</th>
+                      <th className="text-left py-3 px-4">Vendor</th>
+                      <th className="text-left py-3 px-4">Category</th>
+                      <th className="text-right py-3 px-4">Amount</th>
+                      <th className="text-center py-3 px-4">Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAndSortedTransactions.map(t => (
-                      <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/30 transition-colors">
+                    {filteredAndSortedTransactions.slice(0, 20).map(t => (
+                      <tr key={t.id} className="border-b border-slate-700 hover:bg-slate-700/50">
                         <td className="py-3 px-4">{t.date}</td>
                         <td className="py-3 px-4">{t.description}</td>
                         <td className="py-3 px-4">{t.vendor}</td>
                         <td className="py-3 px-4">{t.category}</td>
-                        <td className="py-3 px-4"><span className="px-2 py-1 bg-slate-700 rounded text-xs">{t.institution || 'Manual'}</span></td>
-                        <td className="py-3 px-4"><span className={`px-2 py-1 rounded text-xs ${t.recurring ? 'bg-blue-500/20 text-blue-300' : 'bg-slate-700 text-slate-400'}`}>{t.recurring ? `${t.frequency}` : 'One-time'}</span></td>
-                        <td className={`py-3 px-4 text-right font-semibold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>{t.amount >= 0 ? '+' : ''}{t.amount.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</td>
-                        <td className="py-3 px-4 text-center"><button onClick={() => handleDeleteTransaction(t.id)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></button></td>
+                        <td className={`py-3 px-4 text-right font-semibold ${t.amount >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                          {t.amount >= 0 ? '+' : ''}${Math.abs(t.amount).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button onClick={() => handleDeleteTransaction(t.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
+              {filteredAndSortedTransactions.length > 20 && (
+                <p className="text-slate-400 text-sm mt-4">Showing 20 of {filteredAndSortedTransactions.length} transactions</p>
+              )}
+              {filteredAndSortedTransactions.length === 0 && (
+                <p className="text-slate-400 text-center py-8">No transactions found. Add your first transaction above!</p>
+              )}
             </div>
           </div>
         )}
@@ -939,30 +941,27 @@ const FinanceDashboard = () => {
         {activeTab === 'billHistory' && (
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-4">Add New Bill</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div><label className="block text-sm text-slate-300 mb-2">Bill Name</label><input type="text" id="bill-name" placeholder="e.g., Electric Bill" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm text-slate-300 mb-2">Amount</label><input type="number" id="bill-amount" placeholder="0.00" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" /></div>
-                <div><label className="block text-sm text-slate-300 mb-2">Due Date</label><input type="date" id="bill-date" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" /></div>
-              </div>
-              <button onClick={() => { const name = document.getElementById('bill-name').value; const amount = parseFloat(document.getElementById('bill-amount').value); const dueDate = document.getElementById('bill-date').value; if (name && amount && dueDate) { addBillDate({ name, amount, dueDate }); document.getElementById('bill-name').value = ''; document.getElementById('bill-amount').value = ''; document.getElementById('bill-date').value = ''; } else { alert('Please fill in all fields'); }}} className="flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 rounded-lg transition-all"><Plus size={20} /> Add Bill</button>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <div className="flex justify-between items-center mb-6">
-                <button onClick={() => { if (selectedMonth === 0) { setSelectedMonth(11); setSelectedYear(selectedYear - 1); } else { setSelectedMonth(selectedMonth - 1); }}} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">← Previous</button>
-                <h3 className="text-2xl font-semibold">{new Date(selectedYear, selectedMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}</h3>
-                <button onClick={() => { if (selectedMonth === 11) { setSelectedMonth(0); setSelectedYear(selectedYear + 1); } else { setSelectedMonth(selectedMonth + 1); }}} className="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition-colors">Next →</button>
-              </div>
-              <div className="grid grid-cols-7 gap-2">
-                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (<div key={day} className="text-center font-bold text-slate-400 py-2">{day}</div>))}
-                {(() => { const daysInMonth = new Date(selectedYear, selectedMonth + 1, 0).getDate(); const firstDay = new Date(selectedYear, selectedMonth, 1).getDay(); const days = []; for (let i = 0; i < firstDay; i++) { days.push(<div key={`empty-${i}`} className="aspect-square"></div>); } for (let day = 1; day <= daysInMonth; day++) { const billsOnDay = billDates.filter(bill => { const billDate = new Date(bill.dueDate); return billDate.getDate() === day && billDate.getMonth() === selectedMonth && billDate.getFullYear() === selectedYear; }); days.push(<div key={day} className="aspect-square border border-slate-600 rounded-lg p-2 bg-slate-700/30 hover:bg-slate-700/50 transition-colors"><div className="font-semibold text-sm mb-1">{day}</div>{billsOnDay.map((bill) => (<div key={bill.id} className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded px-1 py-0.5 mb-1 truncate" title={`${bill.name}: $${bill.amount}`}>{bill.name}</div>))}</div>); } return days; })()}
-              </div>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4">All Bills</h3>
-              <div className="space-y-3">
-                {billDates.map(bill => (<div key={bill.id} className="flex justify-between items-center p-4 bg-slate-700/30 rounded-lg"><div><div className="font-semibold">{bill.name}</div><div className="text-sm text-slate-400">Due: {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div></div><div className="flex items-center gap-4"><div className="text-lg font-bold">${bill.amount.toFixed(2)}</div><button onClick={() => deleteBill(bill.id)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={18} /></button></div></div>))}
-              </div>
+              <h3 className="text-xl font-semibold mb-4">Upcoming Bills</h3>
+              {billDates.length > 0 ? (
+                <div className="space-y-3">
+                  {billDates.map(bill => (
+                    <div key={bill.id} className="flex items-center justify-between p-4 bg-slate-700/50 rounded-lg">
+                      <div>
+                        <p className="font-semibold">{bill.name}</p>
+                        <p className="text-sm text-slate-400">Due: {bill.dueDate}</p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-bold text-red-400">${bill.amount.toLocaleString()}</span>
+                        <button onClick={() => handleDeleteBill(bill.id)} className="p-2 text-red-400 hover:bg-red-500/20 rounded-lg transition-colors">
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-slate-400 text-center py-8">No upcoming bills. Add recurring transactions to see them here!</p>
+              )}
             </div>
           </div>
         )}
@@ -970,48 +969,45 @@ const FinanceDashboard = () => {
         {/* Budget Tab */}
         {activeTab === 'budget' && (
           <div className="space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-4 text-green-400">Income Sources</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div><label className="block text-sm text-slate-300 mb-2">Source Name</label><input type="text" id="income-name" placeholder="e.g., Salary" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" /></div>
-                <div><label className="block text-sm text-slate-300 mb-2">Monthly Amount</label><input type="number" id="income-amount" placeholder="0.00" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500" /></div>
-                <div className="flex items-end"><button onClick={() => { const name = document.getElementById('income-name').value; const amount = parseFloat(document.getElementById('income-amount').value); if (name && amount) { addIncome({ name, amount }); document.getElementById('income-name').value = ''; document.getElementById('income-amount').value = ''; } else { alert('Please fill in all fields'); }}} className="w-full px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg transition-colors flex items-center justify-center gap-2"><Plus size={20} /> Add Income</button></div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-xl font-semibold mb-4">Monthly Income Budget</h3>
+                <div className="space-y-3">
+                  {budgetData.income.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                      <span>{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-green-400 font-semibold">${item.amount.toLocaleString()}</span>
+                        <button onClick={() => deleteIncome(item.id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-600">
+                  <p className="text-lg font-semibold">Total: <span className="text-green-400">${budgetData.income.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span></p>
+                </div>
               </div>
-              <div className="space-y-2">
-                {(() => { const maxIncome = Math.max(...budgetData.income.map(item => item.amount), 1); return budgetData.income.map(item => { const percentage = (item.amount / maxIncome) * 100; return (<div key={item.id} className="bg-green-500/10 border border-green-500/30 rounded-lg p-4"><div className="flex justify-between items-center mb-2"><span className="font-semibold">{item.name}</span><div className="flex items-center gap-3"><span className="text-green-400 font-bold">${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span><button onClick={() => deleteIncome(item.id)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={16} /></button></div></div><div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden"><div className="bg-gradient-to-r from-green-500 to-green-400 h-3 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}></div></div></div>); }); })()}
+              <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                <h3 className="text-xl font-semibold mb-4">Monthly Expense Budget</h3>
+                <div className="space-y-3">
+                  {budgetData.expenses.map(item => (
+                    <div key={item.id} className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
+                      <span>{item.name}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-red-400 font-semibold">${item.amount.toLocaleString()}</span>
+                        <button onClick={() => deleteExpense(item.id)} className="p-1 text-red-400 hover:bg-red-500/20 rounded">
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-600">
+                  <p className="text-lg font-semibold">Total: <span className="text-red-400">${budgetData.expenses.reduce((sum, i) => sum + i.amount, 0).toLocaleString()}</span></p>
+                </div>
               </div>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-4 text-red-400">Expenses</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                <div><label className="block text-sm text-slate-300 mb-2">Expense Name</label><input type="text" id="expense-name" placeholder="e.g., Rent" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" /></div>
-                <div><label className="block text-sm text-slate-300 mb-2">Monthly Amount</label><input type="number" id="expense-amount" placeholder="0.00" className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500" /></div>
-                <div className="flex items-end"><button onClick={() => { const name = document.getElementById('expense-name').value; const amount = parseFloat(document.getElementById('expense-amount').value); if (name && amount) { addExpense({ name, amount }); document.getElementById('expense-name').value = ''; document.getElementById('expense-amount').value = ''; } else { alert('Please fill in all fields'); }}} className="w-full px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center justify-center gap-2"><Plus size={20} /> Add Expense</button></div>
-              </div>
-              <div className="space-y-2">
-                {(() => { const maxExpense = Math.max(...budgetData.expenses.map(item => item.amount), 1); return budgetData.expenses.map(item => { const percentage = (item.amount / maxExpense) * 100; return (<div key={item.id} className="bg-red-500/10 border border-red-500/30 rounded-lg p-4"><div className="flex justify-between items-center mb-2"><span className="font-semibold">{item.name}</span><div className="flex items-center gap-3"><span className="text-red-400 font-bold">${item.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</span><button onClick={() => deleteExpense(item.id)} className="text-red-400 hover:text-red-300 transition-colors"><Trash2 size={16} /></button></div></div><div className="w-full bg-slate-700 rounded-full h-3 overflow-hidden"><div className="bg-gradient-to-r from-red-500 to-red-400 h-3 rounded-full transition-all duration-500" style={{ width: `${percentage}%` }}></div></div></div>); }); })()}
-              </div>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-2xl font-semibold mb-6">Yearly Budget Summary</h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4"><div className="text-sm text-slate-400 mb-1">Total Monthly Income</div><div className="text-2xl font-bold text-green-400">${budgetData.income.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</div></div>
-                <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4"><div className="text-sm text-slate-400 mb-1">Total Monthly Expenses</div><div className="text-2xl font-bold text-red-400">${budgetData.expenses.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}</div></div>
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4"><div className="text-sm text-slate-400 mb-1">Monthly Net</div><div className={`text-2xl font-bold ${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) >= 0 ? 'text-blue-400' : 'text-orange-400'}`}>${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)).toLocaleString()}</div></div>
-                <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-4"><div className="text-sm text-slate-400 mb-1">Yearly Net</div><div className={`text-2xl font-bold ${(budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) >= 0 ? 'text-purple-400' : 'text-orange-400'}`}>${((budgetData.income.reduce((sum, item) => sum + item.amount, 0) - budgetData.expenses.reduce((sum, item) => sum + item.amount, 0)) * 12).toLocaleString()}</div></div>
-              </div>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={getBudgetSummary}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                  <XAxis dataKey="month" stroke="#9CA3AF" />
-                  <YAxis stroke="#9CA3AF" />
-                  <Tooltip formatter={(value) => `$${value.toLocaleString()}`} contentStyle={{ backgroundColor: '#1F2937', border: '1px solid #374151' }} />
-                  <Legend />
-                  <Bar dataKey="income" name="Income" fill="#10B981" />
-                  <Bar dataKey="expenses" name="Expenses" fill="#EF4444" />
-                  <Bar dataKey="net" name="Net" fill="#3B82F6" />
-                </BarChart>
-              </ResponsiveContainer>
             </div>
           </div>
         )}
@@ -1020,25 +1016,68 @@ const FinanceDashboard = () => {
         {activeTab === 'retirement' && (
           <div className="space-y-6">
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <h3 className="text-xl font-semibold mb-4">Market Performance - {currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-slate-700/50 rounded-lg p-4"><div className="text-slate-400 text-sm mb-1">Dow Jones</div><div className="text-2xl font-bold text-white">{marketData.dow.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className={`text-sm font-semibold ${marketData.dow.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>{marketData.dow.change >= 0 ? '+' : ''}{marketData.dow.change}%</div></div>
-                <div className="bg-slate-700/50 rounded-lg p-4"><div className="text-slate-400 text-sm mb-1">S&P 500</div><div className="text-2xl font-bold text-white">{marketData.sp500.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className={`text-sm font-semibold ${marketData.sp500.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>{marketData.sp500.change >= 0 ? '+' : ''}{marketData.sp500.change}%</div></div>
-                <div className="bg-slate-700/50 rounded-lg p-4"><div className="text-slate-400 text-sm mb-1">NASDAQ</div><div className="text-2xl font-bold text-white">{marketData.nasdaq.value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div><div className={`text-sm font-semibold ${marketData.nasdaq.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>{marketData.nasdaq.change >= 0 ? '+' : ''}{marketData.nasdaq.change}%</div></div>
-              </div>
-            </div>
-            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <h3 className="text-xl font-semibold mb-4">Import Retirement Account Statement</h3>
-              <div className="mb-4"><label className="block text-sm text-slate-300 mb-2">Account Type</label><select value={selectedRetirementAccountType} onChange={(e) => setSelectedRetirementAccountType(e.target.value)} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="">Select account type...</option>{retirementAccountTypes.map(type => (<option key={type} value={type}>{type}</option>))}</select></div>
-              <label className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors"><Upload size={24} /><span className="text-lg font-semibold">Upload Statement (CSV or PDF)</span><input type="file" accept=".csv,.pdf" onChange={handleRetirementFileUpload} className="hidden" /></label>
+              <div className="mb-4">
+                <label className="block text-sm text-slate-300 mb-2">Account Type</label>
+                <select value={selectedRetirementAccountType} onChange={(e) => setSelectedRetirementAccountType(e.target.value)} className="w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
+                  <option value="">Select account type...</option>
+                  {retirementAccountTypes.map(type => (<option key={type} value={type}>{type}</option>))}
+                </select>
+              </div>
+              <label className="flex items-center justify-center gap-2 px-6 py-4 bg-purple-600 hover:bg-purple-700 rounded-lg cursor-pointer transition-colors">
+                <Upload size={24} />
+                <span className="text-lg font-semibold">Upload Statement (CSV or PDF)</span>
+                <input type="file" accept=".csv,.pdf" onChange={handleRetirementFileUpload} className="hidden" />
+              </label>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {investments.map(inv => { const progress = (inv.currentValue / inv.targetValue) * 100; return (<div key={inv.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg"><div className="flex items-center justify-between mb-4"><div><h3 className="text-xl font-semibold">{inv.type}</h3><p className="text-sm text-slate-400">Account Type: {inv.accountType}</p></div><Target className="text-purple-400" /></div><div className="space-y-4"><div><div className="flex justify-between text-sm mb-2"><span className="text-slate-400">Current Value</span><span className="font-semibold">${inv.currentValue.toLocaleString()}</span></div><div className="flex justify-between text-sm mb-2"><span className="text-slate-400">Target Value</span><span className="font-semibold">${inv.targetValue.toLocaleString()}</span></div></div><div><div className="flex justify-between text-sm mb-2"><span className="text-slate-400">Progress</span><span className="font-semibold text-purple-400">{progress.toFixed(1)}%</span></div><div className="w-full bg-slate-700 rounded-full h-3"><div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500" style={{ width: `${Math.min(progress, 100)}%` }} /></div></div></div></div>); })}
+              {investments.map(inv => {
+                const progress = (inv.currentValue / inv.targetValue) * 100;
+                return (
+                  <div key={inv.id} className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
+                    <div className="flex items-center justify-between mb-4">
+                      <div>
+                        <h3 className="text-xl font-semibold">{inv.type}</h3>
+                        <p className="text-sm text-slate-400">Account Type: {inv.accountType}</p>
+                      </div>
+                      <Target className="text-purple-400" />
+                    </div>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Current Value</span>
+                          <span className="font-semibold">${inv.currentValue.toLocaleString()}</span>
+                        </div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Target Value</span>
+                          <span className="font-semibold">${inv.targetValue.toLocaleString()}</span>
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between text-sm mb-2">
+                          <span className="text-slate-400">Progress</span>
+                          <span className="font-semibold text-purple-400">{progress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-slate-700 rounded-full h-3">
+                          <div className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500" style={{ width: `${Math.min(progress, 100)}%` }} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
-            <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8 shadow-lg text-center">
-              <h3 className="text-2xl font-semibold mb-4">Total Retirement Value</h3>
-              <p className="text-5xl font-bold text-white">${investments.reduce((sum, inv) => sum + inv.currentValue, 0).toLocaleString()}</p>
-            </div>
+            {investments.length > 0 && (
+              <div className="bg-gradient-to-br from-purple-500/20 to-blue-500/20 backdrop-blur-sm border border-purple-500/30 rounded-xl p-8 shadow-lg text-center">
+                <h3 className="text-2xl font-semibold mb-4">Total Retirement Value</h3>
+                <p className="text-5xl font-bold text-white">${investments.reduce((sum, inv) => sum + inv.currentValue, 0).toLocaleString()}</p>
+              </div>
+            )}
+            {investments.length === 0 && (
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-8 text-center">
+                <p className="text-slate-400">No retirement accounts yet. Upload a statement above to get started!</p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1048,21 +1087,61 @@ const FinanceDashboard = () => {
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
               <h3 className="text-2xl font-semibold mb-4">CPA Export</h3>
               <p className="text-slate-300 mb-6">Export your transaction data in a format ready for your accountant or tax professional.</p>
-              <div className="mb-6"><label className="block text-sm font-medium text-slate-300 mb-2">Export Format</label><select value={cpaExportSoftware} onChange={(e) => setCpaExportSoftware(e.target.value)} className="w-full md:w-64 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg"><option value="quickbooks">QuickBooks</option><option value="xero">Xero</option><option value="turbotax">TurboTax</option></select></div>
-              {cpaExportSoftware === 'quickbooks' && (<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6"><p className="text-sm text-blue-300"><strong>💡 QuickBooks:</strong> This export uses the IIF format compatible with QuickBooks Desktop. For QuickBooks Online, you can import via the Banking → File Upload feature.</p></div>)}
-              {cpaExportSoftware === 'xero' && (<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6"><p className="text-sm text-blue-300"><strong>💡 Xero:</strong> This export is formatted for Xero's bank statement import. Import via Accounting → Bank Accounts → Manage Account → Import a Statement.</p></div>)}
-              {cpaExportSoftware === 'turbotax' && (<div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-4 mb-6"><p className="text-sm text-blue-300"><strong>💡 TurboTax:</strong> This export provides a transaction summary suitable for Schedule C (business) or investment income reporting.</p></div>)}
-              <button onClick={exportCPAData} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg transition-all text-lg font-semibold"><Download size={20} /> Export for {cpaExportSoftware === 'quickbooks' ? 'QuickBooks' : cpaExportSoftware === 'xero' ? 'Xero' : 'TurboTax'}</button>
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-slate-300 mb-2">Export Format</label>
+                <select value={cpaExportSoftware} onChange={(e) => setCpaExportSoftware(e.target.value)} className="w-full md:w-64 px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-lg">
+                  <option value="quickbooks">QuickBooks</option>
+                  <option value="xero">Xero</option>
+                  <option value="turbotax">TurboTax</option>
+                </select>
+              </div>
+              <button onClick={exportCPAData} disabled={transactions.length === 0} className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 rounded-lg transition-all text-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed">
+                <Download size={20} /> Export for {cpaExportSoftware === 'quickbooks' ? 'QuickBooks' : cpaExportSoftware === 'xero' ? 'Xero' : 'TurboTax'}
+              </button>
             </div>
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-xl p-6 shadow-lg">
-              <div className="flex justify-between items-center mb-4"><h3 className="text-xl font-semibold">Preview</h3><div className="flex gap-3"><div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} /><input type="text" placeholder="Filter..." value={cpaFilter} onChange={(e) => setCpaFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" /></div><select value={cpaSort} onChange={(e) => setCpaSort(e.target.value)} className="px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"><option value="date-desc">Date (Newest)</option><option value="date-asc">Date (Oldest)</option><option value="amount-desc">Amount (High-Low)</option><option value="amount-asc">Amount (Low-High)</option><option value="vendor">Vendor (A-Z)</option></select></div></div>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-semibold">Preview</h3>
+                <div className="flex gap-3">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+                    <input type="text" placeholder="Filter..." value={cpaFilter} onChange={(e) => setCpaFilter(e.target.value)} className="pl-10 pr-4 py-2 bg-slate-700 border border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500" />
+                  </div>
+                </div>
+              </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
-                  <thead><tr className="border-b border-slate-600"><th className="text-left py-2 px-3">Date</th><th className="text-left py-2 px-3">Description</th><th className="text-left py-2 px-3">Vendor</th><th className="text-right py-2 px-3">Amount</th><th className="text-left py-2 px-3">Outflow/Inflow</th><th className="text-left py-2 px-3">GL Account</th></tr></thead>
-                  <tbody>{cpaFilteredAndSorted.slice(0, 10).map(t => { const glAccount = mapToGLAccount(t.description, t.category, t.type); const isOutflow = t.amount < 0; return (<tr key={t.id} className="border-b border-slate-700"><td className="py-2 px-3">{t.date}</td><td className="py-2 px-3">{t.description}</td><td className="py-2 px-3">{t.vendor}</td><td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td><td className="py-2 px-3">{isOutflow ? 'Outflow' : 'Inflow'}</td><td className="py-2 px-3">{glAccount.number} {glAccount.description}</td></tr>); })}</tbody>
+                  <thead>
+                    <tr className="border-b border-slate-600">
+                      <th className="text-left py-2 px-3">Date</th>
+                      <th className="text-left py-2 px-3">Description</th>
+                      <th className="text-left py-2 px-3">Vendor</th>
+                      <th className="text-right py-2 px-3">Amount</th>
+                      <th className="text-left py-2 px-3">Outflow/Inflow</th>
+                      <th className="text-left py-2 px-3">GL Account</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {cpaFilteredAndSorted.slice(0, 10).map(t => {
+                      const glAccount = mapToGLAccount(t.description || '', t.category, t.type);
+                      const isOutflow = t.amount < 0;
+                      return (
+                        <tr key={t.id} className="border-b border-slate-700">
+                          <td className="py-2 px-3">{t.date}</td>
+                          <td className="py-2 px-3">{t.description}</td>
+                          <td className="py-2 px-3">{t.vendor}</td>
+                          <td className="py-2 px-3 text-right">${Math.abs(t.amount).toFixed(2)}</td>
+                          <td className="py-2 px-3">{isOutflow ? 'Outflow' : 'Inflow'}</td>
+                          <td className="py-2 px-3">{glAccount.number} {glAccount.description}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
                 </table>
               </div>
-              {cpaFilteredAndSorted.length > 10 && (<p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>)}
+              {cpaFilteredAndSorted.length > 10 && (
+                <p className="text-slate-400 text-sm mt-4">Showing 10 of {cpaFilteredAndSorted.length} transactions</p>
+              )}
             </div>
           </div>
         )}
