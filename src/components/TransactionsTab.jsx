@@ -426,11 +426,11 @@ export default function TransactionsTab({
               <div style={{ textAlign: 'center' }}>Status</div>
             </div>
 
-            <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
+            <div style={{ maxHeight: '70vh', overflowY: 'auto' }}>
               {filteredTransactions.length === 0 ? (
                 <div style={{ padding: '40px', textAlign: 'center', color: 'rgba(255,255,255,0.5)' }}>No transactions match your filters</div>
               ) : (
-                filteredTransactions.map((tx, index) => {
+                filteredTransactions.slice(0, 1000).map((tx, index) => {
                   const amount = parseFloat(tx.amount || tx.Amount);
                   const isExpense = amount < 0;
                   const date = new Date(tx.date || tx.Date);
@@ -458,7 +458,12 @@ export default function TransactionsTab({
           </div>
 
           <div style={{ marginTop: '16px', textAlign: 'center', fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>
-            Showing {filteredTransactions.length.toLocaleString()} of {filteredByDate.length.toLocaleString()} transactions
+            Showing {Math.min(filteredTransactions.length, 1000).toLocaleString()} of {filteredTransactions.length.toLocaleString()} filtered transactions
+            {filteredTransactions.length > 1000 && (
+              <span style={{ color: '#F59E0B', marginLeft: '8px' }}>
+                (Use filters to narrow results)
+              </span>
+            )}
           </div>
         </>
       )}
