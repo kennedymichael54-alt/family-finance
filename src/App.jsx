@@ -977,7 +977,19 @@ function Dashboard({
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Profile Button */}
+          {lastImportDate && (
+            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ fontSize: '16px' }}>📥</span>
+              <span>Last import: {lastImportDate.toLocaleDateString()} at {lastImportDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+            </div>
+          )}
+
+          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📅</span>
+            <span>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
+          </div>
+
+          {/* Profile Button - now left of Sign Out */}
           <button 
             onClick={() => setShowProfileModal(true)}
             style={{ 
@@ -1009,25 +1021,13 @@ function Dashboard({
             <span style={{ fontSize: '14px' }}>Profile</span>
           </button>
 
-          {lastImportDate && (
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '16px' }}>📥</span>
-              <span>Last import: {lastImportDate.toLocaleDateString()} at {lastImportDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
-          )}
-
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-            <span style={{ fontSize: '16px' }}>📅</span>
-            <span>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          </div>
-
           <button onClick={handleSignOut} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', cursor: 'pointer', fontSize: '14px' }}>
             Sign Out
           </button>
         </div>
       </header>
 
-      {/* Navigation Tabs - Settings moved to far right */}
+      {/* Navigation Tabs - Settings moved to far right, consistent box styling */}
       <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           {[
@@ -1043,8 +1043,8 @@ function Dashboard({
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '12px 24px',
-                background: activeTab === tab.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'transparent',
-                border: 'none',
+                background: activeTab === tab.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.1)',
+                border: activeTab === tab.id ? 'none' : '1px solid rgba(255,255,255,0.2)',
                 borderRadius: '10px',
                 color: 'white',
                 cursor: 'pointer',
