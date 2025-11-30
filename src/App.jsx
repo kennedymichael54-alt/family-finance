@@ -9,6 +9,7 @@ import BillsCalendarView from './components/BillsCalendarView';
 import GoalsTimelineWithCelebration from './components/GoalsTimelineWithCelebration';
 import ProductShowcase from './components/FamilyFinance-ProductGraphics';
 import TransactionsTab from './components/TransactionsTab';
+import ReportsTab from './components/ReportsTab';
 
 // ============================================================================
 // FAMILY FINANCE - COMPREHENSIVE APP WITH REAL DATA SUPPORT
@@ -1077,10 +1078,10 @@ function Dashboard({
           {[
             { id: 'home', label: '🏠 Dashboard' },
             { id: 'budget', label: '💰 Budget' },
+            { id: 'transactions', label: '📋 Transactions' },
             { id: 'bills', label: '📅 Bills' },
             { id: 'goals', label: '🎯 Goals' },
-            { id: 'import', label: '📂 Import' },
-            { id: 'transactions', label: '📋 Transactions' }
+            { id: 'reports', label: '📊 Reports' }
           ].map(tab => (
             <button
               key={tab.id}
@@ -1106,27 +1107,49 @@ function Dashboard({
           ))}
         </div>
         
-        {/* Settings on far right */}
-        <button
-          onClick={() => setActiveTab('settings')}
-          style={{
-            padding: '12px 24px',
-            background: activeTab === 'settings' 
-              ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
-              : 'rgba(139, 92, 246, 0.1)',
-            border: 'none',
-            borderRadius: '10px',
-            color: 'white',
-            cursor: 'pointer',
-            fontSize: '14px',
-            fontWeight: activeTab === 'settings' ? '600' : '400',
-            opacity: activeTab === 'settings' ? 1 : 0.8,
-            transition: 'all 0.2s ease',
-            backdropFilter: 'blur(10px)'
-          }}
-        >
-          ⚙️ Settings
-        </button>
+        {/* Settings and Import on far right */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={() => setActiveTab('settings')}
+            style={{
+              padding: '12px 24px',
+              background: activeTab === 'settings' 
+                ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+                : 'rgba(139, 92, 246, 0.1)',
+              border: 'none',
+              borderRadius: '10px',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === 'settings' ? '600' : '400',
+              opacity: activeTab === 'settings' ? 1 : 0.8,
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)'
+            }}
+          >
+            ⚙️ Settings
+          </button>
+          <button
+            onClick={() => setActiveTab('import')}
+            style={{
+              padding: '12px 24px',
+              background: activeTab === 'import' 
+                ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+                : 'rgba(139, 92, 246, 0.1)',
+              border: 'none',
+              borderRadius: '10px',
+              color: 'white',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: activeTab === 'import' ? '600' : '400',
+              opacity: activeTab === 'import' ? 1 : 0.8,
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)'
+            }}
+          >
+            📂 Import
+          </button>
+        </div>
       </nav>
 
       {/* Profile Modal */}
@@ -1170,6 +1193,12 @@ function Dashboard({
         )}
         {activeTab === 'transactions' && (
           <TransactionsTab 
+            transactions={transactions}
+            onNavigateToImport={() => setActiveTab('import')}
+          />
+        )}
+        {activeTab === 'reports' && (
+          <ReportsTab 
             transactions={transactions}
             onNavigateToImport={() => setActiveTab('import')}
           />
