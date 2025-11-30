@@ -5,6 +5,7 @@ import BudgetTab from './components/BudgetTab';
 import BillsCalendarView from './components/BillsCalendarView';
 import GoalsTimelineWithCelebration from './components/GoalsTimelineWithCelebration';
 import DataUploadSystem from './components/DataUploadSystem';
+import ProductShowcase from './components/FamilyFinance-ProductGraphics';
 
 // ============================================================================
 // FAMILY FINANCE - COMPREHENSIVE APP WITH FULL DASHBOARD FUNCTIONALITY
@@ -316,116 +317,9 @@ function LandingPage({ setView }) {
           </div>
         </section>
 
-        {/* Products Section */}
-        <section id="features" style={{ maxWidth: '1400px', margin: '0 auto', padding: '80px 40px' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h2 style={{ fontSize: '40px', fontWeight: '700', marginBottom: '16px' }}>Everything Your Family Needs</h2>
-            <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.6)' }}>Purpose-built tools for modern family finances</p>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px' }}>
-            {/* HomeBudget Hub - Most Popular */}
-            <div 
-              onClick={() => setSelectedHub('home')}
-              style={{ 
-                position: 'relative', 
-                background: selectedHub === 'home' ? 'rgba(30, 27, 56, 0.9)' : 'rgba(30, 27, 56, 0.8)', 
-                backdropFilter: 'blur(20px)', 
-                borderRadius: '24px', 
-                padding: '32px', 
-                border: selectedHub === 'home' ? '2px solid rgba(139, 92, 246, 0.6)' : '1px solid rgba(139, 92, 246, 0.3)',
-                boxShadow: selectedHub === 'home' ? '0 0 30px rgba(139, 92, 246, 0.3), inset 0 0 30px rgba(139, 92, 246, 0.1)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', padding: '6px 16px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>
-                Most Popular
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #10B981, #14B8A6)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px' }}>
-                🏠
-              </div>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px' }}>HomeBudget Hub</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
-                Track spending, manage bills, and build budgets that actually work for your family.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Automatic transaction categorization', 'Bill reminders & payment tracking', 'Family spending insights', 'Goal setting & progress tracking'].map((feature, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                    <span style={{ color: '#10B981' }}>✓</span> {feature}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* BusinessBudget Hub - Coming Soon */}
-            <div 
-              onClick={() => setSelectedHub('business')}
-              style={{ 
-                position: 'relative', 
-                background: selectedHub === 'business' ? 'rgba(30, 27, 56, 0.7)' : 'rgba(30, 27, 56, 0.5)', 
-                backdropFilter: 'blur(20px)', 
-                borderRadius: '24px', 
-                padding: '32px', 
-                border: selectedHub === 'business' ? '2px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
-                boxShadow: selectedHub === 'business' ? '0 0 20px rgba(139, 92, 246, 0.2)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', padding: '6px 16px', background: 'rgba(251, 191, 36, 0.2)', borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: '#FBBF24' }}>
-                Coming Soon
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #3B82F6, #06B6D4)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px' }}>
-                💼
-              </div>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px' }}>BusinessBudget Hub</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
-                Powerful tools for freelancers and small business owners to manage cash flow.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Cash flow forecasting', 'Expense management', 'Team access controls', 'Financial reports'].map((feature, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                    <span style={{ color: '#10B981' }}>✓</span> {feature}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* REAnalyzer Hub - Coming Soon */}
-            <div 
-              onClick={() => setSelectedHub('real-estate')}
-              style={{ 
-                position: 'relative', 
-                background: selectedHub === 'real-estate' ? 'rgba(30, 27, 56, 0.7)' : 'rgba(30, 27, 56, 0.5)', 
-                backdropFilter: 'blur(20px)', 
-                borderRadius: '24px', 
-                padding: '32px', 
-                border: selectedHub === 'real-estate' ? '2px solid rgba(139, 92, 246, 0.4)' : '1px solid rgba(255,255,255,0.1)',
-                boxShadow: selectedHub === 'real-estate' ? '0 0 20px rgba(139, 92, 246, 0.2)' : 'none',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', padding: '6px 16px', background: 'rgba(251, 191, 36, 0.2)', borderRadius: '20px', fontSize: '12px', fontWeight: '600', color: '#FBBF24' }}>
-                Coming Soon
-              </div>
-              <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #F97316, #FBBF24)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px' }}>
-                🏢
-              </div>
-              <h3 style={{ fontSize: '22px', fontWeight: '600', marginBottom: '12px' }}>REAnalyzer Hub</h3>
-              <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '15px', marginBottom: '24px', lineHeight: 1.5 }}>
-                Analyze real estate investments with professional-grade tools and insights.
-              </p>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {['Property analysis tools', 'Rental income tracking', 'Market comparisons', 'Equity growth tracking'].map((feature, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px', fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                    <span style={{ color: '#10B981' }}>✓</span> {feature}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+    {/* Products Section */}
+        <section id="features">
+          <ProductShowcase />
         </section>
 
         {/* Pricing Section */}
