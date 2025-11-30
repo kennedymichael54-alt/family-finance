@@ -317,10 +317,17 @@ function LandingPage({ setView }) {
           </div>
         </section>
 
-    {/* Products Section */}
-        <section id="features">
-          <ProductShowcase />
-        </section>
+ {/* Products Section */}
+<section id="features" style={{ background: 'transparent' }}>
+  <div style={{ 
+    background: 'transparent',
+    padding: '80px 40px',
+    maxWidth: '1400px',
+    margin: '0 auto'
+  }}>
+    <ProductShowcase />
+  </div>
+</section>
 
         {/* Pricing Section */}
         <PricingSection setView={setView} />
