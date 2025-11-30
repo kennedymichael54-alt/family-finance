@@ -709,6 +709,197 @@ function AuthPage({ setView }) {
 }
 
 // ============================================================================
+// PROFILE MODAL
+// ============================================================================
+
+function ProfileModal({ profile, email, onSave, onClose }) {
+  const [formData, setFormData] = useState({
+    firstName: profile.firstName || '',
+    lastName: profile.lastName || '',
+    address: profile.address || ''
+  });
+
+  const handleSave = () => {
+    onSave(formData);
+    onClose();
+  };
+
+  return (
+    <div 
+      style={{ 
+        position: 'fixed', 
+        inset: 0, 
+        background: 'rgba(0,0,0,0.8)', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center', 
+        zIndex: 1000,
+        backdropFilter: 'blur(4px)'
+      }} 
+      onClick={onClose}
+    >
+      <div 
+        style={{ 
+          background: 'rgba(30, 27, 56, 0.98)', 
+          backdropFilter: 'blur(20px)', 
+          borderRadius: '24px', 
+          padding: '32px', 
+          width: '450px',
+          maxWidth: '90vw',
+          border: '1px solid rgba(255,255,255,0.1)',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.5)'
+        }} 
+        onClick={e => e.stopPropagation()}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
+          <div style={{ 
+            width: '60px', 
+            height: '60px', 
+            borderRadius: '50%', 
+            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center',
+            fontSize: '24px',
+            fontWeight: '600'
+          }}>
+            {formData.firstName && formData.lastName 
+              ? `${formData.firstName[0]}${formData.lastName[0]}`.toUpperCase()
+              : formData.firstName 
+                ? formData.firstName[0].toUpperCase() 
+                : '👤'}
+          </div>
+          <div>
+            <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0, color: 'white' }}>Your Profile</h3>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: '4px 0 0 0' }}>{email}</p>
+          </div>
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+            First Name
+          </label>
+          <input
+            type="text"
+            value={formData.firstName}
+            onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+            placeholder="Enter your first name"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '16px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+            Last Name
+          </label>
+          <input
+            type="text"
+            value={formData.lastName}
+            onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+            placeholder="Enter your last name"
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '14px',
+              boxSizing: 'border-box'
+            }}
+          />
+        </div>
+
+        <div style={{ marginBottom: '24px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>
+            Address
+          </label>
+          <textarea
+            value={formData.address}
+            onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+            placeholder="Enter your address"
+            rows={3}
+            style={{
+              width: '100%',
+              padding: '12px 16px',
+              background: 'rgba(255,255,255,0.1)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '10px',
+              color: 'white',
+              fontSize: '14px',
+              boxSizing: 'border-box',
+              resize: 'none',
+              fontFamily: 'inherit'
+            }}
+          />
+        </div>
+
+        <div style={{ 
+          background: 'rgba(139, 92, 246, 0.1)', 
+          border: '1px solid rgba(139, 92, 246, 0.2)', 
+          borderRadius: '10px', 
+          padding: '12px 16px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span style={{ fontSize: '16px' }}>📧</span>
+          <div>
+            <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Email (from login)</div>
+            <div style={{ fontSize: '14px', color: 'white' }}>{email}</div>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: '12px' }}>
+          <button 
+            onClick={onClose} 
+            style={{ 
+              flex: 1, 
+              padding: '14px', 
+              background: 'rgba(255,255,255,0.1)', 
+              border: '1px solid rgba(255,255,255,0.2)', 
+              borderRadius: '12px', 
+              color: 'white', 
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500'
+            }}
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={handleSave}
+            style={{ 
+              flex: 1, 
+              padding: '14px', 
+              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
+              border: 'none', 
+              borderRadius: '12px', 
+              color: 'white', 
+              fontWeight: '600', 
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            Save Profile
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // DASHBOARD
 // ============================================================================
 
@@ -726,13 +917,42 @@ function Dashboard({
 }) {
   const [activeTab, setActiveTab] = useState('home');
   const [showAIChat, setShowAIChat] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  
+  // Profile state - load from localStorage
+  const [profile, setProfile] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`ff_profile_${user?.id}`);
+      return saved ? JSON.parse(saved) : { firstName: '', lastName: '', address: '' };
+    } catch { return { firstName: '', lastName: '', address: '' }; }
+  });
 
   const handleSignOut = async () => {
     const sb = await initSupabase();
     if (sb) await sb.auth.signOut();
   };
 
-  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  // Save profile to localStorage
+  const saveProfile = (newProfile) => {
+    setProfile(newProfile);
+    if (user?.id) {
+      localStorage.setItem(`ff_profile_${user.id}`, JSON.stringify(newProfile));
+    }
+  };
+
+  // Display name: use profile first name if available, otherwise email
+  const displayName = profile.firstName || user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
+  
+  // Get initials for profile avatar
+  const getInitials = () => {
+    if (profile.firstName && profile.lastName) {
+      return `${profile.firstName[0]}${profile.lastName[0]}`.toUpperCase();
+    }
+    if (profile.firstName) {
+      return profile.firstName[0].toUpperCase();
+    }
+    return user?.email?.[0]?.toUpperCase() || 'U';
+  };
 
   return (
     <div style={{ minHeight: '100vh', background: '#0c0a1d', color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
@@ -752,11 +972,43 @@ function Dashboard({
           </button>
           <div>
             <div style={{ fontWeight: '600', fontSize: '18px' }}>Family Finance</div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Welcome back, {userName}!</div>
+            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Welcome back, {displayName}!</div>
           </div>
         </div>
         
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          {/* Profile Button */}
+          <button 
+            onClick={() => setShowProfileModal(true)}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px', 
+              padding: '8px 16px', 
+              background: 'rgba(255,255,255,0.1)', 
+              border: '1px solid rgba(255,255,255,0.2)', 
+              borderRadius: '10px', 
+              color: 'white', 
+              cursor: 'pointer',
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <div style={{ 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '50%', 
+              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              fontSize: '13px',
+              fontWeight: '600'
+            }}>
+              {getInitials()}
+            </div>
+            <span style={{ fontSize: '14px' }}>Profile</span>
+          </button>
+
           {lastImportDate && (
             <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span style={{ fontSize: '16px' }}>📥</span>
@@ -775,35 +1027,63 @@ function Dashboard({
         </div>
       </header>
 
-      {/* Navigation Tabs */}
-      <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', gap: '8px' }}>
-        {[
-          { id: 'home', label: '🏠 Home' },
-          { id: 'budget', label: '💰 Budget' },
-          { id: 'bills', label: '📅 Bills' },
-          { id: 'goals', label: '🎯 Goals' },
-          { id: 'import', label: '📂 Import' },
-          { id: 'transactions', label: '📋 Transactions' },
-          { id: 'settings', label: '⚙️ Settings' }
-        ].map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            style={{
-              padding: '12px 24px',
-              background: activeTab === tab.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'transparent',
-              border: 'none',
-              borderRadius: '10px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: activeTab === tab.id ? '600' : '400'
-            }}
-          >
-            {tab.label}
-          </button>
-        ))}
+      {/* Navigation Tabs - Settings moved to far right */}
+      <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          {[
+            { id: 'home', label: '🏠 Home' },
+            { id: 'budget', label: '💰 Budget' },
+            { id: 'bills', label: '📅 Bills' },
+            { id: 'goals', label: '🎯 Goals' },
+            { id: 'import', label: '📂 Import' },
+            { id: 'transactions', label: '📋 Transactions' }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              style={{
+                padding: '12px 24px',
+                background: activeTab === tab.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'transparent',
+                border: 'none',
+                borderRadius: '10px',
+                color: 'white',
+                cursor: 'pointer',
+                fontSize: '14px',
+                fontWeight: activeTab === tab.id ? '600' : '400'
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+        
+        {/* Settings on far right */}
+        <button
+          onClick={() => setActiveTab('settings')}
+          style={{
+            padding: '12px 24px',
+            background: activeTab === 'settings' ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.1)',
+            border: activeTab === 'settings' ? 'none' : '1px solid rgba(255,255,255,0.2)',
+            borderRadius: '10px',
+            color: 'white',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: activeTab === 'settings' ? '600' : '400'
+          }}
+        >
+          ⚙️ Settings
+        </button>
       </nav>
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <ProfileModal 
+          profile={profile} 
+          email={user?.email} 
+          onSave={saveProfile} 
+          onClose={() => setShowProfileModal(false)} 
+        />
+      )}
 
       {/* Main Content */}
       <main style={{ padding: '24px', maxWidth: '1400px', margin: '0 auto' }}>
