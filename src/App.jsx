@@ -967,8 +967,51 @@ function Dashboard({
         justifyContent: 'space-between' 
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <button onClick={() => setView('landing')} style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ color: 'white', fontWeight: 'bold', fontSize: '18px' }}>FF</span>
+          {/* Logo Button - navigates to Dashboard */}
+          <button 
+            onClick={() => setActiveTab('home')} 
+            style={{ 
+              width: '48px', 
+              height: '48px', 
+              borderRadius: '14px', 
+              background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #8B5CF6 100%)', 
+              border: 'none', 
+              cursor: 'pointer', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center',
+              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
+              position: 'relative',
+              overflow: 'hidden'
+            }}
+            title="Go to Dashboard"
+          >
+            {/* Shine effect */}
+            <div style={{ 
+              position: 'absolute', 
+              top: 0, 
+              left: '-50%', 
+              width: '50%', 
+              height: '100%', 
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
+              transform: 'skewX(-20deg)'
+            }} />
+            {/* Logo SVG */}
+            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+              {/* Outer ring */}
+              <circle cx="14" cy="14" r="12" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none"/>
+              {/* Dollar sign stylized */}
+              <path 
+                d="M14 6V8M14 20V22M10 12C10 10.3431 11.7909 9 14 9C16.2091 9 18 10.3431 18 12C18 13.6569 16.2091 15 14 15C11.7909 15 10 16.3431 10 18C10 19.6569 11.7909 21 14 21C16.2091 21 18 19.6569 18 18" 
+                stroke="white" 
+                strokeWidth="2" 
+                strokeLinecap="round"
+                fill="none"
+              />
+              {/* Sparkle accents */}
+              <circle cx="7" cy="10" r="1" fill="rgba(255,255,255,0.6)"/>
+              <circle cx="21" cy="18" r="1" fill="rgba(255,255,255,0.6)"/>
+            </svg>
           </button>
           <div>
             <div style={{ fontWeight: '600', fontSize: '18px' }}>Family Finance</div>
@@ -997,12 +1040,13 @@ function Dashboard({
               alignItems: 'center', 
               gap: '10px', 
               padding: '8px 16px', 
-              background: 'rgba(255,255,255,0.1)', 
-              border: '1px solid rgba(255,255,255,0.2)', 
+              background: 'rgba(255,255,255,0.08)', 
+              border: '1px solid rgba(255,255,255,0.1)', 
               borderRadius: '10px', 
               color: 'white', 
               cursor: 'pointer',
-              transition: 'all 0.2s ease'
+              transition: 'all 0.2s ease',
+              backdropFilter: 'blur(10px)'
             }}
           >
             <div style={{ 
@@ -1021,17 +1065,17 @@ function Dashboard({
             <span style={{ fontSize: '14px' }}>Profile</span>
           </button>
 
-          <button onClick={handleSignOut} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', cursor: 'pointer', fontSize: '14px' }}>
+          <button onClick={handleSignOut} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', cursor: 'pointer', fontSize: '14px', backdropFilter: 'blur(10px)' }}>
             Sign Out
           </button>
         </div>
       </header>
 
-      {/* Navigation Tabs - Settings moved to far right, consistent box styling */}
+      {/* Navigation Tabs - Softer inactive styling */}
       <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', gap: '8px' }}>
           {[
-            { id: 'home', label: '🏠 Home' },
+            { id: 'home', label: '🏠 Dashboard' },
             { id: 'budget', label: '💰 Budget' },
             { id: 'bills', label: '📅 Bills' },
             { id: 'goals', label: '🎯 Goals' },
@@ -1043,13 +1087,18 @@ function Dashboard({
               onClick={() => setActiveTab(tab.id)}
               style={{
                 padding: '12px 24px',
-                background: activeTab === tab.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.1)',
-                border: activeTab === tab.id ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                background: activeTab === tab.id 
+                  ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+                  : 'rgba(139, 92, 246, 0.1)',
+                border: 'none',
                 borderRadius: '10px',
                 color: 'white',
                 cursor: 'pointer',
                 fontSize: '14px',
-                fontWeight: activeTab === tab.id ? '600' : '400'
+                fontWeight: activeTab === tab.id ? '600' : '400',
+                opacity: activeTab === tab.id ? 1 : 0.8,
+                transition: 'all 0.2s ease',
+                backdropFilter: 'blur(10px)'
               }}
             >
               {tab.label}
@@ -1062,13 +1111,18 @@ function Dashboard({
           onClick={() => setActiveTab('settings')}
           style={{
             padding: '12px 24px',
-            background: activeTab === 'settings' ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.1)',
-            border: activeTab === 'settings' ? 'none' : '1px solid rgba(255,255,255,0.2)',
+            background: activeTab === 'settings' 
+              ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
+              : 'rgba(139, 92, 246, 0.1)',
+            border: 'none',
             borderRadius: '10px',
             color: 'white',
             cursor: 'pointer',
             fontSize: '14px',
-            fontWeight: activeTab === 'settings' ? '600' : '400'
+            fontWeight: activeTab === 'settings' ? '600' : '400',
+            opacity: activeTab === 'settings' ? 1 : 0.8,
+            transition: 'all 0.2s ease',
+            backdropFilter: 'blur(10px)'
           }}
         >
           ⚙️ Settings
