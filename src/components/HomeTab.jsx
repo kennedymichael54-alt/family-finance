@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 // ============================================================================
 // HOME TAB - Split Dashboard: Personal vs Side Hustle View (Full Width)
@@ -13,6 +13,20 @@ const formatCurrency = (amount, hideValue = false) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   }).format(amount);
+};
+
+// Get today's date formatted
+const getTodayFormatted = () => {
+  return new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+};
+
+// Get last import date
+const getLastImportDate = () => {
+  try {
+    const saved = localStorage.getItem('ff_last_import');
+    if (saved) return new Date(saved).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
+    return 'Never';
+  } catch { return 'Never'; }
 };
 
 // Side hustle detection keywords
@@ -414,12 +428,108 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
   const hasFilteredData = filteredTransactions.length > 0;
   const hasSideHustleData = sideHustleTransactions.length > 0;
 
+  // Selected bank accounts for display
+  const [selectedPersonalBanks, setSelectedPersonalBanks] = useState(['all']);
+  const [selectedSideHustleBanks, setSelectedSideHustleBanks] = useState(['all']);
+  const [selectedInvestmentInstitutions, setSelectedInvestmentInstitutions] = useState(['all']);
+  const [showBankSelector, setShowBankSelector] = useState(null); // 'personal', 'sidehustle', 'investments', or null
+
+  // Sample bank accounts - in real app would come from imports
+  const personalBanksList = [
+    { id: 'usaa', name: 'USAA Checking', balance: personalStats.income - personalStats.expenses, color: '#10B981' },
+    { id: 'navy', name: 'Navy Federal', balance: 2450.00, color: '#3B82F6' },
+    { id: 'synovus', name: 'Synovus', balance: 1200.00, color: '#8B5CF6' }
+  ];
+
+  const sideHustleBanksList = [
+    { id: 'business', name: 'Business Checking', balance: sideHustleStats.income - sideHustleStats.expenses, color: '#EC4899' },
+    { id: 'savings', name: 'Business Savings', balance: 5000.00, color: '#F59E0B' }
+  ];
+
+  // Filter displayed banks based on selection
+  const displayedPersonalBanks = selectedPersonalBanks.includes('all') ? personalBanksList : personalBanksList.filter(b => selectedPersonalBanks.includes(b.id));
+  const displayedSideHustleBanks = selectedSideHustleBanks.includes('all') ? sideHustleBanksList : sideHustleBanksList.filter(b => selectedSideHustleBanks.includes(b.id));
+  const displayedInvestments = selectedInvestmentInstitutions.includes('all') ? Object.entries(investmentsByInstitution) : Object.entries(investmentsByInstitution).filter(([inst]) => selectedInvestmentInstitutions.includes(inst));
+
+  // Toggle bank selection
+  const toggleBankSelection = (type, id) => {
+    if (type === 'personal') {
+      if (id === 'all') {
+        setSelectedPersonalBanks(['all']);
+      } else {
+        const newSelection = selectedPersonalBanks.filter(b => b !== 'all');
+        if (newSelection.includes(id)) {
+          const filtered = newSelection.filter(b => b !== id);
+          setSelectedPersonalBanks(filtered.length === 0 ? ['all'] : filtered);
+        } else {
+          setSelectedPersonalBanks([...newSelection, id]);
+        }
+      }
+    } else if (type === 'sidehustle') {
+      if (id === 'all') {
+        setSelectedSideHustleBanks(['all']);
+      } else {
+        const newSelection = selectedSideHustleBanks.filter(b => b !== 'all');
+        if (newSelection.includes(id)) {
+          const filtered = newSelection.filter(b => b !== id);
+          setSelectedSideHustleBanks(filtered.length === 0 ? ['all'] : filtered);
+        } else {
+          setSelectedSideHustleBanks([...newSelection, id]);
+        }
+      }
+    } else if (type === 'investments') {
+      if (id === 'all') {
+        setSelectedInvestmentInstitutions(['all']);
+      } else {
+        const newSelection = selectedInvestmentInstitutions.filter(b => b !== 'all');
+        if (newSelection.includes(id)) {
+          const filtered = newSelection.filter(b => b !== id);
+          setSelectedInvestmentInstitutions(filtered.length === 0 ? ['all'] : filtered);
+        } else {
+          setSelectedInvestmentInstitutions([...newSelection, id]);
+        }
+      }
+    }
+  };
+
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const fullMonthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
   return (
     <div style={{ animation: 'slideIn 0.3s ease' }}>
-      {/* Top Balances Bar - Date Selector | Personal Banks | Side Hustle Banks | Investments */}
+      {/* DATA DASHBOARD HEADER - Live/Current Data */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))',
+        borderRadius: '16px',
+        padding: '16px 24px',
+        marginBottom: '20px',
+        border: '1px solid rgba(16, 185, 129, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            width: '40px', height: '40px', borderRadius: '12px',
+            background: 'linear-gradient(135deg, #10B981, #3B82F6)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '20px'
+          }}>📊</div>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'white' }}>Data Dashboard</h2>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>Real-time account balances as of {getTodayFormatted()}</p>
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Last Import</div>
+          <div style={{ fontSize: '13px', color: '#10B981', fontWeight: '600' }}>{getLastImportDate()}</div>
+        </div>
+      </div>
+
+      {/* Top Balances Bar - Period Selector | Personal Banks | Side Hustle Banks | Investments */}
       <div style={{ 
         display: 'grid', 
-        gridTemplateColumns: '1fr 2px 1fr 2px 1fr 2px 1fr', 
+        gridTemplateColumns: '1.2fr 2px 1fr 2px 1fr 2px 1fr', 
         gap: '0',
         background: 'rgba(30, 27, 56, 0.8)', 
         backdropFilter: 'blur(20px)', 
@@ -428,40 +538,81 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
         marginBottom: '24px',
         overflow: 'hidden'
       }}>
-        {/* Date Selector Section */}
+        {/* Modern Period Selector Section */}
         <div style={{ padding: '20px' }}>
           <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span>📅</span> Period Selection
           </div>
-          {/* Year Buttons */}
-          <div style={{ display: 'flex', gap: '4px', marginBottom: '10px', flexWrap: 'wrap' }}>
+          
+          {/* Year Row */}
+          <div style={{ display: 'flex', gap: '6px', marginBottom: '12px' }}>
             {[selectedYear - 1, selectedYear, selectedYear + 1].map(year => (
               <button key={year} onClick={() => setSelectedYear(year)}
-                style={{ padding: '6px 12px', background: selectedYear === year ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.08)', 
-                  border: 'none', borderRadius: '6px', color: 'white', fontSize: '11px', fontWeight: selectedYear === year ? '600' : '400', cursor: 'pointer' }}>
+                style={{ 
+                  flex: 1, padding: '10px 8px', 
+                  background: selectedYear === year ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', 
+                  border: selectedYear === year ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                  borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: selectedYear === year ? '700' : '500', 
+                  cursor: 'pointer', transition: 'all 0.2s',
+                  boxShadow: selectedYear === year ? '0 4px 15px rgba(139, 92, 246, 0.4)' : 'none'
+                }}>
                 {year}
               </button>
             ))}
           </div>
-          {/* Month Buttons */}
-          <div style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+          
+          {/* Month Grid - 4x3 */}
+          <div style={{ 
+            display: 'grid', 
+            gridTemplateColumns: 'repeat(4, 1fr)', 
+            gap: '6px',
+            background: 'rgba(255,255,255,0.03)',
+            borderRadius: '12px',
+            padding: '8px'
+          }}>
+            {/* All Button */}
             <button onClick={() => setSelectedMonth(null)}
-              style={{ padding: '5px 8px', background: selectedMonth === null ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', 
-                border: '1px solid rgba(255,255,255,0.1)', borderRadius: '5px', color: 'white', fontSize: '10px', cursor: 'pointer' }}>
-              All
+              style={{ 
+                gridColumn: 'span 4',
+                padding: '8px', 
+                background: selectedMonth === null ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.08)', 
+                border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                boxShadow: selectedMonth === null ? '0 2px 10px rgba(139, 92, 246, 0.3)' : 'none'
+              }}>
+              📆 All {selectedYear}
             </button>
-            {['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'].map((m, i) => (
-              <button key={i} onClick={() => setSelectedMonth(i)}
-                style={{ padding: '5px 7px', background: selectedMonth === i ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', 
-                  border: new Date().getMonth() === i && selectedYear === new Date().getFullYear() ? '1px solid rgba(139, 92, 246, 0.5)' : '1px solid rgba(255,255,255,0.1)', 
-                  borderRadius: '5px', color: 'white', fontSize: '10px', cursor: 'pointer' }}>
-                {m}
-              </button>
-            ))}
+            
+            {/* Month Buttons in 4x3 grid */}
+            {monthNames.map((m, i) => {
+              const isCurrentMonth = new Date().getMonth() === i && selectedYear === new Date().getFullYear();
+              const isSelected = selectedMonth === i;
+              return (
+                <button key={i} onClick={() => setSelectedMonth(i)}
+                  style={{ 
+                    padding: '10px 4px', 
+                    background: isSelected ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 
+                               isCurrentMonth ? 'rgba(139, 92, 246, 0.2)' : 'rgba(255,255,255,0.05)', 
+                    border: isCurrentMonth && !isSelected ? '1px solid rgba(139, 92, 246, 0.5)' : 'none',
+                    borderRadius: '8px', color: 'white', fontSize: '11px', fontWeight: isSelected ? '700' : '500',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                    boxShadow: isSelected ? '0 2px 8px rgba(139, 92, 246, 0.3)' : 'none'
+                  }}>
+                  {m}
+                </button>
+              );
+            })}
           </div>
-          <div style={{ marginTop: '10px', padding: '8px', background: 'rgba(139, 92, 246, 0.15)', borderRadius: '6px', textAlign: 'center' }}>
-            <span style={{ color: '#EC4899', fontWeight: '600', fontSize: '11px' }}>
-              {selectedMonth !== null ? `${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][selectedMonth]} ${selectedYear}` : `${selectedYear}`}
+          
+          {/* Current Selection Display */}
+          <div style={{ 
+            marginTop: '12px', padding: '10px', 
+            background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))', 
+            borderRadius: '10px', textAlign: 'center',
+            border: '1px solid rgba(139, 92, 246, 0.3)'
+          }}>
+            <span style={{ color: 'white', fontWeight: '700', fontSize: '13px' }}>
+              📊 {selectedMonth !== null ? `${fullMonthNames[selectedMonth]} ${selectedYear}` : `Full Year ${selectedYear}`}
             </span>
           </div>
         </div>
@@ -470,17 +621,37 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
         <div style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.4), rgba(236, 72, 153, 0.4))' }} />
 
         {/* Personal Bank Balances */}
-        <div style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>🏦</span> Personal Banking
+        <div style={{ padding: '20px', position: 'relative' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>🏦</span> Personal Banking
+            </div>
+            <button onClick={() => setShowBankSelector(showBankSelector === 'personal' ? null : 'personal')}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', fontSize: '10px', cursor: 'pointer' }}>
+              ⚙️ Select
+            </button>
           </div>
+          
+          {/* Bank Selector Dropdown */}
+          {showBankSelector === 'personal' && (
+            <div style={{ position: 'absolute', top: '50px', right: '20px', background: 'rgba(30, 27, 56, 0.98)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px', zIndex: 100, minWidth: '180px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Select Accounts</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                <input type="checkbox" checked={selectedPersonalBanks.includes('all')} onChange={() => toggleBankSelection('personal', 'all')} />
+                Show All
+              </label>
+              {personalBanksList.map(bank => (
+                <label key={bank.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                  <input type="checkbox" checked={selectedPersonalBanks.includes('all') || selectedPersonalBanks.includes(bank.id)} onChange={() => toggleBankSelection('personal', bank.id)} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: bank.color }} />
+                  {bank.name}
+                </label>
+              ))}
+            </div>
+          )}
+          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {/* Show derived or sample bank accounts */}
-            {[
-              { name: 'USAA Checking', balance: personalStats.income - personalStats.expenses, color: '#10B981' },
-              { name: 'Navy Federal', balance: 0, color: '#3B82F6' },
-              { name: 'Synovus', balance: 0, color: '#8B5CF6' }
-            ].slice(0, 3).map((bank, i) => (
+            {displayedPersonalBanks.map((bank, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: bank.color }} />
@@ -493,8 +664,8 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
             ))}
           </div>
           <div style={{ marginTop: '10px', padding: '10px', background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(16, 185, 129, 0.05))', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Period Net</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#10B981' }}>{formatCurrency(personalStats.income - personalStats.expenses)}</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Total Balance</div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#10B981' }}>{formatCurrency(displayedPersonalBanks.reduce((sum, b) => sum + b.balance, 0))}</div>
           </div>
         </div>
 
@@ -502,15 +673,37 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
         <div style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.4), rgba(236, 72, 153, 0.4))' }} />
 
         {/* Side Hustle Bank Balances */}
-        <div style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>💼</span> {sideHustleName} Banking
+        <div style={{ padding: '20px', position: 'relative' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>💼</span> {sideHustleName} Banking
+            </div>
+            <button onClick={() => setShowBankSelector(showBankSelector === 'sidehustle' ? null : 'sidehustle')}
+              style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', fontSize: '10px', cursor: 'pointer' }}>
+              ⚙️ Select
+            </button>
           </div>
+          
+          {/* Bank Selector Dropdown */}
+          {showBankSelector === 'sidehustle' && (
+            <div style={{ position: 'absolute', top: '50px', right: '20px', background: 'rgba(30, 27, 56, 0.98)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px', zIndex: 100, minWidth: '180px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Select Accounts</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                <input type="checkbox" checked={selectedSideHustleBanks.includes('all')} onChange={() => toggleBankSelection('sidehustle', 'all')} />
+                Show All
+              </label>
+              {sideHustleBanksList.map(bank => (
+                <label key={bank.id} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                  <input type="checkbox" checked={selectedSideHustleBanks.includes('all') || selectedSideHustleBanks.includes(bank.id)} onChange={() => toggleBankSelection('sidehustle', bank.id)} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: bank.color }} />
+                  {bank.name}
+                </label>
+              ))}
+            </div>
+          )}
+          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {[
-              { name: 'Business Checking', balance: sideHustleStats.income - sideHustleStats.expenses, color: '#EC4899' },
-              { name: 'Business Savings', balance: 0, color: '#F59E0B' }
-            ].slice(0, 2).map((bank, i) => (
+            {displayedSideHustleBanks.map((bank, i) => (
               <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: bank.color }} />
@@ -523,8 +716,8 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
             ))}
           </div>
           <div style={{ marginTop: '10px', padding: '10px', background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15), rgba(236, 72, 153, 0.05))', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(236, 72, 153, 0.3)' }}>
-            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Period Net</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#EC4899' }}>{formatCurrency(sideHustleStats.income - sideHustleStats.expenses)}</div>
+            <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Total Balance</div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#EC4899' }}>{formatCurrency(displayedSideHustleBanks.reduce((sum, b) => sum + b.balance, 0))}</div>
           </div>
         </div>
 
@@ -532,13 +725,40 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
         <div style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.4), rgba(236, 72, 153, 0.4))' }} />
 
         {/* Investment Balances */}
-        <div style={{ padding: '20px' }}>
-          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span>📈</span> Investments
+        <div style={{ padding: '20px', position: 'relative' }}>
+          <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>📈</span> Investments
+            </div>
+            {investments.length > 0 && (
+              <button onClick={() => setShowBankSelector(showBankSelector === 'investments' ? null : 'investments')}
+                style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '4px', padding: '4px 8px', color: 'white', fontSize: '10px', cursor: 'pointer' }}>
+                ⚙️ Select
+              </button>
+            )}
           </div>
+          
+          {/* Investment Selector Dropdown */}
+          {showBankSelector === 'investments' && investments.length > 0 && (
+            <div style={{ position: 'absolute', top: '50px', right: '20px', background: 'rgba(30, 27, 56, 0.98)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', padding: '12px', zIndex: 100, minWidth: '180px' }}>
+              <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', marginBottom: '8px' }}>Select Institutions</div>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                <input type="checkbox" checked={selectedInvestmentInstitutions.includes('all')} onChange={() => toggleBankSelection('investments', 'all')} />
+                Show All
+              </label>
+              {Object.keys(investmentsByInstitution).map((inst, i) => (
+                <label key={inst} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 0', cursor: 'pointer', fontSize: '12px' }}>
+                  <input type="checkbox" checked={selectedInvestmentInstitutions.includes('all') || selectedInvestmentInstitutions.includes(inst)} onChange={() => toggleBankSelection('investments', inst)} />
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ['#8B5CF6', '#3B82F6', '#10B981'][i % 3] }} />
+                  {inst}
+                </label>
+              ))}
+            </div>
+          )}
+          
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {investments.length > 0 ? (
-              Object.entries(investmentsByInstitution).slice(0, 3).map(([inst, data], i) => (
+              displayedInvestments.slice(0, 3).map(([inst, data], i) => (
                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: ['#8B5CF6', '#3B82F6', '#10B981'][i % 3] }} />
@@ -557,8 +777,46 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
           </div>
           <div style={{ marginTop: '10px', padding: '10px', background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(139, 92, 246, 0.05))', borderRadius: '8px', textAlign: 'center', border: '1px solid rgba(139, 92, 246, 0.3)' }}>
             <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Total Portfolio</div>
-            <div style={{ fontSize: '18px', fontWeight: '700', color: '#8B5CF6' }}>{formatCurrency(totalInvestments)}</div>
+            <div style={{ fontSize: '18px', fontWeight: '700', color: '#8B5CF6' }}>{formatCurrency(displayedInvestments.reduce((sum, [_, data]) => sum + data.total, 0))}</div>
           </div>
+        </div>
+      </div>
+
+      {/* CUSTOM DATA DASHBOARD HEADER - Period-Filtered Data */}
+      <div style={{ 
+        background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(236, 72, 153, 0.15))',
+        borderRadius: '16px',
+        padding: '16px 24px',
+        marginBottom: '20px',
+        border: '1px solid rgba(139, 92, 246, 0.3)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ 
+            width: '40px', height: '40px', borderRadius: '12px',
+            background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '20px'
+          }}>📈</div>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: '700', margin: 0, color: 'white' }}>Custom Data Dashboard</h2>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: 0 }}>
+              Filtered by Period Selection: <span style={{ color: '#EC4899', fontWeight: '600' }}>
+                {selectedMonth !== null ? `${fullMonthNames[selectedMonth]} ${selectedYear}` : `All of ${selectedYear}`}
+              </span>
+            </p>
+          </div>
+        </div>
+        <div style={{ 
+          padding: '8px 16px', 
+          background: 'rgba(255,255,255,0.1)', 
+          borderRadius: '8px',
+          fontSize: '13px',
+          color: 'rgba(255,255,255,0.8)'
+        }}>
+          {filteredTransactions.length} transactions
         </div>
       </div>
 
