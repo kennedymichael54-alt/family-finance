@@ -87,10 +87,10 @@ export default function BillsCalendarView() {
   // Bills Panel Component
   const BillsPanel = ({ title, icon, color, billsList, stats }) => (
     <div style={{ background: 'rgba(30, 27, 56, 0.8)', borderRadius: '16px', padding: '20px', border: '1px solid rgba(255,255,255,0.1)', marginBottom: '16px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '16px', position: 'relative' }}>
         <span style={{ fontSize: '24px' }}>{icon}</span>
         <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>{title}</h3>
-        <span style={{ marginLeft: 'auto', fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{billsList.length} bills</span>
+        <span style={{ position: 'absolute', right: 0, fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>{billsList.length} bills</span>
       </div>
 
       {/* Mini Stats */}
@@ -166,8 +166,8 @@ export default function BillsCalendarView() {
         </div>
       </div>
 
-      {/* Split View - Always show both panels centered */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0', maxWidth: '1600px', margin: '0 auto' }}>
+      {/* Split View - Full Width with Centered Headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0' }}>
         {/* Left Side - Bills Lists */}
         <div style={{ paddingRight: '20px' }}>
           <BillsPanel title="👤 Personal Bills" icon="🏠" color="#8B5CF6" billsList={personalBills} stats={personalStats} />
