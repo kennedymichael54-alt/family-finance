@@ -321,12 +321,225 @@ export default function RetirementTab() {
     setInvestments(investments.filter(inv => inv.id !== id));
   };
 
+  // Save investments to localStorage whenever they change
+  useEffect(() => {
+    if (investments.length > 0) {
+      localStorage.setItem('ff_investments', JSON.stringify(investments));
+    }
+  }, [investments]);
+
+  // Load investments from localStorage on mount
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ff_investments');
+      if (saved) {
+        setInvestments(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error('Error loading investments:', e);
+    }
+  }, []);
+
+  const [importStatus, setImportStatus] = useState(null);
+  const [importedData, setImportedData] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({});
+  const [csvHeaders, setCsvHeaders] = useState([]);
+  const [showMappingModal, setShowMappingModal] = useState(false);
+
+  // Detect asset type from investment name
+  const detectAssetType = (name) => {
+    const nameLower = (name || '').toLowerCase();
+    if (nameLower.includes('etf') || nameLower.includes('ishares') || nameLower.includes('spdr') || nameLower.includes('vanguard') && nameLower.includes('index')) return 'ETFs';
+    if (nameLower.includes('mutual') || nameLower.includes('fund') || nameLower.includes('fidelity') || nameLower.includes('american funds')) return 'Mutual Funds';
+    if (nameLower.includes('bond') || nameLower.includes('treasury') || nameLower.includes('fixed income') || nameLower.includes('govt')) return 'Bonds';
+    if (nameLower.includes('money market') || nameLower.includes('cash') || nameLower.includes('savings') || nameLower.includes('sweep')) return 'Cash';
+    if (nameLower.includes('reit') || nameLower.includes('real estate') || nameLower.includes('property')) return 'Real Estate';
+    if (nameLower.includes('crypto') || nameLower.includes('bitcoin') || nameLower.includes('ethereum')) return 'Crypto';
+    if (nameLower.includes('stock') || nameLower.includes('equity') || nameLower.includes('common') || nameLower.includes('preferred')) return 'Stocks';
+    // Default to stocks for individual tickers
+    if (/^[A-Z]{1,5}$/.test(name.trim())) return 'Stocks';
+    return 'Mutual Funds'; // Most brokerage holdings are mutual funds
+  };
+
+  // Parse CSV file
+  const parseCSV = (text) => {
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return { headers: [], data: [] };
+    
+    // Parse headers
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    
+    // Parse data rows
+    const data = [];
+    for (let i = 1; i < lines.length; i++) {
+      const values = [];
+      let current = '';
+      let inQuotes = false;
+      
+      for (const char of lines[i]) {
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(current.trim().replace(/"/g, ''));
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+      values.push(current.trim().replace(/"/g, ''));
+      
+      if (values.length === headers.length) {
+        const row = {};
+        headers.forEach((h, idx) => {
+          row[h] = values[idx];
+        });
+        data.push(row);
+      }
+    }
+    
+    return { headers, data };
+  };
+
+  // Auto-detect column mappings
+  const autoDetectMapping = (headers) => {
+    const mapping = { name: '', value: '', type: '', symbol: '', shares: '' };
+    const headerLower = headers.map(h => h.toLowerCase());
+    
+    // Name/Description detection
+    const namePatterns = ['name', 'description', 'security', 'investment', 'holding', 'fund name', 'asset'];
+    for (const pattern of namePatterns) {
+      const idx = headerLower.findIndex(h => h.includes(pattern));
+      if (idx !== -1) { mapping.name = headers[idx]; break; }
+    }
+    
+    // Value/Amount detection
+    const valuePatterns = ['value', 'market value', 'current value', 'amount', 'balance', 'total', 'worth'];
+    for (const pattern of valuePatterns) {
+      const idx = headerLower.findIndex(h => h.includes(pattern) && !h.includes('change'));
+      if (idx !== -1) { mapping.value = headers[idx]; break; }
+    }
+    
+    // Symbol/Ticker detection
+    const symbolPatterns = ['symbol', 'ticker', 'cusip'];
+    for (const pattern of symbolPatterns) {
+      const idx = headerLower.findIndex(h => h.includes(pattern));
+      if (idx !== -1) { mapping.symbol = headers[idx]; break; }
+    }
+    
+    // Type/Category detection
+    const typePatterns = ['type', 'category', 'asset class', 'class'];
+    for (const pattern of typePatterns) {
+      const idx = headerLower.findIndex(h => h.includes(pattern));
+      if (idx !== -1) { mapping.type = headers[idx]; break; }
+    }
+    
+    // Shares/Quantity detection
+    const sharesPatterns = ['shares', 'quantity', 'units', 'qty'];
+    for (const pattern of sharesPatterns) {
+      const idx = headerLower.findIndex(h => h.includes(pattern));
+      if (idx !== -1) { mapping.shares = headers[idx]; break; }
+    }
+    
+    return mapping;
+  };
+
+  // Parse currency string to number
+  const parseCurrency = (str) => {
+    if (!str) return 0;
+    const cleaned = str.toString().replace(/[$,\s()]/g, '').replace(/^\((.+)\)$/, '-$1');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : Math.abs(num);
+  };
+
+  // Handle file upload
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
-    if (file) {
-      setUploadedFile(file.name);
-      // In a real app, this would parse the PDF/CSV and extract investment data
+    if (!file) return;
+
+    setUploadedFile(file.name);
+    setImportStatus('processing');
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const text = event.target.result;
+        const { headers, data } = parseCSV(text);
+        
+        if (headers.length === 0 || data.length === 0) {
+          setImportStatus('error');
+          return;
+        }
+
+        setCsvHeaders(headers);
+        setImportedData(data);
+        
+        // Auto-detect column mappings
+        const detected = autoDetectMapping(headers);
+        setColumnMapping(detected);
+        
+        // If we have name and value, we can proceed
+        if (detected.name && detected.value) {
+          setImportStatus('mapped');
+        } else {
+          setImportStatus('needs-mapping');
+          setShowMappingModal(true);
+        }
+      } catch (error) {
+        console.error('CSV parsing error:', error);
+        setImportStatus('error');
+      }
+    };
+
+    reader.onerror = () => {
+      setImportStatus('error');
+    };
+
+    reader.readAsText(file);
+  };
+
+  // Import the mapped data as investments
+  const importInvestments = () => {
+    if (!columnMapping.name || !columnMapping.value) {
+      alert('Please map at least the Name and Value columns');
+      return;
     }
+
+    const newInvestments = importedData
+      .map((row, idx) => {
+        const name = row[columnMapping.name] || '';
+        const value = parseCurrency(row[columnMapping.value]);
+        const symbol = columnMapping.symbol ? row[columnMapping.symbol] : '';
+        const type = columnMapping.type ? row[columnMapping.type] : detectAssetType(name + ' ' + symbol);
+        
+        // Skip rows with no name or zero value
+        if (!name || value === 0) return null;
+        
+        return {
+          id: Date.now() + idx,
+          name: symbol ? `${name} (${symbol})` : name,
+          type: type,
+          value: value,
+          institution: uploadedFile ? uploadedFile.replace('.csv', '').replace('.CSV', '') : 'Imported',
+          dateAdded: new Date().toISOString()
+        };
+      })
+      .filter(inv => inv !== null);
+
+    if (newInvestments.length > 0) {
+      setInvestments(prev => [...prev, ...newInvestments]);
+      setImportStatus('success');
+      setActiveView('investments');
+    } else {
+      setImportStatus('no-data');
+    }
+  };
+
+  const clearImport = () => {
+    setUploadedFile(null);
+    setImportStatus(null);
+    setImportedData([]);
+    setColumnMapping({});
+    setCsvHeaders([]);
   };
 
   return (
@@ -493,32 +706,163 @@ export default function RetirementTab() {
               📄 Import Financial Statements
             </h3>
             <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginBottom: '24px' }}>
-              Upload statements from your financial advisor or brokerage to automatically import your investment data.
+              Export your holdings as CSV from your brokerage and upload here to import your investments.
             </p>
 
-            <div style={{ border: '2px dashed rgba(139, 92, 246, 0.4)', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '20px' }}>
-              <input type="file" accept=".pdf,.csv,.xlsx" onChange={handleFileUpload} style={{ display: 'none' }} id="fileUpload" />
-              <label htmlFor="fileUpload" style={{ cursor: 'pointer' }}>
-                <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
-                <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>Drop your file here or click to upload</div>
-                <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Supports PDF, CSV, XLSX</div>
-              </label>
-            </div>
+            {/* Upload Area */}
+            {!uploadedFile && (
+              <div style={{ border: '2px dashed rgba(139, 92, 246, 0.4)', borderRadius: '16px', padding: '40px', textAlign: 'center', marginBottom: '20px' }}>
+                <input type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} id="fileUpload" />
+                <label htmlFor="fileUpload" style={{ cursor: 'pointer' }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px' }}>📁</div>
+                  <div style={{ fontSize: '16px', fontWeight: '600', marginBottom: '8px' }}>Drop your CSV file here or click to upload</div>
+                  <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)' }}>Supports .CSV files exported from your brokerage</div>
+                </label>
+              </div>
+            )}
 
-            {uploadedFile && (
-              <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderRadius: '10px', padding: '14px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
-                <span style={{ fontSize: '20px' }}>✅</span>
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '14px' }}>{uploadedFile}</div>
-                  <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>File uploaded successfully</div>
+            {/* Processing Status */}
+            {importStatus === 'processing' && (
+              <div style={{ background: 'rgba(139, 92, 246, 0.1)', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                <div style={{ fontSize: '32px', marginBottom: '10px' }}>⏳</div>
+                <div style={{ fontWeight: '600' }}>Processing {uploadedFile}...</div>
+              </div>
+            )}
+
+            {/* Mapping Success */}
+            {importStatus === 'mapped' && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', padding: '16px', marginBottom: '16px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>✅</span>
+                    <div>
+                      <div style={{ fontWeight: '600' }}>{uploadedFile}</div>
+                      <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Found {importedData.length} investments ready to import</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Column Mapping Preview */}
+                <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Column Mapping (Auto-Detected)</h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Name:</span>
+                      <span style={{ fontWeight: '600', fontSize: '12px' }}>{columnMapping.name || 'Not found'}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Value:</span>
+                      <span style={{ fontWeight: '600', fontSize: '12px' }}>{columnMapping.value || 'Not found'}</span>
+                    </div>
+                    {columnMapping.symbol && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Symbol:</span>
+                        <span style={{ fontWeight: '600', fontSize: '12px' }}>{columnMapping.symbol}</span>
+                      </div>
+                    )}
+                    {columnMapping.type && (
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px', background: 'rgba(255,255,255,0.05)', borderRadius: '6px' }}>
+                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '12px' }}>Type:</span>
+                        <span style={{ fontWeight: '600', fontSize: '12px' }}>{columnMapping.type}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Preview Table */}
+                <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px', marginBottom: '16px' }}>
+                  <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Preview (First 5 rows)</h4>
+                  <div style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                    {importedData.slice(0, 5).map((row, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '10px', background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', borderRadius: '6px' }}>
+                        <span style={{ fontSize: '13px', flex: 1 }}>{row[columnMapping.name]}</span>
+                        <span style={{ fontSize: '13px', fontWeight: '600', color: '#10B981' }}>${parseCurrency(row[columnMapping.value]).toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={clearImport}
+                    style={{ flex: 1, padding: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={() => setShowMappingModal(true)}
+                    style={{ padding: '14px 20px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px', cursor: 'pointer' }}>
+                    Edit Mapping
+                  </button>
+                  <button onClick={importInvestments}
+                    style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                    Import {importedData.length} Investments
+                  </button>
                 </div>
               </div>
             )}
 
-            <div style={{ marginTop: '24px' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Supported Institutions</h4>
+            {/* Needs Manual Mapping */}
+            {importStatus === 'needs-mapping' && (
+              <div style={{ background: 'rgba(251, 191, 36, 0.1)', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(251, 191, 36, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                  <span style={{ fontSize: '24px' }}>⚠️</span>
+                  <div>
+                    <div style={{ fontWeight: '600' }}>Column mapping needed</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>We couldn't auto-detect all columns. Please map them manually.</div>
+                  </div>
+                </div>
+                <button onClick={() => setShowMappingModal(true)}
+                  style={{ padding: '10px 20px', background: 'linear-gradient(135deg, #F59E0B, #D97706)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  Map Columns
+                </button>
+              </div>
+            )}
+
+            {/* Error State */}
+            {importStatus === 'error' && (
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>❌</span>
+                  <div>
+                    <div style={{ fontWeight: '600' }}>Error parsing file</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>Please make sure you're uploading a valid CSV file.</div>
+                  </div>
+                </div>
+                <button onClick={clearImport} style={{ marginTop: '12px', padding: '8px 16px', background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '6px', color: 'white', fontSize: '12px', cursor: 'pointer' }}>
+                  Try Again
+                </button>
+              </div>
+            )}
+
+            {/* Success State */}
+            {importStatus === 'success' && (
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '24px' }}>🎉</span>
+                  <div>
+                    <div style={{ fontWeight: '600' }}>Investments imported successfully!</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)' }}>View them in the "My Investments" tab.</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* How to Export Instructions */}
+            <div style={{ marginTop: '24px', padding: '20px', background: 'rgba(59, 130, 246, 0.1)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>💡</span> How to Export from Your Brokerage
+              </h4>
+              <ol style={{ margin: 0, paddingLeft: '20px', fontSize: '13px', color: 'rgba(255,255,255,0.7)', lineHeight: '1.8' }}>
+                <li>Log in to your brokerage account (Ameriprise, Fidelity, Vanguard, etc.)</li>
+                <li>Go to "Holdings", "Positions", or "Portfolio" page</li>
+                <li>Look for "Export", "Download", or "⬇️" button</li>
+                <li>Select CSV or Excel format</li>
+                <li>Upload the downloaded file here</li>
+              </ol>
+            </div>
+
+            <div style={{ marginTop: '16px' }}>
+              <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '12px' }}>Supported Brokerages</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                {['Fidelity', 'Vanguard', 'Charles Schwab', 'TD Ameritrade', 'E*TRADE', 'Robinhood', 'Merrill Lynch', 'Morgan Stanley'].map(inst => (
+                {['Ameriprise', 'Fidelity', 'Vanguard', 'Charles Schwab', 'TD Ameritrade', 'E*TRADE', 'Robinhood', 'Merrill Lynch', 'Morgan Stanley', 'Edward Jones'].map(inst => (
                   <span key={inst} style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', fontSize: '12px' }}>{inst}</span>
                 ))}
               </div>
@@ -541,6 +885,65 @@ export default function RetirementTab() {
                   <span style={{ marginLeft: 'auto', fontSize: '11px', padding: '4px 10px', background: 'rgba(251, 191, 36, 0.2)', borderRadius: '6px', color: '#FBBF24' }}>Coming Soon</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Column Mapping Modal */}
+      {showMappingModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowMappingModal(false)}>
+          <div style={{ background: 'rgba(30, 27, 56, 0.98)', backdropFilter: 'blur(20px)', borderRadius: '24px', padding: '32px', width: '500px', border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '24px' }}>🗂️ Map CSV Columns</h3>
+            <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '20px' }}>
+              Match your CSV columns to the required fields. Name and Value are required.
+            </p>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Investment Name Column *</label>
+              <select value={columnMapping.name} onChange={e => setColumnMapping({ ...columnMapping, name: e.target.value })}
+                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px' }}>
+                <option value="" style={{ background: '#1E1B38' }}>-- Select Column --</option>
+                {csvHeaders.map(h => <option key={h} value={h} style={{ background: '#1E1B38' }}>{h}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Value/Amount Column *</label>
+              <select value={columnMapping.value} onChange={e => setColumnMapping({ ...columnMapping, value: e.target.value })}
+                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px' }}>
+                <option value="" style={{ background: '#1E1B38' }}>-- Select Column --</option>
+                {csvHeaders.map(h => <option key={h} value={h} style={{ background: '#1E1B38' }}>{h}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Symbol/Ticker Column (Optional)</label>
+              <select value={columnMapping.symbol || ''} onChange={e => setColumnMapping({ ...columnMapping, symbol: e.target.value })}
+                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px' }}>
+                <option value="" style={{ background: '#1E1B38' }}>-- None --</option>
+                {csvHeaders.map(h => <option key={h} value={h} style={{ background: '#1E1B38' }}>{h}</option>)}
+              </select>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Asset Type Column (Optional)</label>
+              <select value={columnMapping.type || ''} onChange={e => setColumnMapping({ ...columnMapping, type: e.target.value })}
+                style={{ width: '100%', padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px' }}>
+                <option value="" style={{ background: '#1E1B38' }}>-- Auto-Detect --</option>
+                {csvHeaders.map(h => <option key={h} value={h} style={{ background: '#1E1B38' }}>{h}</option>)}
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button onClick={() => setShowMappingModal(false)}
+                style={{ flex: 1, padding: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '12px', color: 'white', fontSize: '14px', cursor: 'pointer' }}>
+                Cancel
+              </button>
+              <button onClick={() => { setShowMappingModal(false); if (columnMapping.name && columnMapping.value) setImportStatus('mapped'); }}
+                style={{ flex: 1, padding: '14px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                Apply Mapping
+              </button>
             </div>
           </div>
         </div>
