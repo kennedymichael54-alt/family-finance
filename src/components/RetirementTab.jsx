@@ -597,7 +597,19 @@ export default function RetirementTab() {
                   <div style={{ background: 'rgba(30, 27, 56, 0.8)', borderRadius: '20px', padding: '24px', border: '1px solid rgba(255,255,255,0.1)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                       <h3 style={{ fontSize: '16px', fontWeight: '600', margin: 0 }}>💼 My Investments</h3>
-                      <button onClick={() => setShowAddInvestment(true)} style={{ padding: '8px 14px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button onClick={() => {
+                          const allExpanded = {};
+                          investments.forEach(inv => allExpanded[inv.id] = true);
+                          setExpandedInvestments(allExpanded);
+                        }} style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: 'white', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '10px' }}>▼</span> Expand All
+                        </button>
+                        <button onClick={() => setExpandedInvestments({})} style={{ padding: '6px 12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: 'white', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          <span style={{ fontSize: '10px' }}>▲</span> Collapse All
+                        </button>
+                        <button onClick={() => setShowAddInvestment(true)} style={{ padding: '8px 14px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>+ Add</button>
+                      </div>
                     </div>
                     <div style={{ maxHeight: '500px', overflowY: 'auto', paddingRight: '8px' }}>
                       {investments.map(inv => (
