@@ -439,7 +439,7 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
             {/* Side Hustle Panel - Only show if there's data */}
             {hasSideHustleData && (
               <DashboardPanel
-                title={`💼 ${sideHustleName}`}
+                title={`💼 ${sideHustleName || 'Side Hustle'}`}
                 icon="💼"
                 color="#EC4899"
                 income={sideHustleStats.income}
@@ -466,9 +466,9 @@ export default function HomeTab({ transactions = [], bills = [], goals = [], onN
             }}>
               <span style={{ fontSize: '24px' }}>💼</span>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>Have a Side Hustle?</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>Have a Side Hustle or Second Job?</div>
                 <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                  Go to the Transactions tab and mark income sources as "Side Hustle" to see a split view of your Personal vs Side Hustle finances!
+                  Go to the Transactions tab and mark income sources as "Side Hustle" to see a split view. You can also rename "Side Hustle" to your career (e.g., "Real Estate Agent", "Hair Stylist")!
                 </div>
               </div>
             </div>
