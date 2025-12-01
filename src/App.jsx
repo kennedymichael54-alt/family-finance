@@ -1416,14 +1416,14 @@ function GoalsTab({ goals, onUpdateGoals }) {
 
   const GoalsPanel = ({ title, icon, color, goalsList, type }) => (
     <div style={{ flex: 1 }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '14px 20px', background: `linear-gradient(135deg, ${color}25, ${color}10)`, borderRadius: '14px', border: `1px solid ${color}40` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', padding: '14px 20px', background: `linear-gradient(135deg, ${color}25, ${color}10)`, borderRadius: '14px', border: `1px solid ${color}40`, position: 'relative' }}>
         <span style={{ fontSize: '28px' }}>{icon}</span>
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>{title}</h3>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: '2px 0 0 0' }}>{goalsList.length} goals</p>
         </div>
         <button onClick={() => { setNewGoal({ ...newGoal, type, color }); setShowAddGoal(true); }}
-          style={{ marginLeft: 'auto', padding: '8px 14px', background: `linear-gradient(135deg, ${color}, ${color}CC)`, border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+          style={{ position: 'absolute', right: '20px', padding: '8px 14px', background: `linear-gradient(135deg, ${color}, ${color}CC)`, border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
           + Add
         </button>
       </div>
@@ -1450,8 +1450,8 @@ function GoalsTab({ goals, onUpdateGoals }) {
         </button>
       </div>
 
-      {/* Split View - Always show both panels centered */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0', maxWidth: '1600px', margin: '0 auto' }}>
+      {/* Split View - Full Width with Centered Headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0' }}>
         <div style={{ paddingRight: '20px' }}>
           <GoalsPanel title="👤 Personal Goals" icon="🏠" color="#8B5CF6" goalsList={personalGoals} type="personal" />
         </div>
