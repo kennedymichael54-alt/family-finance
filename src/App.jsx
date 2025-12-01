@@ -11,6 +11,7 @@ import ProductShowcase from './components/FamilyFinance-ProductGraphics';
 import TransactionsTab from './components/TransactionsTab';
 import ReportsTab from './components/ReportsTab';
 import RetirementTab from './components/RetirementTab';
+import SalesTrackerTab from './components/SalesTrackerTab';
 
 // ============================================================================
 // FAMILY FINANCE - COMPREHENSIVE APP WITH REAL DATA SUPPORT
@@ -1183,6 +1184,7 @@ function Dashboard({
         <div style={{ display: 'flex', gap: '8px' }}>
           {[
             { id: 'home', label: '🏠 Dashboard' },
+            { id: 'sales', label: '🏠 Sales Tracker' },
             { id: 'budget', label: '💰 Budget' },
             { id: 'transactions', label: '📋 Transactions' },
             { id: 'bills', label: '📅 Bills' },
@@ -1278,6 +1280,7 @@ function Dashboard({
             onNavigateToImport={() => setActiveTab('import')}
           />
         )}
+        {activeTab === 'sales' && <SalesTrackerTab />}
         {activeTab === 'budget' && (
           <BudgetTab 
             transactions={transactions}
@@ -1302,6 +1305,7 @@ function Dashboard({
         {activeTab === 'transactions' && (
           <TransactionsTab 
             transactions={transactions}
+            goals={goals}
             onNavigateToImport={() => setActiveTab('import')}
           />
         )}
