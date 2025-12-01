@@ -266,12 +266,19 @@ function ReportPanel({ title, icon, color, transactions, dateRange }) {
         </div>
       </div>
 
-      {/* Report Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
-        {['income', 'spending', 'cashflow'].map(report => (
-          <button key={report} onClick={() => setExpandedReport(report)}
-            style={{ padding: '10px 16px', background: expandedReport === report ? `linear-gradient(135deg, ${color}, ${color}CC)` : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '12px', fontWeight: expandedReport === report ? '600' : '400', cursor: 'pointer' }}>
-            {report === 'income' ? '💰 Income' : report === 'spending' ? '🛍️ Spending' : '💹 Cash Flow'}
+      {/* Report Tabs - Extended Options */}
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '16px', flexWrap: 'wrap' }}>
+        {[
+          { id: 'income', label: '💰 Income', icon: '💰' },
+          { id: 'spending', label: '🛍️ Spending', icon: '🛍️' },
+          { id: 'cashflow', label: '💹 Cash Flow', icon: '💹' },
+          { id: 'trends', label: '📈 Trends', icon: '📈' },
+          { id: 'networth', label: '💎 Net Worth', icon: '💎' },
+          { id: 'progress', label: '🎯 Progress', icon: '🎯' }
+        ].map(report => (
+          <button key={report.id} onClick={() => setExpandedReport(report.id)}
+            style={{ padding: '8px 12px', background: expandedReport === report.id ? `linear-gradient(135deg, ${color}, ${color}CC)` : 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '11px', fontWeight: expandedReport === report.id ? '600' : '400', cursor: 'pointer' }}>
+            {report.label}
           </button>
         ))}
       </div>
@@ -318,6 +325,81 @@ function ReportPanel({ title, icon, color, transactions, dateRange }) {
           <div>
             <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>💹 Cash Flow Visualization</h4>
             <SankeyDiagram incomeBySource={incomeBySource} expensesByCategory={expensesByCategory} totalIncome={totalIncome} color={color} />
+          </div>
+        )}
+
+        {expandedReport === 'trends' && (
+          <div>
+            <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>📈 Cash Flow Trends</h4>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '20px' }}>
+              <div style={{ background: 'rgba(16, 185, 129, 0.1)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Avg Monthly Income</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#10B981' }}>{formatCurrency(totalIncome / Math.max(monthlyData.length, 1))}</div>
+              </div>
+              <div style={{ background: 'rgba(239, 68, 68, 0.1)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '4px' }}>Avg Monthly Expenses</div>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#EF4444' }}>{formatCurrency(totalExpenses / Math.max(monthlyData.length, 1))}</div>
+              </div>
+            </div>
+            <h5 style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', marginBottom: '12px' }}>Monthly Comparison</h5>
+            <BarChart data={monthlyData} color={color} />
+          </div>
+        )}
+
+        {expandedReport === 'networth' && (
+          <div>
+            <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>💎 Net Worth Progress</h4>
+            <div style={{ textAlign: 'center', padding: '40px', background: `linear-gradient(135deg, ${color}20, ${color}10)`, borderRadius: '16px', marginBottom: '20px' }}>
+              <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)', marginBottom: '8px' }}>Cumulative Savings</div>
+              <div style={{ fontSize: '36px', fontWeight: '700', color: totalIncome - totalExpenses >= 0 ? '#10B981' : '#EF4444' }}>
+                {totalIncome - totalExpenses >= 0 ? '+' : ''}{formatCurrency(totalIncome - totalExpenses)}
+              </div>
+              <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginTop: '8px' }}>Based on tracked transactions</div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>Total Income</div>
+                <div style={{ fontSize: '20px', fontWeight: '600', color: '#10B981' }}>{formatCurrency(totalIncome)}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '16px' }}>
+                <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', marginBottom: '4px' }}>Total Expenses</div>
+                <div style={{ fontSize: '20px', fontWeight: '600', color: '#EF4444' }}>{formatCurrency(totalExpenses)}</div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {expandedReport === 'progress' && (
+          <div>
+            <h4 style={{ fontSize: '15px', fontWeight: '600', marginBottom: '16px' }}>🎯 Plan Progress</h4>
+            <div style={{ marginBottom: '20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                <span style={{ fontSize: '13px' }}>Savings Rate Goal: 20%</span>
+                <span style={{ fontSize: '13px', fontWeight: '600', color: (totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome * 100 : 0) >= 20 ? '#10B981' : '#F59E0B' }}>
+                  {totalIncome > 0 ? ((totalIncome - totalExpenses) / totalIncome * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+              <div style={{ height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '6px', overflow: 'hidden' }}>
+                <div style={{ width: `${Math.min((totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome * 100 : 0) / 20 * 100, 100)}%`, height: '100%', background: (totalIncome > 0 ? (totalIncome - totalExpenses) / totalIncome * 100 : 0) >= 20 ? '#10B981' : `linear-gradient(90deg, ${color}, #F59E0B)`, borderRadius: '6px' }} />
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>📊</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Transactions</div>
+                <div style={{ fontSize: '18px', fontWeight: '600' }}>{transactions.length}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>📅</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Months Tracked</div>
+                <div style={{ fontSize: '18px', fontWeight: '600' }}>{monthlyData.length}</div>
+              </div>
+              <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', marginBottom: '4px' }}>💵</div>
+                <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>Categories</div>
+                <div style={{ fontSize: '18px', fontWeight: '600' }}>{Object.keys(expensesByCategory).length}</div>
+              </div>
+            </div>
           </div>
         )}
       </div>
