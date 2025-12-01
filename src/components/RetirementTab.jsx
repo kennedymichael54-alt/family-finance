@@ -345,32 +345,159 @@ export default function RetirementTab() {
   const [columnMapping, setColumnMapping] = useState({});
   const [csvHeaders, setCsvHeaders] = useState([]);
   const [showMappingModal, setShowMappingModal] = useState(false);
+  const [detectedFormat, setDetectedFormat] = useState(null);
+  const [accountBreakdown, setAccountBreakdown] = useState([]);
 
-  // Detect asset type from investment name
-  const detectAssetType = (name) => {
+  // Detect asset type from account name
+  const detectAccountType = (name) => {
     const nameLower = (name || '').toLowerCase();
-    if (nameLower.includes('etf') || nameLower.includes('ishares') || nameLower.includes('spdr') || nameLower.includes('vanguard') && nameLower.includes('index')) return 'ETFs';
-    if (nameLower.includes('mutual') || nameLower.includes('fund') || nameLower.includes('fidelity') || nameLower.includes('american funds')) return 'Mutual Funds';
-    if (nameLower.includes('bond') || nameLower.includes('treasury') || nameLower.includes('fixed income') || nameLower.includes('govt')) return 'Bonds';
-    if (nameLower.includes('money market') || nameLower.includes('cash') || nameLower.includes('savings') || nameLower.includes('sweep')) return 'Cash';
-    if (nameLower.includes('reit') || nameLower.includes('real estate') || nameLower.includes('property')) return 'Real Estate';
-    if (nameLower.includes('crypto') || nameLower.includes('bitcoin') || nameLower.includes('ethereum')) return 'Crypto';
-    if (nameLower.includes('stock') || nameLower.includes('equity') || nameLower.includes('common') || nameLower.includes('preferred')) return 'Stocks';
-    // Default to stocks for individual tickers
-    if (/^[A-Z]{1,5}$/.test(name.trim())) return 'Stocks';
-    return 'Mutual Funds'; // Most brokerage holdings are mutual funds
+    if (nameLower.includes('ira')) return 'IRA';
+    if (nameLower.includes('vul') || nameLower.includes('variable universal')) return 'VUL (Life Insurance)';
+    if (nameLower.includes('401k') || nameLower.includes('401(k)')) return '401(k)';
+    if (nameLower.includes('roth')) return 'Roth IRA';
+    if (nameLower.includes('annuity')) return 'Annuity';
+    if (nameLower.includes('brokerage')) return 'Brokerage';
+    if (nameLower.includes('advisory')) return 'Advisory';
+    if (nameLower.includes('cash')) return 'Cash';
+    return 'Investment Account';
   };
 
-  // Parse CSV file
-  const parseCSV = (text) => {
+  // Detect owner from account name
+  const detectOwner = (name) => {
+    const nameParts = (name || '').split(' ');
+    // Usually first 1-2 words are the name
+    if (nameParts.length >= 2) {
+      const firstName = nameParts[0].toUpperCase();
+      // Check if it looks like a name (not an account type word)
+      const skipWords = ['AMERIPRISE', 'SPS', 'ADVISOR', 'BROKERAGE', 'TOTAL'];
+      if (!skipWords.includes(firstName) && firstName.length > 1) {
+        return nameParts[0].charAt(0) + nameParts[0].slice(1).toLowerCase();
+      }
+    }
+    return 'Account Holder';
+  };
+
+  // Parse currency string to number
+  const parseCurrency = (str) => {
+    if (!str) return 0;
+    const cleaned = str.toString().replace(/[$,\s()]/g, '').replace(/^\((.+)\)$/, '-$1');
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : Math.abs(num);
+  };
+
+  // Parse Ameriprise-specific CSV format
+  const parseAmeripriseCSV = (text) => {
+    const lines = text.split('\n');
+    const accounts = [];
+    let currentSection = '';
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line || line === ',') continue;
+      
+      // Detect section headers
+      if (line.includes('"Advisory Accounts"') && !line.includes('Inception')) {
+        currentSection = 'Advisory';
+        continue;
+      }
+      if (line.includes('"Brokerage and Cash Accounts"') && !line.includes('Inception')) {
+        currentSection = 'Brokerage';
+        continue;
+      }
+      if (line.includes('"Insurance and Annuity Accounts"') && !line.includes('Value')) {
+        currentSection = 'Insurance';
+        continue;
+      }
+      if (line.includes('"Inactive Accounts"')) {
+        currentSection = 'Inactive';
+        continue;
+      }
+      if (line.includes('"Progress"')) {
+        currentSection = 'Progress';
+        continue;
+      }
+      
+      // Skip headers and totals
+      if (line.includes('Investment Timeframe') || line.includes('Inception Date') || 
+          line.includes('"Total "') || line.includes('"Accounts"') ||
+          currentSection === 'Inactive' || currentSection === 'Progress' ||
+          line.includes('Investment Rate of Return')) {
+        continue;
+      }
+      
+      // Parse account lines based on section
+      const parts = line.split(',').map(p => p.replace(/"/g, '').trim());
+      
+      if (currentSection === 'Advisory' || currentSection === 'Brokerage') {
+        // Format: "Account Name","Timeframe Risk","Inception","Value","YTD",...
+        const accountName = parts[0];
+        const currentValue = parts[3];
+        const ytdReturn = parts[4];
+        
+        if (accountName && currentValue && !accountName.includes('Accounts')) {
+          accounts.push({
+            id: Date.now() + accounts.length,
+            name: accountName.split('(')[0].trim(),
+            fullName: accountName,
+            type: detectAccountType(accountName),
+            owner: detectOwner(accountName),
+            value: parseCurrency(currentValue),
+            ytdReturn: ytdReturn || '',
+            section: currentSection,
+            institution: 'Ameriprise',
+            dateAdded: new Date().toISOString()
+          });
+        }
+      } else if (currentSection === 'Insurance') {
+        // Format: "Account Name","Value"
+        const accountName = parts[0];
+        const value = parts[1];
+        
+        if (accountName && value && !accountName.includes('Accounts')) {
+          accounts.push({
+            id: Date.now() + accounts.length,
+            name: accountName.split('(')[0].trim(),
+            fullName: accountName,
+            type: detectAccountType(accountName),
+            owner: detectOwner(accountName),
+            value: parseCurrency(value),
+            ytdReturn: '',
+            section: 'Insurance',
+            institution: 'Ameriprise',
+            dateAdded: new Date().toISOString()
+          });
+        }
+      }
+    }
+    
+    return accounts;
+  };
+
+  // Detect CSV format (Ameriprise vs generic)
+  const detectCSVFormat = (text) => {
+    if (text.includes('Household Group') && text.includes('Advisory Accounts') && text.includes('Ameriprise')) {
+      return 'ameriprise';
+    }
+    if (text.includes('Fidelity') || text.includes('NetBenefits')) {
+      return 'fidelity';
+    }
+    if (text.includes('Vanguard')) {
+      return 'vanguard';
+    }
+    if (text.includes('Schwab')) {
+      return 'schwab';
+    }
+    return 'generic';
+  };
+
+  // Parse generic CSV file
+  const parseGenericCSV = (text) => {
     const lines = text.trim().split('\n');
     if (lines.length < 2) return { headers: [], data: [] };
     
-    // Parse headers
     const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-    
-    // Parse data rows
     const data = [];
+    
     for (let i = 1; i < lines.length; i++) {
       const values = [];
       let current = '';
@@ -400,55 +527,36 @@ export default function RetirementTab() {
     return { headers, data };
   };
 
-  // Auto-detect column mappings
+  // Auto-detect column mappings for generic CSV
   const autoDetectMapping = (headers) => {
     const mapping = { name: '', value: '', type: '', symbol: '', shares: '' };
     const headerLower = headers.map(h => h.toLowerCase());
     
-    // Name/Description detection
     const namePatterns = ['name', 'description', 'security', 'investment', 'holding', 'fund name', 'asset'];
     for (const pattern of namePatterns) {
       const idx = headerLower.findIndex(h => h.includes(pattern));
       if (idx !== -1) { mapping.name = headers[idx]; break; }
     }
     
-    // Value/Amount detection
     const valuePatterns = ['value', 'market value', 'current value', 'amount', 'balance', 'total', 'worth'];
     for (const pattern of valuePatterns) {
       const idx = headerLower.findIndex(h => h.includes(pattern) && !h.includes('change'));
       if (idx !== -1) { mapping.value = headers[idx]; break; }
     }
     
-    // Symbol/Ticker detection
     const symbolPatterns = ['symbol', 'ticker', 'cusip'];
     for (const pattern of symbolPatterns) {
       const idx = headerLower.findIndex(h => h.includes(pattern));
       if (idx !== -1) { mapping.symbol = headers[idx]; break; }
     }
     
-    // Type/Category detection
     const typePatterns = ['type', 'category', 'asset class', 'class'];
     for (const pattern of typePatterns) {
       const idx = headerLower.findIndex(h => h.includes(pattern));
       if (idx !== -1) { mapping.type = headers[idx]; break; }
     }
     
-    // Shares/Quantity detection
-    const sharesPatterns = ['shares', 'quantity', 'units', 'qty'];
-    for (const pattern of sharesPatterns) {
-      const idx = headerLower.findIndex(h => h.includes(pattern));
-      if (idx !== -1) { mapping.shares = headers[idx]; break; }
-    }
-    
     return mapping;
-  };
-
-  // Parse currency string to number
-  const parseCurrency = (str) => {
-    if (!str) return 0;
-    const cleaned = str.toString().replace(/[$,\s()]/g, '').replace(/^\((.+)\)$/, '-$1');
-    const num = parseFloat(cleaned);
-    return isNaN(num) ? 0 : Math.abs(num);
   };
 
   // Handle file upload
@@ -463,26 +571,41 @@ export default function RetirementTab() {
     reader.onload = (event) => {
       try {
         const text = event.target.result;
-        const { headers, data } = parseCSV(text);
+        const format = detectCSVFormat(text);
+        setDetectedFormat(format);
         
-        if (headers.length === 0 || data.length === 0) {
-          setImportStatus('error');
-          return;
-        }
-
-        setCsvHeaders(headers);
-        setImportedData(data);
-        
-        // Auto-detect column mappings
-        const detected = autoDetectMapping(headers);
-        setColumnMapping(detected);
-        
-        // If we have name and value, we can proceed
-        if (detected.name && detected.value) {
-          setImportStatus('mapped');
+        if (format === 'ameriprise') {
+          // Use Ameriprise-specific parser
+          const accounts = parseAmeripriseCSV(text);
+          
+          if (accounts.length === 0) {
+            setImportStatus('error');
+            return;
+          }
+          
+          setAccountBreakdown(accounts);
+          setImportStatus('ameriprise-ready');
         } else {
-          setImportStatus('needs-mapping');
-          setShowMappingModal(true);
+          // Use generic parser
+          const { headers, data } = parseGenericCSV(text);
+          
+          if (headers.length === 0 || data.length === 0) {
+            setImportStatus('error');
+            return;
+          }
+
+          setCsvHeaders(headers);
+          setImportedData(data);
+          
+          const detected = autoDetectMapping(headers);
+          setColumnMapping(detected);
+          
+          if (detected.name && detected.value) {
+            setImportStatus('mapped');
+          } else {
+            setImportStatus('needs-mapping');
+            setShowMappingModal(true);
+          }
         }
       } catch (error) {
         console.error('CSV parsing error:', error);
@@ -497,12 +620,30 @@ export default function RetirementTab() {
     reader.readAsText(file);
   };
 
-  // Import the mapped data as investments
+  // Import Ameriprise accounts
+  const importAmeripriseAccounts = () => {
+    if (accountBreakdown.length === 0) return;
+    
+    setInvestments(prev => [...prev, ...accountBreakdown]);
+    setImportStatus('success');
+    setActiveView('investments');
+  };
+
+  // Import generic mapped data
   const importInvestments = () => {
     if (!columnMapping.name || !columnMapping.value) {
       alert('Please map at least the Name and Value columns');
       return;
     }
+
+    const detectAssetType = (name) => {
+      const nameLower = (name || '').toLowerCase();
+      if (nameLower.includes('etf')) return 'ETFs';
+      if (nameLower.includes('mutual') || nameLower.includes('fund')) return 'Mutual Funds';
+      if (nameLower.includes('bond')) return 'Bonds';
+      if (nameLower.includes('money market') || nameLower.includes('cash')) return 'Cash';
+      return 'Stocks';
+    };
 
     const newInvestments = importedData
       .map((row, idx) => {
@@ -511,7 +652,6 @@ export default function RetirementTab() {
         const symbol = columnMapping.symbol ? row[columnMapping.symbol] : '';
         const type = columnMapping.type ? row[columnMapping.type] : detectAssetType(name + ' ' + symbol);
         
-        // Skip rows with no name or zero value
         if (!name || value === 0) return null;
         
         return {
@@ -540,7 +680,31 @@ export default function RetirementTab() {
     setImportedData([]);
     setColumnMapping({});
     setCsvHeaders([]);
+    setAccountBreakdown([]);
+    setDetectedFormat(null);
   };
+
+  // Group accounts by type for display
+  const accountsByType = useMemo(() => {
+    const grouped = {};
+    accountBreakdown.forEach(acc => {
+      const type = acc.type || 'Other';
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(acc);
+    });
+    return grouped;
+  }, [accountBreakdown]);
+
+  // Group investments by type for the investments view
+  const investmentsByOwner = useMemo(() => {
+    const grouped = {};
+    investments.forEach(inv => {
+      const owner = inv.owner || 'Account Holder';
+      if (!grouped[owner]) grouped[owner] = [];
+      grouped[owner].push(inv);
+    });
+    return grouped;
+  }, [investments]);
 
   return (
     <div style={{ animation: 'slideIn 0.3s ease' }}>
@@ -726,6 +890,77 @@ export default function RetirementTab() {
               <div style={{ background: 'rgba(139, 92, 246, 0.1)', borderRadius: '12px', padding: '20px', textAlign: 'center', marginBottom: '20px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
                 <div style={{ fontSize: '32px', marginBottom: '10px' }}>⏳</div>
                 <div style={{ fontWeight: '600' }}>Processing {uploadedFile}...</div>
+              </div>
+            )}
+
+            {/* Ameriprise Format Detected */}
+            {importStatus === 'ameriprise-ready' && (
+              <div style={{ marginBottom: '20px' }}>
+                <div style={{ background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(59, 130, 246, 0.15))', borderRadius: '16px', padding: '20px', marginBottom: '20px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                    <span style={{ fontSize: '32px' }}>🎯</span>
+                    <div>
+                      <div style={{ fontWeight: '700', fontSize: '18px' }}>Ameriprise Format Detected!</div>
+                      <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>Found {accountBreakdown.length} accounts totaling {formatCurrency(accountBreakdown.reduce((sum, a) => sum + a.value, 0))}</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Account Breakdown by Type */}
+                {Object.entries(accountsByType).map(([type, accounts]) => (
+                  <div key={type} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '14px', padding: '16px', marginBottom: '12px', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                      <h4 style={{ fontSize: '15px', fontWeight: '600', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>{type.includes('IRA') ? '🏦' : type.includes('VUL') ? '🛡️' : type.includes('401') ? '💼' : '📊'}</span>
+                        {type}
+                      </h4>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#10B981' }}>
+                        {formatCurrency(accounts.reduce((sum, a) => sum + a.value, 0))}
+                      </span>
+                    </div>
+                    {accounts.map((acc, idx) => (
+                      <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: idx % 2 === 0 ? 'rgba(255,255,255,0.03)' : 'transparent', borderRadius: '8px', marginBottom: '4px' }}>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: '500' }}>{acc.name}</div>
+                          <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>{acc.owner} • {acc.section}</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '14px', fontWeight: '600', color: '#10B981' }}>{formatCurrency(acc.value)}</div>
+                          {acc.ytdReturn && <div style={{ fontSize: '11px', color: acc.ytdReturn.includes('-') ? '#EF4444' : '#10B981' }}>YTD: {acc.ytdReturn}</div>}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+
+                {/* Summary */}
+                <div style={{ background: 'linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.2))', borderRadius: '14px', padding: '20px', marginBottom: '16px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', textAlign: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: '4px' }}>Total Accounts</div>
+                      <div style={{ fontSize: '24px', fontWeight: '700' }}>{accountBreakdown.length}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: '4px' }}>Account Types</div>
+                      <div style={{ fontSize: '24px', fontWeight: '700' }}>{Object.keys(accountsByType).length}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', marginBottom: '4px' }}>Total Value</div>
+                      <div style={{ fontSize: '24px', fontWeight: '700', color: '#10B981' }}>{formatCurrency(accountBreakdown.reduce((sum, a) => sum + a.value, 0))}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button onClick={clearImport}
+                    style={{ flex: 1, padding: '14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', fontSize: '14px', cursor: 'pointer' }}>
+                    Cancel
+                  </button>
+                  <button onClick={importAmeripriseAccounts}
+                    style={{ flex: 2, padding: '14px', background: 'linear-gradient(135deg, #10B981, #059669)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
+                    Import {accountBreakdown.length} Accounts
+                  </button>
+                </div>
               </div>
             )}
 
