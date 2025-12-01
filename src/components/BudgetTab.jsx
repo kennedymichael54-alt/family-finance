@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 
 // ============================================================================
-// BUDGET TAB - Split Personal/Side Hustle View
+// BUDGET TAB - Budget vs Actual Comparison View
 // ============================================================================
 
 const formatCurrency = (amount) => {
@@ -33,16 +33,12 @@ const extractVendor = (description) => {
   return description.replace(/^(IN \*|SQ \*|TST\*|PP\*|PAYPAL \*|VENMO\s+)/i, '').replace(/\s+\d{2,}.*$/i, '').trim().toLowerCase().slice(0, 25);
 };
 
-// Compact Month/Year Selector
+// Compact Month/Year Selector matching dashboard style
 function MonthYearSelector({ selectedYear, setSelectedYear, selectedMonth, setSelectedMonth }) {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
   const years = [currentYear - 2, currentYear - 1, currentYear, currentYear + 1];
-  const months = [
-    { num: 0, short: 'Jan' }, { num: 1, short: 'Feb' }, { num: 2, short: 'Mar' }, { num: 3, short: 'Apr' },
-    { num: 4, short: 'May' }, { num: 5, short: 'Jun' }, { num: 6, short: 'Jul' }, { num: 7, short: 'Aug' },
-    { num: 8, short: 'Sep' }, { num: 9, short: 'Oct' }, { num: 10, short: 'Nov' }, { num: 11, short: 'Dec' }
-  ];
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
 
   return (
@@ -62,10 +58,10 @@ function MonthYearSelector({ selectedYear, setSelectedYear, selectedMonth, setSe
             style={{ padding: '8px 10px', background: selectedMonth === null ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '11px', cursor: 'pointer' }}>
             📅 All
           </button>
-          {months.map(month => (
-            <button key={month.num} onClick={() => setSelectedMonth(month.num)}
-              style={{ padding: '8px 10px', background: selectedMonth === month.num ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', border: currentMonth === month.num && selectedYear === currentYear ? '2px solid rgba(139, 92, 246, 0.5)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '11px', cursor: 'pointer' }}>
-              {month.short}
+          {months.map((month, i) => (
+            <button key={i} onClick={() => setSelectedMonth(i)}
+              style={{ padding: '8px 10px', background: selectedMonth === i ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'rgba(255,255,255,0.05)', border: currentMonth === i && selectedYear === currentYear ? '2px solid rgba(139, 92, 246, 0.5)' : '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: 'white', fontSize: '11px', cursor: 'pointer' }}>
+              {month}
             </button>
           ))}
         </div>
@@ -80,10 +76,31 @@ function MonthYearSelector({ selectedYear, setSelectedYear, selectedMonth, setSe
   );
 }
 
-// Budget Panel Component
+// Budget Health Score Component
+function BudgetHealthScore({ score, label, color }) {
+  const circumference = 2 * Math.PI * 40;
+  const strokeDashoffset = circumference - (score / 100) * circumference;
+  
+  return (
+    <div style={{ position: 'relative', width: '100px', height: '100px' }}>
+      <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
+        <circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="8" />
+        <circle cx="50" cy="50" r="40" fill="none" stroke={color} strokeWidth="8"
+          strokeDasharray={circumference} strokeDashoffset={strokeDashoffset}
+          strokeLinecap="round" style={{ transition: 'stroke-dashoffset 0.5s ease' }} />
+      </svg>
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ fontSize: '24px', fontWeight: '700', color }}>{score.toFixed(0)}%</div>
+        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>{label}</div>
+      </div>
+    </div>
+  );
+}
+
+// Budget Panel Component with Actual vs Budget comparison
 function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) {
   const [showAddCategory, setShowAddCategory] = useState(false);
-  const [newCategory, setNewCategory] = useState({ name: '', budget: '', emoji: '📦' });
+  const [newCategory, setNewCategory] = useState({ name: '', budget: '' });
 
   const income = useMemo(() => {
     return transactions.filter(tx => parseFloat(tx.amount || tx.Amount) > 0).reduce((sum, tx) => sum + parseFloat(tx.amount || tx.Amount), 0);
@@ -111,6 +128,12 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
     })).sort((a, b) => b.spent - a.spent);
   }, [transactions, budgets]);
 
+  const totalBudgeted = Object.values(budgets).reduce((sum, b) => sum + (parseFloat(b) || 0), 0);
+  const totalSpent = expenses;
+  const budgetHealth = totalBudgeted > 0 ? Math.max(0, Math.min(100, ((totalBudgeted - totalSpent) / totalBudgeted + 1) * 50)) : 50;
+  const categoriesOnTrack = categorySpending.filter(c => c.budget > 0 && c.spent <= c.budget).length;
+  const categoriesOverBudget = categorySpending.filter(c => c.budget > 0 && c.spent > c.budget).length;
+
   const getCategoryEmoji = (cat) => categoryEmojiMap[cat] || '📦';
 
   const handleSetBudget = (category, amount) => {
@@ -121,13 +144,13 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
   const addCategory = () => {
     if (!newCategory.name || !newCategory.budget) return;
     handleSetBudget(newCategory.name, newCategory.budget);
-    setNewCategory({ name: '', budget: '', emoji: '📦' });
+    setNewCategory({ name: '', budget: '' });
     setShowAddCategory(false);
   };
 
   return (
     <div style={{ flex: 1 }}>
-      {/* Header - Centered */}
+      {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', padding: '14px 20px', background: `linear-gradient(135deg, ${color}25, ${color}10)`, borderRadius: '14px', border: `1px solid ${color}40`, position: 'relative' }}>
         <span style={{ fontSize: '28px' }}>{icon}</span>
         <div style={{ textAlign: 'center' }}>
@@ -137,6 +160,60 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
         <button onClick={() => setShowAddCategory(true)} style={{ position: 'absolute', right: '20px', padding: '8px 14px', background: `linear-gradient(135deg, ${color}, ${color}CC)`, border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
           + Add Category
         </button>
+      </div>
+
+      {/* Budget Health Overview */}
+      <div style={{ background: 'rgba(30, 27, 56, 0.8)', borderRadius: '16px', padding: '20px', marginBottom: '16px', border: '1px solid rgba(255,255,255,0.1)' }}>
+        <h4 style={{ fontSize: '14px', fontWeight: '600', marginBottom: '16px', textAlign: 'center' }}>📊 Budget Health Overview</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '20px', alignItems: 'center' }}>
+          {/* Left - Actual vs Budget */}
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+              <span style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>Actual vs Budget</span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: totalSpent <= totalBudgeted ? '#10B981' : '#EF4444' }}>
+                {totalBudgeted > 0 ? ((totalSpent / totalBudgeted) * 100).toFixed(0) : 0}% used
+              </span>
+            </div>
+            <div style={{ height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '10px', overflow: 'hidden', position: 'relative' }}>
+              <div style={{ 
+                position: 'absolute', top: 0, left: 0, height: '100%',
+                width: `${Math.min((totalSpent / (totalBudgeted || 1)) * 100, 100)}%`,
+                background: totalSpent <= totalBudgeted ? 'linear-gradient(90deg, #10B981, #059669)' : 'linear-gradient(90deg, #EF4444, #DC2626)',
+                borderRadius: '10px', transition: 'width 0.5s ease'
+              }} />
+              {totalBudgeted > 0 && (
+                <div style={{ position: 'absolute', top: 0, left: `${Math.min((totalBudgeted / (Math.max(totalSpent, totalBudgeted) || 1)) * 100, 100)}%`, height: '100%', width: '2px', background: '#F59E0B' }} />
+              )}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>
+              <span>Spent: {formatCurrency(totalSpent)}</span>
+              <span>Budget: {formatCurrency(totalBudgeted)}</span>
+            </div>
+          </div>
+
+          {/* Center - Health Score */}
+          <BudgetHealthScore score={budgetHealth} label="Health" color={budgetHealth >= 70 ? '#10B981' : budgetHealth >= 40 ? '#F59E0B' : '#EF4444'} />
+
+          {/* Right - Category Status */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+            <div style={{ background: 'rgba(16, 185, 129, 0.15)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#10B981' }}>{categoriesOnTrack}</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>On Track</div>
+            </div>
+            <div style={{ background: 'rgba(239, 68, 68, 0.15)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#EF4444' }}>{categoriesOverBudget}</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Over Budget</div>
+            </div>
+            <div style={{ background: 'rgba(139, 92, 246, 0.15)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B5CF6' }}>{categorySpending.length}</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Categories</div>
+            </div>
+            <div style={{ background: surplus >= 0 ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+              <div style={{ fontSize: '18px', fontWeight: '700', color: surplus >= 0 ? '#10B981' : '#EF4444' }}>{surplus >= 0 ? '+' : ''}{formatCurrency(surplus)}</div>
+              <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.5)' }}>Net</div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Summary Stats */}
@@ -155,19 +232,20 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
         </div>
       </div>
 
-      {/* Categories List */}
+      {/* Categories List with Budget Comparison */}
       <div style={{ background: 'rgba(30, 27, 56, 0.8)', borderRadius: '14px', border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
-        <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '14px', fontWeight: '600' }}>Categories</div>
-        <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.1)', fontSize: '14px', fontWeight: '600' }}>Categories - Actual vs Budget</div>
+        <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
           {categorySpending.length === 0 ? (
             <div style={{ padding: '32px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: '13px' }}>No spending data</div>
           ) : (
             categorySpending.map(cat => {
               const percentSpent = cat.budget > 0 ? (cat.spent / cat.budget) * 100 : 0;
               const isOverBudget = cat.budget > 0 && cat.spent > cat.budget;
+              const remaining = cat.budget - cat.spent;
               return (
                 <div key={cat.name} style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <span style={{ fontSize: '20px' }}>{getCategoryEmoji(cat.name)}</span>
                       <div>
@@ -175,22 +253,31 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
                         <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.4)' }}>{cat.transactionCount} transactions</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: '600', fontSize: '14px', color: isOverBudget ? '#EF4444' : 'white' }}>{formatCurrency(cat.spent)}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>Actual</div>
+                        <div style={{ fontWeight: '600', fontSize: '14px', color: isOverBudget ? '#EF4444' : 'white' }}>{formatCurrency(cat.spent)}</div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>Budget</div>
+                        <input type="number" placeholder="Set..." value={cat.budget || ''} onChange={(e) => handleSetBudget(cat.name, e.target.value)}
+                          style={{ width: '80px', padding: '4px 8px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: 'white', fontSize: '12px', textAlign: 'right' }} />
+                      </div>
                       {cat.budget > 0 && (
-                        <div style={{ fontSize: '11px', color: 'rgba(255,255,255,0.5)' }}>of {formatCurrency(cat.budget)}</div>
+                        <div style={{ textAlign: 'right', minWidth: '70px' }}>
+                          <div style={{ fontSize: '10px', color: 'rgba(255,255,255,0.4)' }}>{remaining >= 0 ? 'Remaining' : 'Over'}</div>
+                          <div style={{ fontWeight: '600', fontSize: '13px', color: remaining >= 0 ? '#10B981' : '#EF4444' }}>
+                            {remaining >= 0 ? '' : '-'}{formatCurrency(Math.abs(remaining))}
+                          </div>
+                        </div>
                       )}
                     </div>
                   </div>
                   {cat.budget > 0 && (
-                    <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                      <div style={{ width: `${Math.min(percentSpent, 100)}%`, height: '100%', background: isOverBudget ? '#EF4444' : color, borderRadius: '3px', transition: 'width 0.5s ease' }} />
+                    <div style={{ height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${Math.min(percentSpent, 100)}%`, height: '100%', background: isOverBudget ? 'linear-gradient(90deg, #EF4444, #DC2626)' : 'linear-gradient(90deg, #10B981, #059669)', borderRadius: '4px', transition: 'width 0.3s ease' }} />
                     </div>
                   )}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                    <input type="number" placeholder="Set budget" value={cat.budget || ''} onChange={(e) => handleSetBudget(cat.name, e.target.value)}
-                      style={{ flex: 1, padding: '6px 10px', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '6px', color: 'white', fontSize: '11px' }} />
-                  </div>
                 </div>
               );
             })
@@ -201,17 +288,17 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
       {/* Add Category Modal */}
       {showAddCategory && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowAddCategory(false)}>
-          <div style={{ background: 'rgba(30, 27, 56, 0.98)', borderRadius: '20px', padding: '28px', width: '360px', border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>➕ Add Budget Category</h3>
+          <div style={{ background: 'rgba(30, 27, 56, 0.98)', borderRadius: '20px', padding: '24px', width: '360px', border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px' }}>+ Add Budget Category</h3>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Category Name</label>
-              <input value={newCategory.name} onChange={e => setNewCategory({ ...newCategory, name: e.target.value })} placeholder="e.g., Dining Out"
-                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>Category Name</label>
+              <input type="text" value={newCategory.name} onChange={(e) => setNewCategory({ ...newCategory, name: e.target.value })} placeholder="e.g., Groceries"
+                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', fontSize: '13px', color: 'rgba(255,255,255,0.7)' }}>Monthly Budget ($)</label>
-              <input type="number" value={newCategory.budget} onChange={e => setNewCategory({ ...newCategory, budget: e.target.value })} placeholder="500"
-                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', boxSizing: 'border-box' }} />
+              <label style={{ display: 'block', marginBottom: '6px', fontSize: '12px', color: 'rgba(255,255,255,0.7)' }}>Monthly Budget ($)</label>
+              <input type="number" value={newCategory.budget} onChange={(e) => setNewCategory({ ...newCategory, budget: e.target.value })} placeholder="500"
+                style={{ width: '100%', padding: '10px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '8px', color: 'white', fontSize: '13px', boxSizing: 'border-box' }} />
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button onClick={() => setShowAddCategory(false)} style={{ flex: 1, padding: '12px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '10px', color: 'white', cursor: 'pointer' }}>Cancel</button>
@@ -224,19 +311,27 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
   );
 }
 
-export default function BudgetTab({ transactions = [], onNavigateToImport }) {
+export default function BudgetTab({ transactions = [] }) {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
-  const [personalBudgets, setPersonalBudgets] = useState({});
-  const [sideHustleBudgets, setSideHustleBudgets] = useState({});
-
-  const incomeTypeMap = useMemo(() => {
+  const [personalBudgets, setPersonalBudgets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ff_personal_budgets') || '{}'); } catch { return {}; }
+  });
+  const [sideHustleBudgets, setSideHustleBudgets] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('ff_sidehustle_budgets') || '{}'); } catch { return {}; }
+  });
+  const [incomeTypeMap] = useState(() => {
     try { return JSON.parse(localStorage.getItem('ff_income_types') || '{}'); } catch { return {}; }
-  }, []);
+  });
+  const sideHustleName = localStorage.getItem('ff_sidehustle_name') || 'Side Hustle';
 
-  const sideHustleName = useMemo(() => {
-    try { return localStorage.getItem('ff_sidehustle_name') || 'Side Hustle'; } catch { return 'Side Hustle'; }
-  }, []);
+  useEffect(() => {
+    localStorage.setItem('ff_personal_budgets', JSON.stringify(personalBudgets));
+  }, [personalBudgets]);
+
+  useEffect(() => {
+    localStorage.setItem('ff_sidehustle_budgets', JSON.stringify(sideHustleBudgets));
+  }, [sideHustleBudgets]);
 
   const isSideHustle = (tx) => {
     const vendor = extractVendor(tx.description || tx.Description || '');
@@ -246,7 +341,7 @@ export default function BudgetTab({ transactions = [], onNavigateToImport }) {
     return SIDE_HUSTLE_KEYWORDS.some(keyword => combined.includes(keyword));
   };
 
-  const filteredTransactions = useMemo(() => {
+  const filteredByDate = useMemo(() => {
     return transactions.filter(tx => {
       const txDate = new Date(tx.date || tx.Date);
       if (selectedMonth === null) return txDate.getFullYear() === selectedYear;
@@ -255,42 +350,39 @@ export default function BudgetTab({ transactions = [], onNavigateToImport }) {
   }, [transactions, selectedMonth, selectedYear]);
 
   const { personalTransactions, sideHustleTransactions } = useMemo(() => {
-    const personal = filteredTransactions.filter(tx => !isSideHustle(tx));
-    const sideHustle = filteredTransactions.filter(tx => isSideHustle(tx));
+    const personal = filteredByDate.filter(tx => !isSideHustle(tx));
+    const sideHustle = filteredByDate.filter(tx => isSideHustle(tx));
     return { personalTransactions: personal, sideHustleTransactions: sideHustle };
-  }, [filteredTransactions, incomeTypeMap]);
-
-  const hasSideHustleData = sideHustleTransactions.length > 0;
-  const hasData = transactions.length > 0;
-
-  if (!hasData) {
-    return (
-      <div style={{ animation: 'slideIn 0.3s ease' }}>
-        <MonthYearSelector selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px', textAlign: 'center', background: 'rgba(30, 27, 56, 0.5)', borderRadius: '20px', border: '1px dashed rgba(255,255,255,0.2)' }}>
-          <div style={{ fontSize: '64px', marginBottom: '20px' }}>📂</div>
-          <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '8px' }}>No transactions imported</h3>
-          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.5)', marginBottom: '24px' }}>Import your transactions to start budgeting!</p>
-          <button onClick={onNavigateToImport} style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', border: 'none', borderRadius: '12px', color: 'white', fontSize: '15px', fontWeight: '600', cursor: 'pointer' }}>📥 Import Data</button>
-        </div>
-      </div>
-    );
-  }
+  }, [filteredByDate]);
 
   return (
     <div style={{ animation: 'slideIn 0.3s ease' }}>
       <MonthYearSelector selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
 
-      {/* Split View - Full Width with Centered Headers */}
+      {/* Split View */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0' }}>
         <div style={{ paddingRight: '20px' }}>
-          <BudgetPanel title="👤 Personal Budget" icon="🏠" color="#8B5CF6" transactions={personalTransactions} budgets={personalBudgets} setBudgets={setPersonalBudgets} />
+          <BudgetPanel
+            title="👤 Personal Budget"
+            icon="🏠"
+            color="#8B5CF6"
+            transactions={personalTransactions}
+            budgets={personalBudgets}
+            setBudgets={setPersonalBudgets}
+          />
         </div>
 
         <div style={{ background: 'linear-gradient(180deg, rgba(139, 92, 246, 0.6), rgba(236, 72, 153, 0.6), rgba(139, 92, 246, 0.6))', borderRadius: '2px' }} />
-        
+
         <div style={{ paddingLeft: '20px' }}>
-          <BudgetPanel title={`💼 ${sideHustleName} Budget`} icon="💼" color="#EC4899" transactions={sideHustleTransactions} budgets={sideHustleBudgets} setBudgets={setSideHustleBudgets} />
+          <BudgetPanel
+            title={`👤 ${sideHustleName} Budget`}
+            icon="👤"
+            color="#EC4899"
+            transactions={sideHustleTransactions}
+            budgets={sideHustleBudgets}
+            setBudgets={setSideHustleBudgets}
+          />
         </div>
       </div>
 
