@@ -127,14 +127,14 @@ function BudgetPanel({ title, icon, color, transactions, budgets, setBudgets }) 
 
   return (
     <div style={{ flex: 1 }}>
-      {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px', padding: '14px 20px', background: `linear-gradient(135deg, ${color}25, ${color}10)`, borderRadius: '14px', border: `1px solid ${color}40` }}>
+      {/* Header - Centered */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', marginBottom: '16px', padding: '14px 20px', background: `linear-gradient(135deg, ${color}25, ${color}10)`, borderRadius: '14px', border: `1px solid ${color}40`, position: 'relative' }}>
         <span style={{ fontSize: '28px' }}>{icon}</span>
-        <div>
+        <div style={{ textAlign: 'center' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '700', margin: 0 }}>{title}</h3>
           <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', margin: '2px 0 0 0' }}>{transactions.length} transactions</p>
         </div>
-        <button onClick={() => setShowAddCategory(true)} style={{ marginLeft: 'auto', padding: '8px 14px', background: `linear-gradient(135deg, ${color}, ${color}CC)`, border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
+        <button onClick={() => setShowAddCategory(true)} style={{ position: 'absolute', right: '20px', padding: '8px 14px', background: `linear-gradient(135deg, ${color}, ${color}CC)`, border: 'none', borderRadius: '8px', color: 'white', fontSize: '12px', fontWeight: '600', cursor: 'pointer' }}>
           + Add Category
         </button>
       </div>
@@ -281,8 +281,8 @@ export default function BudgetTab({ transactions = [], onNavigateToImport }) {
     <div style={{ animation: 'slideIn 0.3s ease' }}>
       <MonthYearSelector selectedYear={selectedYear} setSelectedYear={setSelectedYear} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
 
-      {/* Split View - Always show both panels centered */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0', maxWidth: '1600px', margin: '0 auto' }}>
+      {/* Split View - Full Width with Centered Headers */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0' }}>
         <div style={{ paddingRight: '20px' }}>
           <BudgetPanel title="👤 Personal Budget" icon="🏠" color="#8B5CF6" transactions={personalTransactions} budgets={personalBudgets} setBudgets={setPersonalBudgets} />
         </div>
