@@ -786,15 +786,40 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         .hub-glow { animation: glow 2s ease-in-out infinite; }
         h1, h2, h3 { letter-spacing: -0.025em; }
         html { scroll-behavior: smooth; }
+        
+        /* Mobile First - Apple Style Responsive */
         @media (max-width: 768px) {
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; }
-          .pricing-grid, .hub-grid, .feature-row, .stats-row { flex-direction: column !important; }
-          .device-mockups { transform: scale(0.8); }
+          .pricing-grid, .hub-grid, .feature-row, .stats-row { flex-direction: column !important; align-items: center !important; }
+          .device-mockups { transform: scale(0.55) !important; margin: -40px 0 !important; }
+          section { padding: 60px 20px !important; }
+          h1 { font-size: 36px !important; }
+          h2 { font-size: 28px !important; }
+          h3 { font-size: 20px !important; }
+          p { font-size: 16px !important; }
+          .feature-mockups-container { flex-direction: column !important; }
+          .feature-mockups-container > div { width: 100% !important; max-width: 100% !important; }
         }
+        
+        @media (max-width: 480px) {
+          .device-mockups { transform: scale(0.45) !important; margin: -60px 0 !important; }
+          section { padding: 48px 16px !important; }
+          h1 { font-size: 32px !important; line-height: 1.15 !important; }
+          h2 { font-size: 24px !important; }
+          .cookie-banner { flex-direction: column !important; text-align: center !important; padding: 20px !important; }
+          .cookie-banner > div:first-child { flex-direction: column !important; }
+        }
+        
         @media (min-width: 769px) {
           .mobile-menu-btn { display: none !important; }
           .mobile-menu { display: none !important; }
+        }
+        
+        /* Touch-friendly targets */
+        @media (hover: none) and (pointer: coarse) {
+          .apple-button { min-height: 48px; min-width: 48px; }
+          a, button { min-height: 44px; display: inline-flex; align-items: center; }
         }
       `}</style>
 
@@ -898,16 +923,16 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
       {/* Navigation */}
       <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, padding: '12px 20px',
+        position: 'fixed', top: 0, left: 0, right: 0, padding: '16px 40px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         background: isScrolled ? 'rgba(255,255,255,0.9)' : 'transparent',
         backdropFilter: isScrolled ? 'saturate(180%) blur(20px)' : 'none',
         borderBottom: isScrolled ? `0.5px solid ${colors.gray5}` : 'none',
         transition: 'all 0.3s ease', zIndex: 1000
       }}>
-        <Logo size={32} />
+        <Logo size={44} />
         
-        <div className="desktop-nav" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
+        <div className="desktop-nav" style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
           {[
             { label: 'Features', id: 'features' },
             { label: 'Pricing', id: 'pricing' },
@@ -916,40 +941,62 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             { label: 'Support', id: 'support' }
           ].map(item => (
             <a key={item.id} onClick={() => scrollToSection(item.id)}
-              style={{ color: colors.secondary, textDecoration: 'none', fontSize: '14px', fontWeight: '400', cursor: 'pointer' }}
+              style={{ color: colors.secondary, textDecoration: 'none', fontSize: '16px', fontWeight: '500', cursor: 'pointer' }}
               onMouseOver={e => e.target.style.color = colors.label}
               onMouseOut={e => e.target.style.color = colors.secondary}>
               {item.label}
             </a>
           ))}
           <button onClick={() => handleSignIn()}
-            style={{ padding: '8px 14px', background: 'transparent', border: 'none', fontSize: '14px', color: colors.blue, cursor: 'pointer' }}>Sign In</button>
+            style={{ padding: '10px 18px', background: 'transparent', border: 'none', fontSize: '16px', color: colors.blue, cursor: 'pointer', fontWeight: '500' }}>Sign In</button>
           <button onClick={() => handleStartTrial()} className="apple-button"
-            style={{ padding: '8px 16px', background: colors.blue, border: 'none', borderRadius: '980px', color: '#FFF', fontSize: '14px', fontWeight: '500' }}>Get Started</button>
+            style={{ padding: '12px 24px', background: colors.blue, border: 'none', borderRadius: '980px', color: '#FFF', fontSize: '16px', fontWeight: '600' }}>Get Started</button>
         </div>
 
         <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          style={{ display: 'none', background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', padding: '8px' }}>
+          style={{ display: 'none', background: 'none', border: 'none', fontSize: '28px', cursor: 'pointer', padding: '8px' }}>
           {mobileMenuOpen ? '✕' : '☰'}
         </button>
       </nav>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu - Apple Style Full Screen */}
       {mobileMenuOpen && (
         <div className="mobile-menu" style={{
-          position: 'fixed', top: '60px', left: 0, right: 0, background: 'rgba(255,255,255,0.98)',
-          backdropFilter: 'blur(20px)', padding: '20px', zIndex: 999, borderBottom: `1px solid ${colors.gray5}`
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
+          background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)', 
+          padding: '100px 24px 40px', zIndex: 999,
+          display: 'flex', flexDirection: 'column', overflowY: 'auto'
         }}>
-          {['Features', 'Pricing', 'About', 'Tutorials', 'Support'].map(item => (
-            <a key={item} onClick={() => scrollToSection(item.toLowerCase())}
-              style={{ display: 'block', padding: '12px 0', fontSize: '16px', color: colors.label, textDecoration: 'none', borderBottom: `1px solid ${colors.gray5}` }}>
-              {item}
-            </a>
-          ))}
-          <button onClick={() => { setMobileMenuOpen(false); handleStartTrial(); }} className="apple-button"
-            style={{ width: '100%', marginTop: '16px', padding: '14px', background: colors.blue, border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '16px', fontWeight: '500' }}>
-            Get Started
-          </button>
+          <div style={{ flex: 1 }}>
+            {['Features', 'Pricing', 'About', 'Tutorials', 'Support'].map(item => (
+              <a key={item} onClick={() => { setMobileMenuOpen(false); scrollToSection(item.toLowerCase()); }}
+                style={{ 
+                  display: 'block', padding: '20px 0', fontSize: '28px', fontWeight: '600',
+                  color: colors.label, textDecoration: 'none', 
+                  borderBottom: `1px solid ${colors.gray5}`, cursor: 'pointer'
+                }}>
+                {item}
+              </a>
+            ))}
+          </div>
+          <div style={{ paddingTop: '24px' }}>
+            <button onClick={() => { setMobileMenuOpen(false); handleSignIn(); }}
+              style={{ 
+                width: '100%', marginBottom: '12px', padding: '18px', 
+                background: 'transparent', border: `2px solid ${colors.blue}`, 
+                borderRadius: '14px', color: colors.blue, fontSize: '18px', fontWeight: '600', cursor: 'pointer'
+              }}>
+              Sign In
+            </button>
+            <button onClick={() => { setMobileMenuOpen(false); handleStartTrial(); }} className="apple-button"
+              style={{ 
+                width: '100%', padding: '18px', 
+                background: colors.blue, border: 'none', 
+                borderRadius: '14px', color: '#FFF', fontSize: '18px', fontWeight: '600'
+              }}>
+              Get Started
+            </button>
+          </div>
         </div>
       )}
 
