@@ -253,7 +253,16 @@ const initSupabase = async () => {
     const { createClient } = await import('@supabase/supabase-js');
     supabase = createClient(
       import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY
+      import.meta.env.VITE_SUPABASE_ANON_KEY,
+      {
+        auth: {
+          persistSession: true,
+          storageKey: 'pn_auth_token',
+          storage: window.localStorage,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      }
     );
     return supabase;
   } catch (e) {
@@ -533,6 +542,7 @@ function AuthPage({ setView }) {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -550,8 +560,21 @@ function AuthPage({ setView }) {
 
     try {
       if (isLogin) {
-        const { error } = await sb.auth.signInWithPassword({ email, password });
+        const { error } = await sb.auth.signInWithPassword({ 
+          email, 
+          password,
+          options: {
+            // Session will persist based on rememberMe
+            persistSession: rememberMe
+          }
+        });
         if (error) throw error;
+        // Store remember preference
+        if (rememberMe) {
+          localStorage.setItem('pn_remember_email', email);
+        } else {
+          localStorage.removeItem('pn_remember_email');
+        }
       } else {
         const { error } = await sb.auth.signUp({ email, password });
         if (error) throw error;
@@ -572,6 +595,15 @@ function AuthPage({ setView }) {
     }
   };
 
+  // Load remembered email on mount
+  useEffect(() => {
+    const rememberedEmail = localStorage.getItem('pn_remember_email');
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setRememberMe(true);
+    }
+  }, []);
+
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       {/* Left side - Branding */}
@@ -581,12 +613,18 @@ function AuthPage({ setView }) {
 
         <div style={{ position: 'relative', zIndex: 1, textAlign: 'center', maxWidth: '400px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'center', marginBottom: '40px' }}>
-            <div style={{ width: '56px', height: '56px', borderRadius: '16px', background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: '700', fontSize: '20px', color: 'white' }}>
-              PN
-            </div>
+            <PennyLogo size={56} />
             <span style={{ fontSize: '28px', fontWeight: '700', color: 'white' }}>
               Prosper<span style={{ color: '#A78BFA' }}>Nest</span>
             </span>
+            <span style={{ 
+              background: '#007AFF', 
+              padding: '4px 10px', 
+              borderRadius: '6px', 
+              fontSize: '11px', 
+              fontWeight: '600', 
+              color: 'white' 
+            }}>Beta</span>
           </div>
 
           <h1 style={{ fontSize: '36px', fontWeight: '700', color: 'white', marginBottom: '16px', lineHeight: 1.2 }}>
@@ -614,18 +652,34 @@ function AuthPage({ setView }) {
       </div>
 
       {/* Right side - Form */}
-      <div style={{ flex: 1, background: theme.bgMain, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
+      <div style={{ flex: 1, background: '#F5F6FA', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px' }}>
         <div style={{ width: '100%', maxWidth: '400px' }}>
+          {/* Mobile header with matching branding */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '24px' }}>
+            <PennyLogo size={36} />
+            <span style={{ fontSize: '20px', fontWeight: '700', color: '#1F2937' }}>
+              Prosper<span style={{ color: '#4F46E5' }}>Nest</span>
+            </span>
+            <span style={{ 
+              background: '#007AFF', 
+              padding: '2px 8px', 
+              borderRadius: '4px', 
+              fontSize: '10px', 
+              fontWeight: '600', 
+              color: 'white' 
+            }}>Beta</span>
+          </div>
+          
           <div style={{ marginBottom: '32px' }}>
-            <h2 style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '8px' }}>
-              {isLogin ? 'Welcome back' : 'Create account'}
+            <h2 style={{ fontSize: '28px', fontWeight: '700', color: '#1F2937', marginBottom: '8px' }}>
+              {isLogin ? 'Welcome back!' : 'Create account'}
             </h2>
-            <p style={{ color: theme.textSecondary }}>
+            <p style={{ color: '#6B7280' }}>
               {isLogin ? 'Sign in to continue to ProsperNest' : 'Get started with your free account'}
             </p>
           </div>
 
-          <button onClick={handleGoogleSignIn} style={{ width: '100%', padding: '14px', background: 'white', border: `1px solid ${theme.border}`, borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', marginBottom: '24px', fontSize: '15px', fontWeight: '500', color: theme.textPrimary }}>
+          <button onClick={handleGoogleSignIn} style={{ width: '100%', padding: '14px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', cursor: 'pointer', marginBottom: '24px', fontSize: '15px', fontWeight: '500', color: '#1F2937' }}>
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -636,9 +690,9 @@ function AuthPage({ setView }) {
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ flex: 1, height: '1px', background: theme.border }} />
-            <span style={{ color: theme.textMuted, fontSize: '14px' }}>or</span>
-            <div style={{ flex: 1, height: '1px', background: theme.border }} />
+            <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
+            <span style={{ color: '#9CA3AF', fontSize: '14px' }}>or</span>
+            <div style={{ flex: 1, height: '1px', background: '#E5E7EB' }} />
           </div>
 
           {error && (
@@ -649,39 +703,53 @@ function AuthPage({ setView }) {
 
           <form onSubmit={handleAuth}>
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', color: theme.textSecondary, fontSize: '14px', fontWeight: '500' }}>Email</label>
+              <label style={{ display: 'block', marginBottom: '6px', color: '#6B7280', fontSize: '14px', fontWeight: '500' }}>Email Address</label>
               <input
                 type="email"
-                placeholder="Enter your email"
+                placeholder="john@example.com"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', background: 'white', border: `1px solid ${theme.border}`, borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box', color: '#1F2937' }}
               />
             </div>
-            <div style={{ marginBottom: '24px' }}>
-              <label style={{ display: 'block', marginBottom: '6px', color: theme.textSecondary, fontSize: '14px', fontWeight: '500' }}>Password</label>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', marginBottom: '6px', color: '#6B7280', fontSize: '14px', fontWeight: '500' }}>Password</label>
               <input
                 type="password"
-                placeholder="Enter your password"
+                placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
-                style={{ width: '100%', padding: '12px 16px', background: 'white', border: `1px solid ${theme.border}`, borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '12px 16px', background: 'white', border: '1px solid #E5E7EB', borderRadius: '10px', fontSize: '15px', outline: 'none', boxSizing: 'border-box', color: '#1F2937' }}
               />
             </div>
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: theme.primary, border: 'none', borderRadius: '10px', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+            
+            {isLogin && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{ width: '16px', height: '16px', accentColor: '#4F46E5' }}
+                  />
+                  <span style={{ fontSize: '14px', color: '#6B7280' }}>Remember me</span>
+                </label>
+                <button type="button" style={{ background: 'none', border: 'none', color: '#4F46E5', fontSize: '14px', cursor: 'pointer', fontWeight: '500' }}>
+                  Forgot password?
+                </button>
+              </div>
+            )}
+            
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: '#007AFF', border: 'none', borderRadius: '10px', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
           </form>
 
-          <p style={{ textAlign: 'center', marginTop: '24px', color: theme.textSecondary, fontSize: '14px' }}>
+          <p style={{ textAlign: 'center', marginTop: '24px', color: '#6B7280', fontSize: '14px' }}>
             {isLogin ? "Don't have an account? " : 'Already have an account? '}
-            <button onClick={() => setIsLogin(!isLogin)} style={{ background: 'none', border: 'none', color: theme.primary, cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
-              {isLogin ? 'Sign up' : 'Sign in'}
+            <button onClick={() => setIsLogin(!isLogin)} style={{ background: 'none', border: 'none', color: '#4F46E5', cursor: 'pointer', fontSize: '14px', fontWeight: '600' }}>
+              {isLogin ? 'Sign up for free' : 'Sign in'}
             </button>
-          </p>
-
-          <p style={{ textAlign: 'center', marginTop: '32px', color: theme.textMuted, fontSize: '12px' }}>
-            www.prospernest.io
           </p>
         </div>
       </div>
@@ -754,6 +822,7 @@ function Dashboard({
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showPennyChat, setShowPennyChat] = useState(false);
   const [showIdleModal, setShowIdleModal] = useState(false);
+  const [showManageAccountModal, setShowManageAccountModal] = useState(false);
   const [chatMessages, setChatMessages] = useState([
     { from: 'penny', text: "Hi! I'm Penny, your financial assistant! 🪙 How can I help you today?" }
   ]);
@@ -811,13 +880,39 @@ function Dashboard({
     localStorage.setItem('pn_darkMode', newMode.toString());
   };
 
-  // Profile state
+  // Profile state with expanded fields
   const [profile, setProfile] = useState(() => {
     try {
       const saved = localStorage.getItem(`pn_profile_${user?.id}`);
-      return saved ? JSON.parse(saved) : { firstName: '', lastName: '', address: '' };
-    } catch { return { firstName: '', lastName: '', address: '' }; }
+      return saved ? JSON.parse(saved) : { 
+        firstName: '', 
+        lastName: '', 
+        email: user?.email || '',
+        phone: '',
+        dateOfBirth: '',
+        gender: '',
+        photoUrl: ''
+      };
+    } catch { 
+      return { 
+        firstName: '', 
+        lastName: '', 
+        email: user?.email || '',
+        phone: '',
+        dateOfBirth: '',
+        gender: '',
+        photoUrl: ''
+      }; 
+    }
   });
+
+  // Save profile to localStorage
+  const saveProfile = (newProfile) => {
+    setProfile(newProfile);
+    if (user?.id) {
+      localStorage.setItem(`pn_profile_${user.id}`, JSON.stringify(newProfile));
+    }
+  };
 
   const handleSignOut = async () => {
     const sb = await initSupabase();
@@ -1004,28 +1099,33 @@ function Dashboard({
           top: 0,
           zIndex: 50
         }}>
-          {/* Search */}
-          <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-            <div style={{ position: 'absolute', left: '14px', color: theme.textMuted }}>
-              <Icons.Search />
+          {/* Search and Welcome */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div style={{ position: 'absolute', left: '14px', color: theme.textMuted }}>
+                <Icons.Search />
+              </div>
+              <input
+                type="text"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '280px',
+                  height: '42px',
+                  background: theme.bgMain,
+                  border: `1px solid ${theme.border}`,
+                  borderRadius: '10px',
+                  padding: '0 16px 0 44px',
+                  fontSize: '14px',
+                  outline: 'none',
+                  color: theme.textPrimary
+                }}
+              />
             </div>
-            <input
-              type="text"
-              placeholder="Search"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              style={{
-                width: '320px',
-                height: '42px',
-                background: theme.bgMain,
-                border: `1px solid ${theme.border}`,
-                borderRadius: '10px',
-                padding: '0 16px 0 44px',
-                fontSize: '14px',
-                outline: 'none',
-                color: theme.textPrimary
-              }}
-            />
+            <div style={{ fontSize: '15px', color: theme.textSecondary, fontWeight: '500' }}>
+              Welcome back, <span style={{ color: theme.primary, fontWeight: '600' }}>{displayName}</span>! 👋
+            </div>
           </div>
 
           {/* Right side */}
@@ -1207,28 +1307,53 @@ function Dashboard({
                   minWidth: '180px',
                   zIndex: 100
                 }}>
-                  {[
-                    { icon: '👤', label: 'Manage Account' },
-                    { icon: '🔑', label: 'Change Password' },
-                    { icon: '📋', label: 'Activity Log' },
-                  ].map((item, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '12px 16px',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: theme.textPrimary,
-                        borderBottom: i < 2 ? `1px solid ${theme.borderLight}` : 'none'
-                      }}
-                    >
-                      <span>{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                  ))}
+                  <div
+                    onClick={() => { setShowManageAccountModal(true); setShowProfileMenu(false); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: theme.textPrimary,
+                      borderBottom: `1px solid ${theme.borderLight}`
+                    }}
+                  >
+                    <span>👤</span>
+                    <span>Manage Account</span>
+                  </div>
+                  <div
+                    onClick={() => { setActiveTab('settings'); setShowProfileMenu(false); }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: theme.textPrimary,
+                      borderBottom: `1px solid ${theme.borderLight}`
+                    }}
+                  >
+                    <span>🔑</span>
+                    <span>Change Password</span>
+                  </div>
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px',
+                      padding: '12px 16px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      color: theme.textPrimary,
+                      borderBottom: `1px solid ${theme.borderLight}`
+                    }}
+                  >
+                    <span>📋</span>
+                    <span>Activity Log</span>
+                  </div>
                   <div
                     onClick={handleSignOut}
                     style={{
@@ -1353,6 +1478,124 @@ function Dashboard({
                 style={{ flex: 1, padding: '12px 20px', background: 'linear-gradient(135deg, #007AFF, #5856D6)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
               >
                 Chat with Penny
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manage Account Modal */}
+      {showManageAccountModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '32px', width: '560px', maxWidth: '90vw', maxHeight: '90vh', overflowY: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: theme.textPrimary }}>Manage Account</h2>
+              <button onClick={() => setShowManageAccountModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: theme.textMuted }}>×</button>
+            </div>
+            
+            {/* Profile Photo */}
+            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: theme.bgMain, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '32px', color: theme.textMuted }}>
+                📷
+              </div>
+              <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>Upload Photo</button>
+            </div>
+            
+            {/* Form Fields */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>First Name</label>
+                <input 
+                  type="text" 
+                  value={profile.firstName}
+                  onChange={(e) => setProfile({...profile, firstName: e.target.value})}
+                  placeholder="Enter your first name"
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Last Name</label>
+                <input 
+                  type="text" 
+                  value={profile.lastName}
+                  onChange={(e) => setProfile({...profile, lastName: e.target.value})}
+                  placeholder="Enter your last name"
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Your email</label>
+                <input 
+                  type="email" 
+                  value={profile.email || user?.email || ''}
+                  onChange={(e) => setProfile({...profile, email: e.target.value})}
+                  placeholder="Enter your email"
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Phone Number</label>
+                <input 
+                  type="tel" 
+                  value={profile.phone}
+                  onChange={(e) => setProfile({...profile, phone: e.target.value})}
+                  placeholder="Enter your phone number"
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Date of Birth</label>
+                <input 
+                  type="date" 
+                  value={profile.dateOfBirth}
+                  onChange={(e) => setProfile({...profile, dateOfBirth: e.target.value})}
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Gender</label>
+                <select 
+                  value={profile.gender}
+                  onChange={(e) => setProfile({...profile, gender: e.target.value})}
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                >
+                  <option value="">Select</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                  <option value="prefer-not">Prefer not to say</option>
+                </select>
+              </div>
+            </div>
+            
+            {/* Save Button */}
+            <button 
+              onClick={() => { saveProfile(profile); setShowManageAccountModal(false); }}
+              style={{ width: '100%', padding: '14px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginBottom: '16px' }}
+            >
+              Save Changes
+            </button>
+            
+            {/* Membership Section */}
+            <div style={{ borderTop: `1px solid ${theme.borderLight}`, paddingTop: '20px', marginTop: '8px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, marginBottom: '12px' }}>Membership</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', background: theme.bgMain, borderRadius: '10px', marginBottom: '12px' }}>
+                <div>
+                  <div style={{ fontWeight: '600', color: theme.textPrimary }}>Current Plan: <span style={{ color: theme.primary }}>Starter (Free)</span></div>
+                  <div style={{ fontSize: '12px', color: theme.textMuted }}>Basic features included</div>
+                </div>
+                <button style={{ padding: '8px 16px', background: theme.success, color: 'white', border: 'none', borderRadius: '8px', fontSize: '13px', fontWeight: '600', cursor: 'pointer' }}>
+                  Upgrade
+                </button>
+              </div>
+              <button style={{ width: '100%', padding: '12px', background: 'transparent', border: `1px solid ${theme.danger}`, color: theme.danger, borderRadius: '10px', fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
+                Cancel Account
               </button>
             </div>
           </div>
