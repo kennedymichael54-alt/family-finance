@@ -412,6 +412,7 @@ const loadUserDataFromDB = async (userId) => {
       { data: transactions },
       { data: bills },
       { data: goals },
+      { data: tasks },
       { data: budgets },
       { data: incomeTypes },
       { data: categories },
@@ -421,6 +422,7 @@ const loadUserDataFromDB = async (userId) => {
       sb.from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false }),
       sb.from('bills').select('*').eq('user_id', userId),
       sb.from('goals').select('*').eq('user_id', userId),
+      sb.from('tasks').select('*').eq('user_id', userId).order('created_at', { ascending: false }),
       sb.from('budgets').select('*').eq('user_id', userId),
       sb.from('income_types').select('*').eq('user_id', userId),
       sb.from('accounting_categories').select('*').eq('user_id', userId),
@@ -430,7 +432,8 @@ const loadUserDataFromDB = async (userId) => {
     console.log('✅ [DB] Loaded:', {
       transactions: transactions?.length || 0,
       bills: bills?.length || 0,
-      goals: goals?.length || 0
+      goals: goals?.length || 0,
+      tasks: tasks?.length || 0
     });
     
     return {
@@ -438,6 +441,7 @@ const loadUserDataFromDB = async (userId) => {
       transactions: transactions || [],
       bills: bills || [],
       goals: goals || [],
+      tasks: tasks || [],
       budgets: budgets || [],
       incomeTypes: incomeTypes || [],
       categories: categories || [],
@@ -448,6 +452,73 @@ const loadUserDataFromDB = async (userId) => {
     return null;
   }
 };
+
+// Save tasks to Supabase
+const saveTasksToDB = async (userId, tasks) => {
+  const sb = await initSupabase();
+  if (!sb) return;
+  
+  console.log('💾 [DB] Saving tasks:', tasks?.length || 0);
+  
+  try {
+    await sb.from('tasks').delete().eq('user_id', userId);
+    
+    if (tasks?.length) {
+      const toInsert = tasks.map(t => ({
+        user_id: userId,
+        title: t.title,
+        description: t.description || '',
+        due_date: t.dueDate || null,
+        priority: t.priority || 'medium',
+        category: t.category || 'Personal',
+        status: t.status || 'todo',
+        created_at: t.createdAt || new Date().toISOString()
+      }));
+      
+      const { error } = await sb.from('tasks').insert(toInsert);
+      if (error) throw error;
+    }
+    console.log('✅ [DB] Tasks saved');
+  } catch (e) {
+    console.error('❌ [DB] Save tasks error:', e);
+  }
+};
+
+// Save user preferences to Supabase
+const savePreferencesToDB = async (userId, preferences) => {
+  const sb = await initSupabase();
+  if (!sb) return;
+  
+  console.log('💾 [DB] Saving preferences...');
+  
+  try {
+    const { error } = await sb.from('user_settings').upsert({
+      user_id: userId,
+      theme: preferences.theme || 'light',
+      language: preferences.language || 'en',
+      avatar: preferences.avatar || '👨‍💼',
+      last_import_date: preferences.lastImportDate || null,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id' });
+    
+    if (error) throw error;
+    console.log('✅ [DB] Preferences saved');
+  } catch (e) {
+    console.error('❌ [DB] Save preferences error:', e);
+  }
+};
+
+// Convert DB task to app format
+const dbToAppTask = (t) => ({
+  id: t.id,
+  title: t.title,
+  description: t.description,
+  dueDate: t.due_date,
+  priority: t.priority,
+  category: t.category,
+  status: t.status,
+  createdAt: t.created_at
+});
 
 // Save transactions to Supabase
 const saveTransactionsToDB = async (userId, transactions) => {
@@ -658,6 +729,12 @@ function App() {
   const [transactions, setTransactions] = useState([]);
   const [bills, setBills] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [tasks, setTasks] = useState([]);
+  const [userPreferences, setUserPreferences] = useState({
+    theme: 'light',
+    language: 'en',
+    avatar: '👨‍💼'
+  });
   const [lastImportDate, setLastImportDate] = useState(() => {
     try {
       return localStorage.getItem('pn_lastImportDate') || null;
@@ -671,12 +748,47 @@ function App() {
     // Try loading from database first
     const dbData = await loadUserDataFromDB(userId);
     
-    if (dbData && (dbData.transactions?.length || dbData.bills?.length || dbData.goals?.length)) {
+    if (dbData) {
       console.log('✅ [Data] Loaded from database');
-      setTransactions(dbData.transactions.map(dbToAppTransaction));
-      setBills(dbData.bills.map(dbToAppBill));
-      setGoals(dbData.goals.map(dbToAppGoal));
-      return;
+      
+      // Load transactions, bills, goals
+      if (dbData.transactions?.length) {
+        setTransactions(dbData.transactions.map(dbToAppTransaction));
+      }
+      if (dbData.bills?.length) {
+        setBills(dbData.bills.map(dbToAppBill));
+      }
+      if (dbData.goals?.length) {
+        setGoals(dbData.goals.map(dbToAppGoal));
+      }
+      
+      // Load tasks
+      if (dbData.tasks?.length) {
+        setTasks(dbData.tasks.map(dbToAppTask));
+      }
+      
+      // Load user preferences/settings
+      if (dbData.settings) {
+        const prefs = {
+          theme: dbData.settings.theme || 'light',
+          language: dbData.settings.language || 'en',
+          avatar: dbData.settings.avatar || '👨‍💼'
+        };
+        setUserPreferences(prefs);
+        
+        // Also update localStorage for immediate access
+        localStorage.setItem('pn_darkMode', prefs.theme === 'dark' ? 'true' : 'false');
+        localStorage.setItem('pn_userAvatar', prefs.avatar);
+        if (dbData.settings.last_import_date) {
+          setLastImportDate(dbData.settings.last_import_date);
+          localStorage.setItem('pn_lastImportDate', dbData.settings.last_import_date);
+        }
+      }
+      
+      // If DB had any data, we're done
+      if (dbData.transactions?.length || dbData.bills?.length || dbData.goals?.length || dbData.tasks?.length) {
+        return;
+      }
     }
     
     // Fallback to localStorage
@@ -685,16 +797,51 @@ function App() {
       const savedTransactions = localStorage.getItem(`pn_transactions_${userId}`);
       const savedBills = localStorage.getItem(`pn_bills_${userId}`);
       const savedGoals = localStorage.getItem(`pn_goals_${userId}`);
+      const savedTasks = localStorage.getItem('pn_tasks');
       const savedImportDate = localStorage.getItem(`pn_lastImport_${userId}`);
 
       if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
       if (savedBills) setBills(JSON.parse(savedBills));
       if (savedGoals) setGoals(JSON.parse(savedGoals));
+      if (savedTasks) setTasks(JSON.parse(savedTasks));
       if (savedImportDate) setLastImportDate(new Date(savedImportDate));
       
       console.log('✅ [Data] Loaded from localStorage');
     } catch (e) {
       console.error('❌ [Data] localStorage load error:', e);
+    }
+  };
+
+  // Save tasks with sync to database
+  const handleUpdateTasks = async (newTasks) => {
+    setTasks(newTasks);
+    localStorage.setItem('pn_tasks', JSON.stringify(newTasks));
+    
+    // Sync to database if user is logged in
+    if (user?.id) {
+      await saveTasksToDB(user.id, newTasks);
+    }
+  };
+
+  // Save preferences with sync to database
+  const handleUpdatePreferences = async (newPrefs) => {
+    setUserPreferences(prev => ({ ...prev, ...newPrefs }));
+    
+    // Update localStorage
+    if (newPrefs.theme !== undefined) {
+      localStorage.setItem('pn_darkMode', newPrefs.theme === 'dark' ? 'true' : 'false');
+    }
+    if (newPrefs.avatar !== undefined) {
+      localStorage.setItem('pn_userAvatar', newPrefs.avatar);
+    }
+    
+    // Sync to database if user is logged in
+    if (user?.id) {
+      await savePreferencesToDB(user.id, {
+        ...userPreferences,
+        ...newPrefs,
+        lastImportDate
+      });
     }
   };
 
@@ -894,11 +1041,15 @@ function App() {
       transactions={transactions}
       bills={bills}
       goals={goals}
+      tasks={tasks}
+      userPreferences={userPreferences}
       lastImportDate={lastImportDate}
       onSetLastImportDate={setLastImportDate}
       onImportTransactions={handleImportTransactions}
       onUpdateBills={handleUpdateBills}
       onUpdateGoals={handleUpdateGoals}
+      onUpdateTasks={handleUpdateTasks}
+      onUpdatePreferences={handleUpdatePreferences}
       parseCSV={parseCSV}
     />
   );
@@ -1480,19 +1631,27 @@ function Dashboard({
   setView, 
   transactions, 
   bills, 
-  goals, 
+  goals,
+  tasks,
+  userPreferences,
   lastImportDate,
   onSetLastImportDate,
   onImportTransactions,
   onUpdateBills,
   onUpdateGoals,
+  onUpdateTasks,
+  onUpdatePreferences,
   parseCSV
 }) {
   const [activeTab, setActiveTab] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const [selectedLanguage, setSelectedLanguage] = useState(() => {
+    // Initialize from userPreferences if available
+    const langCode = userPreferences?.language || 'en';
+    return languages.find(l => l.code === langCode) || languages[0];
+  });
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [showPennyChat, setShowPennyChat] = useState(false);
   const [showIdleModal, setShowIdleModal] = useState(false);
@@ -1505,20 +1664,13 @@ function Dashboard({
     '👱‍♀️', '👨‍🦱', '👩‍🦱', '🧔', '🧔‍♀️', '👲', '🧕', '👳‍♂️',
     '👳‍♀️', '🤵', '🤵‍♀️', '👸', '🤴', '🦸‍♂️', '🦸‍♀️', '🧙‍♂️'
   ];
-  const [userAvatar, setUserAvatar] = useState(() => {
-    try {
-      return localStorage.getItem('pn_userAvatar') || '👨‍💼';
-    } catch { return '👨‍💼'; }
-  });
-  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   
-  // Tasks state
-  const [tasks, setTasks] = useState(() => {
-    try {
-      const saved = localStorage.getItem('pn_tasks');
-      return saved ? JSON.parse(saved) : [];
-    } catch { return []; }
-  });
+  // Avatar from props (synced across devices)
+  const userAvatar = userPreferences?.avatar || '👨‍💼';
+  const setUserAvatar = (newAvatar) => {
+    onUpdatePreferences({ avatar: newAvatar });
+  };
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   
   const [chatMessages, setChatMessages] = useState([
     { from: 'penny', text: "Hi! I'm Penny, your financial assistant! 🪙 How can I help you today?" }
@@ -1559,8 +1711,12 @@ function Dashboard({
     }, 1000);
   };
 
-  // Theme state - persist in localStorage
+  // Theme state - synced across devices via userPreferences
   const [isDarkMode, setIsDarkMode] = useState(() => {
+    // First check userPreferences (from DB), then fallback to localStorage
+    if (userPreferences?.theme) {
+      return userPreferences.theme === 'dark';
+    }
     try {
       const saved = localStorage.getItem('pn_darkMode');
       return saved === 'true';
@@ -1570,11 +1726,13 @@ function Dashboard({
   // Get current theme based on mode
   const theme = isDarkMode ? darkTheme : lightTheme;
 
-  // Save theme preference
+  // Save theme preference - syncs to database
   const toggleTheme = () => {
     const newMode = !isDarkMode;
     setIsDarkMode(newMode);
     localStorage.setItem('pn_darkMode', newMode.toString());
+    // Sync to database
+    onUpdatePreferences({ theme: newMode ? 'dark' : 'light' });
   };
 
   // Profile state with expanded fields
@@ -1662,7 +1820,7 @@ function Dashboard({
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks} theme={theme} lastImportDate={lastImportDate} />;
+        return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} />;
       case 'sales':
         return <SalesTrackerTab theme={theme} />;
       case 'budget':
@@ -1674,10 +1832,7 @@ function Dashboard({
       case 'goals':
         return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} theme={theme} />;
       case 'tasks':
-        return <TasksTab tasks={tasks} onUpdateTasks={(newTasks) => {
-          setTasks(newTasks);
-          localStorage.setItem('pn_tasks', JSON.stringify(newTasks));
-        }} theme={theme} />;
+        return <TasksTab tasks={tasks || []} onUpdateTasks={onUpdateTasks} theme={theme} />;
       case 'retirement':
         return <RetirementTab theme={theme} />;
       case 'reports':
@@ -1691,11 +1846,12 @@ function Dashboard({
           onLanguageChange={(lang) => {
             setSelectedLanguage(lang);
             localStorage.setItem('pn_language', JSON.stringify(lang));
+            // Sync to database
+            onUpdatePreferences({ language: lang.code });
           }}
           userAvatar={userAvatar}
           onAvatarChange={(avatar) => {
             setUserAvatar(avatar);
-            localStorage.setItem('pn_userAvatar', avatar);
           }}
           memojiAvatars={memojiAvatars}
           languages={languages}
@@ -1707,13 +1863,15 @@ function Dashboard({
             const now = new Date().toISOString();
             onSetLastImportDate && onSetLastImportDate(now);
             localStorage.setItem('pn_lastImportDate', now);
+            // Sync import date to database
+            onUpdatePreferences({ lastImportDate: now });
           }} 
           parseCSV={parseCSV} 
           transactionCount={transactions.length} 
           theme={theme} 
         />;
       default:
-        return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks} theme={theme} lastImportDate={lastImportDate} />;
+        return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} />;
     }
   };
 
@@ -2451,8 +2609,7 @@ function Dashboard({
                       <button
                         key={i}
                         onClick={() => { 
-                          setUserAvatar(emoji); 
-                          localStorage.setItem('pn_userAvatar', emoji);
+                          setUserAvatar(emoji); // This now syncs to database
                         }}
                         style={{
                           width: '44px',
@@ -2495,8 +2652,7 @@ function Dashboard({
                           if (file) {
                             const reader = new FileReader();
                             reader.onloadend = () => {
-                              setUserAvatar(reader.result);
-                              localStorage.setItem('pn_userAvatar', reader.result);
+                              setUserAvatar(reader.result); // This now syncs to database
                             };
                             reader.readAsDataURL(file);
                           }
