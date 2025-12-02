@@ -1,386 +1,203 @@
 import React, { useState, useEffect } from 'react';
 
-/**
- * GoalsTimelineWithCelebration - REDESIGNED for modern aesthetic
- * 
- * Clean goal tracking with progress visualization
- */
+// Default themes
+const defaultLightTheme = {
+  mode: 'light',
+  primary: '#4F46E5',
+  secondary: '#EC4899',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  bgMain: '#F5F6FA',
+  bgCard: '#FFFFFF',
+  textPrimary: '#1F2937',
+  textSecondary: '#6B7280',
+  textMuted: '#9CA3AF',
+  border: '#E5E7EB',
+  borderLight: '#F3F4F6',
+  cardShadow: '0 1px 3px rgba(0,0,0,0.05)',
+};
 
-const GoalsTimelineWithCelebration = () => {
-  const [goals, setGoals] = useState([
-    {
-      id: 1,
-      name: 'Emergency Fund',
-      emoji: '🛡️',
-      current: 12500,
-      target: 15000,
-      startDate: new Date('2024-01-01'),
-      targetDate: new Date('2024-12-31'),
-      description: '6 months of expenses',
-      archived: false
-    },
-    {
-      id: 2,
-      name: 'Vacation Fund',
-      emoji: '✈️',
-      current: 2800,
-      target: 5000,
-      startDate: new Date('2024-03-01'),
-      targetDate: new Date('2024-08-01'),
-      description: 'Dream vacation to Europe',
-      archived: false
-    },
-    {
-      id: 3,
-      name: 'New Car',
-      emoji: '🚗',
-      current: 8500,
-      target: 25000,
-      startDate: new Date('2023-06-01'),
-      targetDate: new Date('2025-06-01'),
-      description: 'Down payment for new vehicle',
-      archived: false
-    }
-  ]);
+const defaultDarkTheme = {
+  mode: 'dark',
+  primary: '#8B5CF6',
+  secondary: '#EC4899',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  bgMain: '#0c0a1d',
+  bgCard: '#1e1b38',
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0AEC0',
+  textMuted: '#718096',
+  border: 'rgba(139, 92, 246, 0.2)',
+  borderLight: 'rgba(255,255,255,0.1)',
+  cardShadow: '0 4px 20px rgba(0,0,0,0.3)',
+};
 
-  const [showCelebration, setShowCelebration] = useState(false);
-  const [celebratingGoal, setCelebratingGoal] = useState(null);
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 0
+  }).format(amount);
+};
 
-  const addFunds = (goalId, amount) => {
-    setGoals(goals.map(goal => {
-      if (goal.id === goalId) {
-        const newCurrent = Math.min(goal.current + amount, goal.target);
-        const wasIncomplete = goal.current < goal.target;
-        const isNowComplete = newCurrent >= goal.target;
-        
-        if (wasIncomplete && isNowComplete) {
-          setCelebratingGoal(goal);
-          setShowCelebration(true);
-          setTimeout(() => setShowCelebration(false), 3000);
-        }
-        
-        return { ...goal, current: newCurrent };
-      }
-      return goal;
-    }));
-  };
+const defaultGoals = [
+  { id: 1, name: 'Emergency Fund', description: '6 months of expenses', icon: '🛡️', current: 12500, target: 15000, startDate: '12/31/2023', targetDate: '12/30/2024' },
+  { id: 2, name: 'Vacation Fund', description: 'Dream vacation to Europe', icon: '✈️', current: 2800, target: 5000, startDate: '2/26/2024', targetDate: '7/31/2024' },
+  { id: 3, name: 'New Car', description: 'Down payment for new vehicle', icon: '🚗', current: 8500, target: 25000, startDate: '5/31/2023', targetDate: '5/01/2025' },
+];
 
-  const archiveGoal = (goalId) => {
-    setGoals(goals.map(g => g.id === goalId ? { ...g, archived: !g.archived } : g));
-  };
+export default function GoalsTimelineWithCelebration({ goals: propGoals, onUpdateGoals, theme: propTheme }) {
+  const [localDarkMode] = useState(() => {
+    try {
+      return localStorage.getItem('pn_darkMode') === 'true';
+    } catch { return false; }
+  });
+  
+  const theme = propTheme || (localDarkMode ? defaultDarkTheme : defaultLightTheme);
+  const isDark = theme.mode === 'dark';
 
-  const activeGoals = goals.filter(g => !g.archived);
-  const archivedGoals = goals.filter(g => g.archived);
+  const goals = propGoals && propGoals.length > 0 ? propGoals : defaultGoals;
+
+  const milestones = [100, 300, 500, 1000];
 
   return (
-    <div style={{ animation: 'slideIn 0.3s ease', position: 'relative' }}>
+    <div>
       {/* Header */}
-      <div style={{ marginBottom: '24px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: '600', color: 'white', marginBottom: '8px' }}>
-          🎯 Financial Goals
-        </h2>
-        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
-          Track your progress towards financial milestones
-        </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <span style={{ fontSize: '28px' }}>🎯</span>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>Financial Goals</h1>
       </div>
 
-      {/* Active Goals */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '24px' }}>
-        {activeGoals.map((goal) => {
-          const percentage = Math.min((goal.current / goal.target) * 100, 100);
-          const remaining = Math.max(goal.target - goal.current, 0);
-          const isComplete = percentage >= 100;
-
-          // Calculate time progress
-          const now = new Date();
-          const totalTime = goal.targetDate - goal.startDate;
-          const elapsed = now - goal.startDate;
-          const timePercentage = Math.min((elapsed / totalTime) * 100, 100);
-
+      {/* Goals List */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {goals.map((goal, index) => {
+          const progress = Math.round((goal.current / goal.target) * 100);
+          const remaining = goal.target - goal.current;
+          
           return (
             <div
               key={goal.id}
               style={{
-                background: isComplete 
-                  ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.15), rgba(20, 184, 166, 0.15))'
-                  : 'rgba(30, 27, 56, 0.8)',
-                backdropFilter: 'blur(20px)',
-                borderRadius: '20px',
+                background: theme.bgCard,
+                borderRadius: '16px',
                 padding: '24px',
-                border: isComplete 
-                  ? '1px solid rgba(16, 185, 129, 0.3)'
-                  : '1px solid rgba(255,255,255,0.1)',
-                position: 'relative',
-                overflow: 'hidden'
+                border: `1px solid ${theme.borderLight}`,
+                boxShadow: theme.cardShadow
               }}
             >
-              {/* Header */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '36px' }}>{goal.emoji}</span>
-                  <div>
-                    <h3 style={{ fontSize: '18px', fontWeight: '600', color: 'white', marginBottom: '4px' }}>
-                      {goal.name}
-                    </h3>
-                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                      {goal.description}
-                    </p>
-                  </div>
+              {/* Goal Header */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                <div style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: isDark ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '24px'
+                }}>
+                  {goal.icon}
                 </div>
-                
-                {isComplete && (
-                  <div style={{
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    borderRadius: '8px',
-                    padding: '6px 12px',
-                    fontSize: '13px',
-                    fontWeight: '600',
-                    color: '#10B981'
-                  }}>
-                    ✓ Achieved!
-                  </div>
-                )}
+                <div>
+                  <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>{goal.name}</h3>
+                  <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0 }}>{goal.description}</p>
+                </div>
               </div>
 
-              {/* Progress Info */}
+              {/* Progress Section */}
               <div style={{ marginBottom: '16px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.8)' }}>
-                    Progress
-                  </span>
-                  <span style={{ fontSize: '14px', fontWeight: '600', color: 'white' }}>
-                    ${goal.current.toLocaleString()} / ${goal.target.toLocaleString()}
+                  <span style={{ fontSize: '14px', color: theme.textSecondary }}>Progress</span>
+                  <span style={{ fontSize: '16px', fontWeight: '700', color: theme.primary }}>
+                    {formatCurrency(goal.current)} / {formatCurrency(goal.target)}
                   </span>
                 </div>
                 
-                {/* Financial Progress Bar */}
+                {/* Progress Bar */}
                 <div style={{
-                  height: '10px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '5px',
+                  height: '12px',
+                  background: isDark ? 'rgba(255,255,255,0.1)' : '#E5E7EB',
+                  borderRadius: '6px',
                   overflow: 'hidden',
                   marginBottom: '8px'
                 }}>
                   <div style={{
-                    width: `${percentage}%`,
                     height: '100%',
-                    background: isComplete
-                      ? 'linear-gradient(90deg, #10B981, #14B8A6)'
-                      : 'linear-gradient(90deg, #8B5CF6, #EC4899)',
-                    borderRadius: '5px',
+                    width: `${Math.min(progress, 100)}%`,
+                    background: `linear-gradient(90deg, ${theme.success}, ${theme.primary})`,
+                    borderRadius: '6px',
                     transition: 'width 0.5s ease'
                   }} />
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: 'rgba(255,255,255,0.6)' }}>
-                  <span>{Math.round(percentage)}% complete</span>
-                  {!isComplete && <span>${remaining.toLocaleString()} remaining</span>}
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px' }}>
+                  <span style={{ color: theme.success }}>{progress}% complete</span>
+                  <span style={{ color: theme.textMuted }}>{formatCurrency(remaining)} remaining</span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              {!isComplete && (
-                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                  {[100, 500, 1000].map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => addFunds(goal.id, amount)}
+              {/* Milestones */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(4, 1fr)',
+                gap: '12px',
+                marginBottom: '16px'
+              }}>
+                {milestones.map((milestone, i) => {
+                  const isReached = goal.current >= milestone;
+                  return (
+                    <div
+                      key={milestone}
                       style={{
-                        flex: 1,
-                        padding: '10px',
-                        background: 'rgba(139, 92, 246, 0.2)',
-                        border: '1px solid rgba(139, 92, 246, 0.4)',
+                        padding: '12px',
+                        background: isReached 
+                          ? (isDark ? 'rgba(16, 185, 129, 0.2)' : '#D1FAE5')
+                          : (isDark ? 'rgba(255,255,255,0.05)' : theme.bgMain),
+                        border: `1px solid ${isReached ? theme.success : theme.borderLight}`,
                         borderRadius: '8px',
-                        color: '#8B5CF6',
-                        fontSize: '13px',
-                        fontWeight: '500',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                        textAlign: 'center'
                       }}
                     >
-                      +${amount}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Timeline */}
-              <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '12px', marginTop: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px' }}>
-                  <span>Started {goal.startDate.toLocaleDateString()}</span>
-                  <span>Target {goal.targetDate.toLocaleDateString()}</span>
-                </div>
-                <div style={{
-                  height: '4px',
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '2px',
-                  overflow: 'hidden'
-                }}>
-                  <div style={{
-                    width: `${timePercentage}%`,
-                    height: '100%',
-                    background: 'rgba(251, 191, 36, 0.6)',
-                    borderRadius: '2px',
-                    transition: 'width 0.5s ease'
-                  }} />
-                </div>
+                      <div style={{ fontSize: '13px', fontWeight: '600', color: isReached ? theme.success : theme.textMuted }}>
+                        +${milestone}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Archive Button */}
-              {isComplete && (
-                <button
-                  onClick={() => archiveGoal(goal.id)}
-                  style={{
-                    marginTop: '12px',
-                    width: '100%',
-                    padding: '10px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '8px',
-                    color: 'rgba(255,255,255,0.8)',
-                    fontSize: '13px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Archive Goal
-                </button>
-              )}
+              {/* Dates */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', color: theme.textMuted }}>
+                <span>Started {goal.startDate}</span>
+                <span>Target {goal.targetDate}</span>
+              </div>
             </div>
           );
         })}
       </div>
 
-      {/* Archived Goals */}
-      {archivedGoals.length > 0 && (
-        <div style={{
-          background: 'rgba(30, 27, 56, 0.6)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '16px',
-          padding: '20px',
-          border: '1px solid rgba(255,255,255,0.1)'
+      {/* Add Goal Button */}
+      <div style={{ marginTop: '24px', textAlign: 'center' }}>
+        <button style={{
+          padding: '12px 24px',
+          background: theme.primary,
+          color: 'white',
+          border: 'none',
+          borderRadius: '10px',
+          fontSize: '14px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px'
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: 'rgba(255,255,255,0.8)', marginBottom: '12px' }}>
-            📦 Archived Goals
-          </h3>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {archivedGoals.map(goal => (
-              <div
-                key={goal.id}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '12px',
-                  background: 'rgba(255,255,255,0.03)',
-                  borderRadius: '8px'
-                }}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                  <span style={{ fontSize: '20px', opacity: 0.5 }}>{goal.emoji}</span>
-                  <span style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>{goal.name}</span>
-                </div>
-                <button
-                  onClick={() => archiveGoal(goal.id)}
-                  style={{
-                    padding: '6px 12px',
-                    background: 'rgba(255,255,255,0.1)',
-                    border: '1px solid rgba(255,255,255,0.2)',
-                    borderRadius: '6px',
-                    color: 'rgba(255,255,255,0.8)',
-                    fontSize: '12px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  Restore
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Celebration Modal */}
-      {showCelebration && celebratingGoal && (
-        <div style={{
-          position: 'fixed',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
-          background: 'rgba(30, 27, 56, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          padding: '40px',
-          border: '2px solid rgba(16, 185, 129, 0.5)',
-          boxShadow: '0 0 60px rgba(16, 185, 129, 0.4)',
-          zIndex: 1000,
-          animation: 'bounce-in 0.5s ease-out',
-          textAlign: 'center',
-          minWidth: '300px'
-        }}>
-          <div style={{ fontSize: '64px', marginBottom: '16px' }}>🎉</div>
-          <h2 style={{ fontSize: '24px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
-            Goal Achieved!
-          </h2>
-          <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.8)', marginBottom: '8px' }}>
-            {celebratingGoal.emoji} {celebratingGoal.name}
-          </p>
-          <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>
-            ${celebratingGoal.target.toLocaleString()} saved!
-          </p>
-        </div>
-      )}
-
-      {/* Confetti Overlay */}
-      {showCelebration && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          pointerEvents: 'none',
-          zIndex: 999
-        }}>
-          {Array.from({ length: 30 }).map((_, i) => (
-            <div
-              key={i}
-              style={{
-                position: 'absolute',
-                left: `${Math.random() * 100}%`,
-                top: '-10px',
-                width: '8px',
-                height: '8px',
-                background: ['#8B5CF6', '#EC4899', '#10B981', '#FBBF24', '#3B82F6'][i % 5],
-                borderRadius: '50%',
-                animation: `confetti ${2 + Math.random()}s linear forwards`,
-                animationDelay: `${Math.random() * 0.5}s`
-              }}
-            />
-          ))}
-        </div>
-      )}
-
-      <style>{`
-        @keyframes slideIn {
-          from { transform: translateY(20px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
-        @keyframes bounce-in {
-          0% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-          50% { transform: translate(-50%, -50%) scale(1.1); }
-          100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-        }
-        @keyframes confetti {
-          0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
-          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
-        }
-      `}</style>
+          + Add New Goal
+        </button>
+      </div>
     </div>
   );
-};
-
-export default GoalsTimelineWithCelebration;
+}
