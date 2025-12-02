@@ -431,11 +431,6 @@ function App() {
       }
     };
   }, []);
-      if (subscription) {
-        subscription.unsubscribe();
-      }
-    };
-  }, []);
 
   const loadSavedData = (userId) => {
     try {
