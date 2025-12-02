@@ -115,6 +115,11 @@ const Icons = {
       <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
     </svg>
   ),
+  Tasks: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+    </svg>
+  ),
   Retirement: () => (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
       <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
@@ -1505,6 +1510,15 @@ function Dashboard({
       return localStorage.getItem('pn_userAvatar') || '👨‍💼';
     } catch { return '👨‍💼'; }
   });
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
+  
+  // Tasks state
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pn_tasks');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   
   const [chatMessages, setChatMessages] = useState([
     { from: 'penny', text: "Hi! I'm Penny, your financial assistant! 🪙 How can I help you today?" }
@@ -1635,6 +1649,7 @@ function Dashboard({
     { id: 'transactions', label: 'Transactions', icon: Icons.Transactions },
     { id: 'bills', label: 'Bills', icon: Icons.Calendar },
     { id: 'goals', label: 'Goals', icon: Icons.Goals },
+    { id: 'tasks', label: 'Tasks', icon: Icons.Tasks },
     { id: 'retirement', label: 'Retirement', icon: Icons.Retirement },
     { id: 'reports', label: 'Reports', icon: Icons.Reports },
   ];
@@ -1647,7 +1662,7 @@ function Dashboard({
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <DashboardHome transactions={transactions} goals={goals} bills={bills} theme={theme} lastImportDate={lastImportDate} />;
+        return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks} theme={theme} lastImportDate={lastImportDate} />;
       case 'sales':
         return <SalesTrackerTab theme={theme} />;
       case 'budget':
@@ -1658,6 +1673,11 @@ function Dashboard({
         return <BillsCalendarView theme={theme} />;
       case 'goals':
         return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} theme={theme} />;
+      case 'tasks':
+        return <TasksTab tasks={tasks} onUpdateTasks={(newTasks) => {
+          setTasks(newTasks);
+          localStorage.setItem('pn_tasks', JSON.stringify(newTasks));
+        }} theme={theme} />;
       case 'retirement':
         return <RetirementTab theme={theme} />;
       case 'reports':
@@ -1861,7 +1881,7 @@ function Dashboard({
             {/* Theme Toggle */}
             <ThemeToggle isDark={isDarkMode} onToggle={toggleTheme} />
 
-            {/* Notifications - Clean Bell Style (Image 5) */}
+            {/* Notifications - Shows Activity Count */}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
@@ -1880,23 +1900,31 @@ function Dashboard({
                   <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
-                <span style={{
-                  position: 'absolute',
-                  top: '4px',
-                  right: '4px',
-                  background: '#6366F1',
-                  color: 'white',
-                  fontSize: '10px',
-                  fontWeight: '600',
-                  width: '16px',
-                  height: '16px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  1
-                </span>
+                {(() => {
+                  // Calculate activity count from tasks + goals + bills
+                  const pendingTasks = tasks.filter(t => t.status !== 'completed').length;
+                  const activityCount = pendingTasks + goals.length + bills.length;
+                  return activityCount > 0 ? (
+                    <span style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      background: '#6366F1',
+                      color: 'white',
+                      fontSize: '10px',
+                      fontWeight: '600',
+                      minWidth: '16px',
+                      height: '16px',
+                      borderRadius: '50%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: activityCount > 9 ? '0 4px' : 0
+                    }}>
+                      {activityCount > 99 ? '99+' : activityCount}
+                    </span>
+                  ) : null;
+                })()}
               </button>
 
               {showNotifications && (
@@ -1904,36 +1932,84 @@ function Dashboard({
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
                   right: 0,
-                  width: '320px',
+                  width: '340px',
                   background: theme.dropdownBg,
                   borderRadius: '12px',
                   boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
                   border: `1px solid ${theme.border}`,
                   zIndex: 100
                 }}>
-                  <div style={{ padding: '16px', borderBottom: `1px solid ${theme.borderLight}`, fontWeight: '600', color: theme.textPrimary }}>
-                    Notifications
+                  <div style={{ padding: '16px', borderBottom: `1px solid ${theme.borderLight}`, fontWeight: '600', color: theme.textPrimary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>Activity</span>
+                    <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '400' }}>
+                      {tasks.filter(t => t.status !== 'completed').length + goals.length + bills.length} items
+                    </span>
                   </div>
-                  <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                    {[
-                      { icon: '⚙️', title: 'Settings', desc: 'Update Dashboard', color: '#3B82F6' },
-                      { icon: '📅', title: 'Event Update', desc: 'An event date update again', color: '#10B981' },
-                      { icon: '👤', title: 'Profile', desc: 'Update your profile', color: '#F59E0B' },
-                      { icon: '⚠️', title: 'Application Error', desc: 'Check Your running application', color: '#EF4444' },
-                    ].map((item, i) => (
-                      <div key={i} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: `${item.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
-                          {item.icon}
+                  <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
+                    {/* Pending Tasks */}
+                    {tasks.filter(t => t.status !== 'completed').slice(0, 3).map((task, i) => (
+                      <div key={`task-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: task.status === 'in-progress' ? '#F59E0B15' : '#6366F115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          {task.status === 'in-progress' ? '🔄' : '📋'}
                         </div>
-                        <div>
-                          <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{item.title}</div>
-                          <div style={{ fontSize: '12px', color: theme.textMuted }}>{item.desc}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{task.title}</div>
+                          <div style={{ fontSize: '12px', color: theme.textMuted }}>
+                            {task.status === 'in-progress' ? 'In Progress' : 'To Do'} • Due {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
+                          </div>
+                        </div>
+                        <span style={{ 
+                          fontSize: '10px', 
+                          padding: '2px 8px', 
+                          borderRadius: '10px',
+                          background: task.status === 'in-progress' ? '#FEF3C7' : '#E0E7FF',
+                          color: task.status === 'in-progress' ? '#D97706' : '#6366F1',
+                          fontWeight: '500'
+                        }}>
+                          {task.status === 'in-progress' ? 'In Progress' : 'To-do'}
+                        </span>
+                      </div>
+                    ))}
+                    {/* Goals */}
+                    {goals.slice(0, 2).map((goal, i) => (
+                      <div key={`goal-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#10B98115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          {goal.icon || '🎯'}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{goal.name}</div>
+                          <div style={{ fontSize: '12px', color: theme.textMuted }}>
+                            Goal • {Math.round((goal.currentAmount / goal.targetAmount) * 100)}% complete
+                          </div>
                         </div>
                       </div>
                     ))}
+                    {/* Upcoming Bills */}
+                    {bills.slice(0, 2).map((bill, i) => (
+                      <div key={`bill-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#EF444415', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                          {bill.icon || '📄'}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{bill.name}</div>
+                          <div style={{ fontSize: '12px', color: theme.textMuted }}>
+                            Bill • Due {new Date(bill.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {tasks.length === 0 && goals.length === 0 && bills.length === 0 && (
+                      <div style={{ padding: '24px', textAlign: 'center', color: theme.textMuted }}>
+                        <span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>✨</span>
+                        No pending activities
+                      </div>
+                    )}
                   </div>
-                  <div style={{ padding: '12px 16px', textAlign: 'center', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
-                    See all notifications
+                  <div 
+                    onClick={() => { setActiveTab('tasks'); setShowNotifications(false); }}
+                    style={{ padding: '12px 16px', textAlign: 'center', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer', borderTop: `1px solid ${theme.borderLight}` }}
+                  >
+                    View all tasks
                   </div>
                 </div>
               )}
@@ -2038,12 +2114,16 @@ function Dashboard({
                       padding: '12px 16px',
                       cursor: 'pointer',
                       fontSize: '14px',
-                      color: theme.danger,
+                      color: '#EF4444',
                       borderTop: `1px solid ${theme.borderLight}`
                     }}
                   >
-                    <span>🚪</span>
-                    <span>Log out</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
+                      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                      <polyline points="16 17 21 12 16 7"/>
+                      <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    <span>Logout</span>
                   </div>
                 </div>
               )}
@@ -2188,12 +2268,93 @@ function Dashboard({
               <button onClick={() => setShowManageAccountModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: theme.textMuted }}>×</button>
             </div>
             
-            {/* Profile Photo */}
+            {/* Profile Photo - Memoji Selection */}
             <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <div style={{ width: '80px', height: '80px', borderRadius: '50%', background: theme.bgMain, display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px', fontSize: '32px', color: theme.textMuted }}>
-                📷
+              <div style={{ 
+                width: '80px', 
+                height: '80px', 
+                borderRadius: '50%', 
+                background: '#F3E8FF', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                margin: '0 auto 12px', 
+                fontSize: '40px',
+                border: '3px solid #E9D5FF'
+              }}>
+                {userAvatar || '📷'}
               </div>
-              <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>Upload Photo</button>
+              <button 
+                onClick={() => setShowAvatarPicker(!showAvatarPicker)}
+                style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}
+              >
+                {showAvatarPicker ? 'Close' : 'Change Avatar'}
+              </button>
+              
+              {/* Avatar Picker */}
+              {showAvatarPicker && (
+                <div style={{ marginTop: '16px', padding: '16px', background: theme.bgMain, borderRadius: '12px' }}>
+                  <p style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>Choose a Memoji</p>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px', marginBottom: '16px' }}>
+                    {memojiAvatars.map((emoji, i) => (
+                      <button
+                        key={i}
+                        onClick={() => { 
+                          setUserAvatar(emoji); 
+                          localStorage.setItem('pn_userAvatar', emoji);
+                        }}
+                        style={{
+                          width: '44px',
+                          height: '44px',
+                          borderRadius: '50%',
+                          border: userAvatar === emoji ? `2px solid ${theme.primary}` : `1px solid ${theme.borderLight}`,
+                          background: userAvatar === emoji ? `${theme.primary}15` : theme.bgCard,
+                          fontSize: '24px',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ borderTop: `1px solid ${theme.borderLight}`, paddingTop: '12px' }}>
+                    <label style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      justifyContent: 'center',
+                      gap: '8px',
+                      padding: '10px 16px', 
+                      background: theme.bgCard, 
+                      border: `1px dashed ${theme.border}`, 
+                      borderRadius: '8px', 
+                      cursor: 'pointer',
+                      color: theme.textSecondary,
+                      fontSize: '13px'
+                    }}>
+                      <span>📁</span> Upload Custom Photo
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          const file = e.target.files[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              setUserAvatar(reader.result);
+                              localStorage.setItem('pn_userAvatar', reader.result);
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
+              )}
             </div>
             
             {/* Form Fields */}
@@ -2271,7 +2432,7 @@ function Dashboard({
             
             {/* Save Button */}
             <button 
-              onClick={() => { saveProfile(profile); setShowManageAccountModal(false); }}
+              onClick={() => { saveProfile(profile); setShowManageAccountModal(false); setShowAvatarPicker(false); }}
               style={{ width: '100%', padding: '14px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '16px', fontWeight: '600', cursor: 'pointer', marginBottom: '16px' }}
             >
               Save Changes
@@ -2308,7 +2469,7 @@ function Dashboard({
 // Features: Personal/Side Hustle split, Charts, Budget, Goals, Bills, Free to Spend
 // ============================================================================
 
-function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate }) {
+function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, lastImportDate }) {
   const [timeRange, setTimeRange] = useState('month');
   const [activeAccount, setActiveAccount] = useState('all');
   const [txnSearchQuery, setTxnSearchQuery] = useState('');
@@ -2846,33 +3007,24 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
 
       {/* Spending & Budget Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-        {/* Budgeted vs. Actual Expenses - Bar Chart (Image 8) */}
+        {/* Budgeted vs. Actual Expenses - Bar Chart (Image 3/8) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
-            <div style={{ flex: 1, paddingRight: '20px' }}>
-              <p style={{ fontSize: '13px', color: theme.textMuted, margin: '0 0 12px', lineHeight: '1.5' }}>
-                Track your budgeted vs actual expenses over the past 6 months to understand your financial trends.
-              </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+            <p style={{ fontSize: '13px', color: theme.textMuted, margin: 0, lineHeight: '1.5', maxWidth: '60%' }}>
+              Track your budgeted vs actual expenses over the past 6 months to understand your financial trends.
+            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#6366F1' }} />
+                <span style={{ fontSize: '13px', color: theme.textMuted }}>Actual</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#C7D2FE' }} />
+                <span style={{ fontSize: '13px', color: theme.textMuted }}>Budgeted</span>
+              </div>
             </div>
-            <button style={{ 
-              display: 'flex', alignItems: 'center', gap: '6px',
-              padding: '8px 16px', background: theme.bgMain, border: `1px solid ${theme.borderLight}`,
-              borderRadius: '8px', fontSize: '13px', color: theme.textPrimary, cursor: 'pointer', fontWeight: '500'
-            }}>
-              Download Report <span>📥</span>
-            </button>
           </div>
           <BudgetBarChart data={monthlyData} budgets={budgets} theme={theme} height={220} />
-          <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginTop: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#6366F1' }} />
-              <span style={{ fontSize: '13px', color: theme.textMuted }}>Actual</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#C7D2FE' }} />
-              <span style={{ fontSize: '13px', color: theme.textMuted }}>Budgeted</span>
-            </div>
-          </div>
         </div>
 
         {/* Spending Breakdown (Image 5) */}
@@ -3089,6 +3241,147 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
         )}
       </div>
 
+      {/* Tasks Progress Section */}
+      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, marginBottom: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Task Progress</h3>
+          <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>View All →</button>
+        </div>
+        
+        {/* Task Status Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '20px' }}>
+          {(() => {
+            const todoCount = tasks.filter(t => t.status === 'todo').length;
+            const inProgressCount = tasks.filter(t => t.status === 'in-progress').length;
+            const completedCount = tasks.filter(t => t.status === 'completed').length;
+            const totalTasks = tasks.length;
+            const completionRate = totalTasks > 0 ? Math.round((completedCount / totalTasks) * 100) : 0;
+            
+            return (
+              <>
+                <div style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  background: 'linear-gradient(135deg, #EEF2FF, #E0E7FF)',
+                  border: '1px solid #C7D2FE'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#4F46E5', marginBottom: '4px' }}>{totalTasks}</div>
+                  <div style={{ fontSize: '12px', color: '#6366F1', fontWeight: '500' }}>Total Tasks</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  background: 'linear-gradient(135deg, #FEF3C7, #FDE68A)',
+                  border: '1px solid #FCD34D'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#D97706', marginBottom: '4px' }}>{todoCount}</div>
+                  <div style={{ fontSize: '12px', color: '#F59E0B', fontWeight: '500' }}>To Do</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  background: 'linear-gradient(135deg, #FEE2E2, #FECACA)',
+                  border: '1px solid #FCA5A5'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#DC2626', marginBottom: '4px' }}>{inProgressCount}</div>
+                  <div style={{ fontSize: '12px', color: '#EF4444', fontWeight: '500' }}>In Progress</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  background: 'linear-gradient(135deg, #D1FAE5, #A7F3D0)',
+                  border: '1px solid #6EE7B7'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#059669', marginBottom: '4px' }}>{completedCount}</div>
+                  <div style={{ fontSize: '12px', color: '#10B981', fontWeight: '500' }}>Completed</div>
+                </div>
+              </>
+            );
+          })()}
+        </div>
+        
+        {/* Task Completion Progress */}
+        <div style={{ marginBottom: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <span style={{ fontSize: '13px', color: theme.textMuted }}>Overall Completion</span>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>
+              {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === 'completed').length / tasks.length) * 100) : 0}%
+            </span>
+          </div>
+          <div style={{ height: '8px', background: theme.borderLight, borderRadius: '4px', overflow: 'hidden' }}>
+            <div style={{ 
+              height: '100%', 
+              width: `${tasks.length > 0 ? (tasks.filter(t => t.status === 'completed').length / tasks.length) * 100 : 0}%`,
+              background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+              borderRadius: '4px',
+              transition: 'width 0.3s ease'
+            }} />
+          </div>
+        </div>
+        
+        {/* Upcoming Tasks List */}
+        <div>
+          <div style={{ fontSize: '13px', fontWeight: '600', color: theme.textSecondary, marginBottom: '12px' }}>Upcoming Tasks</div>
+          {tasks.filter(t => t.status !== 'completed').slice(0, 3).length > 0 ? (
+            <div style={{ display: 'grid', gap: '8px' }}>
+              {tasks.filter(t => t.status !== 'completed').slice(0, 3).map((task, i) => (
+                <div key={i} style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '12px 14px',
+                  background: theme.bgMain,
+                  borderRadius: '10px',
+                  border: `1px solid ${theme.borderLight}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ 
+                      width: '32px', 
+                      height: '32px', 
+                      borderRadius: '8px', 
+                      background: task.status === 'in-progress' ? '#FEF3C7' : '#EEF2FF',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px'
+                    }}>
+                      {task.status === 'in-progress' ? '🔄' : '📋'}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{task.title}</div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No due date'}
+                      </div>
+                    </div>
+                  </div>
+                  <span style={{ 
+                    fontSize: '10px', 
+                    padding: '4px 8px', 
+                    borderRadius: '6px',
+                    background: task.status === 'in-progress' ? '#FEF3C7' : '#E0E7FF',
+                    color: task.status === 'in-progress' ? '#D97706' : '#6366F1',
+                    fontWeight: '600'
+                  }}>
+                    {task.status === 'in-progress' ? 'In Progress' : 'To Do'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ 
+              padding: '24px', 
+              textAlign: 'center', 
+              background: theme.bgMain, 
+              borderRadius: '10px',
+              border: `1px dashed ${theme.borderLight}`
+            }}>
+              <span style={{ fontSize: '24px', display: 'block', marginBottom: '8px' }}>✨</span>
+              <span style={{ fontSize: '13px', color: theme.textMuted }}>No pending tasks. Add a task to get started!</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Bills & Goals Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
@@ -3141,6 +3434,394 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
           <h3 style={{ fontSize: '24px', fontWeight: '600', color: theme.textPrimary, marginBottom: '12px' }}>Ready to Take Control?</h3>
           <p style={{ color: theme.textMuted, marginBottom: '8px', maxWidth: '400px', margin: '0 auto 20px', lineHeight: '1.6', fontSize: '15px' }}>Import your bank statements to unlock powerful insights, track your spending, and reach your financial goals.</p>
           <p style={{ color: theme.textSecondary, fontSize: '14px' }}>Go to <span style={{ color: theme.primary, fontWeight: '600' }}>Import</span> in the sidebar to upload your files.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+// ============================================================================
+// TASKS TAB - Task Management (Image 6 inspired)
+// ============================================================================
+function TasksTab({ tasks, onUpdateTasks, theme }) {
+  const [filter, setFilter] = useState('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '', priority: 'medium', category: 'Personal' });
+  const [editingTask, setEditingTask] = useState(null);
+
+  const todoTasks = tasks.filter(t => t.status === 'todo');
+  const inProgressTasks = tasks.filter(t => t.status === 'in-progress');
+  const completedTasks = tasks.filter(t => t.status === 'completed');
+  
+  const filteredTasks = filter === 'all' ? tasks : 
+    filter === 'todo' ? todoTasks :
+    filter === 'in-progress' ? inProgressTasks : completedTasks;
+
+  const completionRate = tasks.length > 0 ? Math.round((completedTasks.length / tasks.length) * 100) : 0;
+
+  const addTask = () => {
+    if (!newTask.title.trim()) return;
+    const task = {
+      id: Date.now(),
+      ...newTask,
+      status: 'todo',
+      createdAt: new Date().toISOString()
+    };
+    onUpdateTasks([...tasks, task]);
+    setNewTask({ title: '', description: '', dueDate: '', priority: 'medium', category: 'Personal' });
+    setShowAddModal(false);
+  };
+
+  const updateTaskStatus = (taskId, newStatus) => {
+    onUpdateTasks(tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t));
+  };
+
+  const deleteTask = (taskId) => {
+    onUpdateTasks(tasks.filter(t => t.id !== taskId));
+  };
+
+  const priorityColors = {
+    high: { bg: '#FEE2E2', color: '#DC2626', label: 'High' },
+    medium: { bg: '#FEF3C7', color: '#D97706', label: 'Medium' },
+    low: { bg: '#D1FAE5', color: '#059669', label: 'Low' }
+  };
+
+  return (
+    <div style={{ maxWidth: '1200px' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+        <div>
+          <h1 style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '4px' }}>Tasks</h1>
+          <p style={{ fontSize: '14px', color: theme.textMuted }}>Manage your tasks and stay productive</p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '12px 20px',
+            background: theme.primary,
+            color: 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: '600',
+            cursor: 'pointer'
+          }}
+        >
+          <span style={{ fontSize: '18px' }}>+</span>
+          Add Task
+        </button>
+      </div>
+
+      {/* Stats Overview */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>📋</div>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary }}>{tasks.length}</div>
+              <div style={{ fontSize: '13px', color: theme.textMuted }}>Total Tasks</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>📝</div>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#D97706' }}>{todoTasks.length}</div>
+              <div style={{ fontSize: '13px', color: theme.textMuted }}>To Do</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#DBEAFE', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>🔄</div>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#2563EB' }}>{inProgressTasks.length}</div>
+              <div style={{ fontSize: '13px', color: theme.textMuted }}>In Progress</div>
+            </div>
+          </div>
+        </div>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: '#D1FAE5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px' }}>✅</div>
+            <div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: '#059669' }}>{completedTasks.length}</div>
+              <div style={{ fontSize: '13px', color: theme.textMuted }}>Completed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Progress Bar */}
+      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', marginBottom: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+          <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Overall Progress</span>
+          <span style={{ fontSize: '14px', fontWeight: '700', color: theme.primary }}>{completionRate}%</span>
+        </div>
+        <div style={{ height: '10px', background: theme.borderLight, borderRadius: '5px', overflow: 'hidden' }}>
+          <div style={{ 
+            height: '100%', 
+            width: `${completionRate}%`,
+            background: 'linear-gradient(90deg, #6366F1, #8B5CF6)',
+            borderRadius: '5px',
+            transition: 'width 0.5s ease'
+          }} />
+        </div>
+      </div>
+
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '24px' }}>
+        {[
+          { id: 'all', label: 'All', count: tasks.length },
+          { id: 'todo', label: 'To Do', count: todoTasks.length },
+          { id: 'in-progress', label: 'In Progress', count: inProgressTasks.length },
+          { id: 'completed', label: 'Completed', count: completedTasks.length }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setFilter(tab.id)}
+            style={{
+              padding: '10px 20px',
+              borderRadius: '10px',
+              border: 'none',
+              background: filter === tab.id ? theme.primary : theme.bgCard,
+              color: filter === tab.id ? 'white' : theme.textPrimary,
+              fontSize: '14px',
+              fontWeight: '500',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: filter === tab.id ? 'none' : theme.cardShadow
+            }}
+          >
+            {tab.label}
+            <span style={{ 
+              padding: '2px 8px', 
+              borderRadius: '10px', 
+              background: filter === tab.id ? 'rgba(255,255,255,0.2)' : theme.bgMain,
+              fontSize: '12px'
+            }}>
+              {tab.count}
+            </span>
+          </button>
+        ))}
+      </div>
+
+      {/* Tasks List */}
+      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
+        {filteredTasks.length > 0 ? (
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {filteredTasks.map(task => (
+              <div 
+                key={task.id} 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'space-between',
+                  padding: '16px',
+                  background: theme.bgMain,
+                  borderRadius: '12px',
+                  border: `1px solid ${theme.borderLight}`,
+                  transition: 'transform 0.2s ease'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flex: 1 }}>
+                  <input 
+                    type="checkbox"
+                    checked={task.status === 'completed'}
+                    onChange={() => updateTaskStatus(task.id, task.status === 'completed' ? 'todo' : 'completed')}
+                    style={{ width: '20px', height: '20px', cursor: 'pointer', accentColor: theme.primary }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ 
+                      fontSize: '15px', 
+                      fontWeight: '500', 
+                      color: task.status === 'completed' ? theme.textMuted : theme.textPrimary,
+                      textDecoration: task.status === 'completed' ? 'line-through' : 'none',
+                      marginBottom: '4px'
+                    }}>
+                      {task.title}
+                    </div>
+                    {task.description && (
+                      <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '6px' }}>{task.description}</div>
+                    )}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <span style={{ fontSize: '12px', color: theme.textMuted }}>
+                        📅 {task.dueDate ? new Date(task.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'No date'}
+                      </span>
+                      <span style={{ fontSize: '12px', color: theme.textMuted }}>📁 {task.category}</span>
+                      <span style={{ 
+                        fontSize: '10px', 
+                        padding: '2px 8px', 
+                        borderRadius: '6px',
+                        background: priorityColors[task.priority]?.bg,
+                        color: priorityColors[task.priority]?.color,
+                        fontWeight: '600'
+                      }}>
+                        {priorityColors[task.priority]?.label}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <select
+                    value={task.status}
+                    onChange={(e) => updateTaskStatus(task.id, e.target.value)}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: `1px solid ${theme.borderLight}`,
+                      background: theme.bgCard,
+                      color: theme.textPrimary,
+                      fontSize: '12px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <option value="todo">To Do</option>
+                    <option value="in-progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                  </select>
+                  <button
+                    onClick={() => deleteTask(task.id)}
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#FEE2E2',
+                      color: '#DC2626',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '14px'
+                    }}
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>📝</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, marginBottom: '8px' }}>
+              {filter === 'all' ? 'No tasks yet' : `No ${filter.replace('-', ' ')} tasks`}
+            </h3>
+            <p style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '20px' }}>
+              {filter === 'all' ? 'Create your first task to get started!' : 'Tasks with this status will appear here'}
+            </p>
+            {filter === 'all' && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                style={{
+                  padding: '12px 24px',
+                  background: theme.primary,
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                + Create Task
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Add Task Modal */}
+      {showAddModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '32px', width: '480px', maxWidth: '90vw' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: theme.textPrimary }}>Add New Task</h2>
+              <button onClick={() => setShowAddModal(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: theme.textMuted }}>×</button>
+            </div>
+            
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Task Name *</label>
+              <input 
+                type="text"
+                value={newTask.title}
+                onChange={(e) => setNewTask({...newTask, title: e.target.value})}
+                placeholder="Enter task name"
+                style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Description</label>
+              <textarea 
+                value={newTask.description}
+                onChange={(e) => setNewTask({...newTask, description: e.target.value})}
+                placeholder="Add description (optional)"
+                rows={3}
+                style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', resize: 'none', boxSizing: 'border-box' }}
+              />
+            </div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Due Date</label>
+                <input 
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask({...newTask, dueDate: e.target.value})}
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Priority</label>
+                <select 
+                  value={newTask.priority}
+                  onChange={(e) => setNewTask({...newTask, priority: e.target.value})}
+                  style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Category</label>
+              <select 
+                value={newTask.category}
+                onChange={(e) => setNewTask({...newTask, category: e.target.value})}
+                style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+              >
+                <option value="Personal">Personal</option>
+                <option value="Work">Work</option>
+                <option value="Finance">Finance</option>
+                <option value="Health">Health</option>
+                <option value="Shopping">Shopping</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={() => setShowAddModal(false)}
+                style={{ flex: 1, padding: '14px', background: theme.bgMain, border: `1px solid ${theme.border}`, borderRadius: '10px', color: theme.textPrimary, fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={addTask}
+                style={{ flex: 1, padding: '14px', background: theme.primary, border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+              >
+                Add Task
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
