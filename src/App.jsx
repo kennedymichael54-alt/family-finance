@@ -17,37 +17,74 @@ import SalesTrackerTab from './components/SalesTrackerTab';
 // PROSPERNEST - DASHSTACK UI DESIGN
 // ============================================================================
 
-// Theme colors - DashStack inspired
-const theme = {
-  primary: '#4F46E5',      // Indigo/Blue
+// Theme colors - Light Mode (DashStack inspired)
+const lightTheme = {
+  mode: 'light',
+  primary: '#4F46E5',
   primaryLight: '#818CF8',
   primaryDark: '#3730A3',
-  secondary: '#EC4899',    // Pink
+  secondary: '#EC4899',
   success: '#10B981',
   warning: '#F59E0B',
   danger: '#EF4444',
   info: '#3B82F6',
   
-  // Backgrounds
   bgMain: '#F5F6FA',
   bgWhite: '#FFFFFF',
   bgCard: '#FFFFFF',
   
-  // Text
   textPrimary: '#1F2937',
   textSecondary: '#6B7280',
   textMuted: '#9CA3AF',
   
-  // Borders
   border: '#E5E7EB',
   borderLight: '#F3F4F6',
   
-  // Sidebar
   sidebarBg: '#FFFFFF',
   sidebarActive: '#4F46E5',
   sidebarText: '#6B7280',
   sidebarActiveText: '#FFFFFF',
+  
+  inputBg: '#FFFFFF',
+  cardShadow: '0 1px 3px rgba(0,0,0,0.05)',
+  dropdownBg: '#FFFFFF',
 };
+
+// Theme colors - Dark Mode (Original purple theme)
+const darkTheme = {
+  mode: 'dark',
+  primary: '#8B5CF6',
+  primaryLight: '#A78BFA',
+  primaryDark: '#6D28D9',
+  secondary: '#EC4899',
+  success: '#10B981',
+  warning: '#F59E0B',
+  danger: '#EF4444',
+  info: '#3B82F6',
+  
+  bgMain: '#0c0a1d',
+  bgWhite: '#1a1230',
+  bgCard: '#1e1b38',
+  
+  textPrimary: '#FFFFFF',
+  textSecondary: '#A0AEC0',
+  textMuted: '#718096',
+  
+  border: 'rgba(139, 92, 246, 0.2)',
+  borderLight: 'rgba(255,255,255,0.1)',
+  
+  sidebarBg: '#1a1230',
+  sidebarActive: '#8B5CF6',
+  sidebarText: 'rgba(255,255,255,0.6)',
+  sidebarActiveText: '#FFFFFF',
+  
+  inputBg: 'rgba(139, 92, 246, 0.1)',
+  cardShadow: '0 4px 20px rgba(0,0,0,0.3)',
+  dropdownBg: '#1e1b38',
+};
+
+// Default theme (will be controlled by state)
+let theme = lightTheme;
 
 // ============================================================================
 // SIDEBAR ICONS - Line style matching DashStack
@@ -646,6 +683,51 @@ function AuthPage({ setView }) {
 }
 
 // ============================================================================
+// THEME TOGGLE COMPONENT
+// ============================================================================
+
+function ThemeToggle({ isDark, onToggle }) {
+  return (
+    <div
+      onClick={onToggle}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '8px',
+        padding: '8px 12px',
+        background: isDark ? 'rgba(139, 92, 246, 0.2)' : '#F5F6FA',
+        border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.3)' : '#E5E7EB'}`,
+        borderRadius: '10px',
+        cursor: 'pointer',
+        transition: 'all 0.3s ease'
+      }}
+    >
+      <span style={{ fontSize: '16px' }}>{isDark ? '🌙' : '☀️'}</span>
+      <div style={{
+        width: '40px',
+        height: '22px',
+        background: isDark ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : '#E5E7EB',
+        borderRadius: '11px',
+        position: 'relative',
+        transition: 'all 0.3s ease'
+      }}>
+        <div style={{
+          width: '18px',
+          height: '18px',
+          background: 'white',
+          borderRadius: '50%',
+          position: 'absolute',
+          top: '2px',
+          left: isDark ? '20px' : '2px',
+          transition: 'all 0.3s ease',
+          boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        }} />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
 // DASHBOARD - DASHSTACK STYLE (Light Theme)
 // ============================================================================
 
@@ -667,6 +749,24 @@ function Dashboard({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
+  
+  // Theme state - persist in localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pn_darkMode');
+      return saved === 'true';
+    } catch { return false; }
+  });
+  
+  // Get current theme based on mode
+  const theme = isDarkMode ? darkTheme : lightTheme;
+  
+  // Save theme preference
+  const toggleTheme = () => {
+    const newMode = !isDarkMode;
+    setIsDarkMode(newMode);
+    localStorage.setItem('pn_darkMode', newMode.toString());
+  };
   
   // Profile state
   const [profile, setProfile] = useState(() => {
@@ -710,27 +810,27 @@ function Dashboard({
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <DashboardHome transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} />;
+        return <DashboardHome transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
       case 'sales':
-        return <SalesTrackerTab />;
+        return <SalesTrackerTab theme={theme} />;
       case 'budget':
-        return <BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} />;
+        return <BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
       case 'transactions':
-        return <TransactionsTabDS transactions={transactions} onNavigateToImport={() => setActiveTab('import')} />;
+        return <TransactionsTabDS transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
       case 'bills':
-        return <BillsCalendarView />;
+        return <BillsCalendarView theme={theme} />;
       case 'goals':
-        return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} />;
+        return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} theme={theme} />;
       case 'retirement':
-        return <RetirementTab />;
+        return <RetirementTab theme={theme} />;
       case 'reports':
-        return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} />;
+        return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
       case 'settings':
-        return <SettingsTabDS />;
+        return <SettingsTabDS theme={theme} />;
       case 'import':
-        return <ImportTabDS onImport={onImportTransactions} parseCSV={parseCSV} transactionCount={transactions.length} />;
+        return <ImportTabDS onImport={onImportTransactions} parseCSV={parseCSV} transactionCount={transactions.length} theme={theme} />;
       default:
-        return <DashboardHome transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} />;
+        return <DashboardHome transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
     }
   };
 
@@ -889,6 +989,9 @@ function Dashboard({
 
           {/* Right side */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Theme Toggle */}
+            <ThemeToggle isDark={isDarkMode} onToggle={toggleTheme} />
+            
             {/* Notifications */}
             <div style={{ position: 'relative' }}>
               <button
@@ -1120,7 +1223,7 @@ function Dashboard({
 // DASHBOARD HOME - DASHSTACK STYLE
 // ============================================================================
 
-function DashboardHome({ transactions, goals, onNavigateToImport }) {
+function DashboardHome({ transactions, goals, onNavigateToImport, theme }) {
   const totalIncome = transactions.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0);
   const totalExpenses = transactions.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
   const netCashFlow = totalIncome - totalExpenses;
@@ -1139,7 +1242,7 @@ function DashboardHome({ transactions, goals, onNavigateToImport }) {
       {/* Stat Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
         {statCards.map((card, i) => (
-          <div key={i} style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div key={i} style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
                 <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px' }}>{card.label}</div>
@@ -1162,7 +1265,7 @@ function DashboardHome({ transactions, goals, onNavigateToImport }) {
       {/* Two Column Layout */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
         {/* Personal Section */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#E0E7FF', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               👤
@@ -1214,7 +1317,7 @@ function DashboardHome({ transactions, goals, onNavigateToImport }) {
         </div>
 
         {/* Side Hustle Section */}
-        <div style={{ background: 'white', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
             <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#FCE7F3', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               💼
@@ -1256,7 +1359,7 @@ function DashboardHome({ transactions, goals, onNavigateToImport }) {
       </div>
 
       {transactions.length === 0 && (
-        <div style={{ marginTop: '24px', background: 'white', borderRadius: '16px', padding: '40px', textAlign: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div style={{ marginTop: '24px', background: theme.bgCard, borderRadius: '16px', padding: '40px', textAlign: 'center', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ fontSize: '48px', marginBottom: '16px' }}>📂</div>
           <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, marginBottom: '8px' }}>No Data Yet</h3>
           <p style={{ color: theme.textMuted, marginBottom: '20px' }}>Import your bank transactions to get started</p>
@@ -1273,7 +1376,7 @@ function DashboardHome({ transactions, goals, onNavigateToImport }) {
 // TRANSACTIONS TAB - DASHSTACK TABLE STYLE
 // ============================================================================
 
-function TransactionsTabDS({ transactions, onNavigateToImport }) {
+function TransactionsTabDS({ transactions, onNavigateToImport, theme }) {
   const [filter, setFilter] = useState({ date: '', type: '', status: '' });
 
   const getStatusBadge = (status) => {
@@ -1295,26 +1398,26 @@ function TransactionsTabDS({ transactions, onNavigateToImport }) {
       <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Transactions</h1>
       
       {/* Filter Bar */}
-      <div style={{ background: 'white', borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: theme.bgCard, borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: theme.textSecondary }}>
           <Icons.Filter />
           <span style={{ fontWeight: '500' }}>Filter By</span>
         </div>
         
-        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: 'white', fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
+        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: theme.inputBg, fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
           <option>Date</option>
           <option>This Week</option>
           <option>This Month</option>
           <option>This Year</option>
         </select>
         
-        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: 'white', fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
+        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: theme.inputBg, fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
           <option>Type</option>
           <option>Income</option>
           <option>Expense</option>
         </select>
         
-        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: 'white', fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
+        <select style={{ padding: '10px 16px', borderRadius: '8px', border: `1px solid ${theme.border}`, background: theme.inputBg, fontSize: '14px', color: theme.textPrimary, cursor: 'pointer' }}>
           <option>Category</option>
           <option>Food</option>
           <option>Shopping</option>
@@ -1328,7 +1431,7 @@ function TransactionsTabDS({ transactions, onNavigateToImport }) {
       </div>
 
       {/* Table */}
-      <div style={{ background: 'white', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: theme.bgCard, borderRadius: '16px', overflow: 'hidden', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: theme.bgMain }}>
@@ -1372,8 +1475,8 @@ function TransactionsTabDS({ transactions, onNavigateToImport }) {
           <div style={{ padding: '16px 20px', borderTop: `1px solid ${theme.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '14px', color: theme.textMuted }}>Showing 1-{Math.min(10, transactions.length)} of {transactions.length}</span>
             <div style={{ display: 'flex', gap: '8px' }}>
-              <button style={{ width: '36px', height: '36px', border: `1px solid ${theme.border}`, borderRadius: '8px', background: 'white', cursor: 'pointer' }}>‹</button>
-              <button style={{ width: '36px', height: '36px', border: `1px solid ${theme.border}`, borderRadius: '8px', background: 'white', cursor: 'pointer' }}>›</button>
+              <button style={{ width: '36px', height: '36px', border: `1px solid ${theme.border}`, borderRadius: '8px', background: theme.bgCard, color: theme.textPrimary, cursor: 'pointer' }}>‹</button>
+              <button style={{ width: '36px', height: '36px', border: `1px solid ${theme.border}`, borderRadius: '8px', background: theme.bgCard, color: theme.textPrimary, cursor: 'pointer' }}>›</button>
             </div>
           </div>
         )}
@@ -1386,7 +1489,7 @@ function TransactionsTabDS({ transactions, onNavigateToImport }) {
 // IMPORT TAB - DASHSTACK STYLE
 // ============================================================================
 
-function ImportTabDS({ onImport, parseCSV, transactionCount }) {
+function ImportTabDS({ onImport, parseCSV, transactionCount, theme }) {
   const [dragOver, setDragOver] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
@@ -1418,7 +1521,7 @@ function ImportTabDS({ onImport, parseCSV, transactionCount }) {
       <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Import Data</h1>
       
       {/* Status Card */}
-      <div style={{ background: 'white', borderRadius: '16px', padding: '24px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', marginBottom: '24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
         <div>
           <div style={{ fontSize: '14px', color: theme.textMuted, marginBottom: '4px' }}>Current Data</div>
           <div style={{ fontSize: '32px', fontWeight: '700', color: theme.textPrimary }}>{transactionCount.toLocaleString()} <span style={{ fontSize: '16px', fontWeight: '400', color: theme.textMuted }}>transactions</span></div>
@@ -1435,7 +1538,7 @@ function ImportTabDS({ onImport, parseCSV, transactionCount }) {
         onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFile(e.dataTransfer.files[0]); }}
         onClick={() => fileInputRef.current?.click()}
         style={{
-          background: dragOver ? '#EEF2FF' : 'white',
+          background: dragOver ? (theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.2)' : '#EEF2FF') : theme.bgCard,
           border: `2px dashed ${dragOver ? theme.primary : theme.border}`,
           borderRadius: '16px',
           padding: '60px',
@@ -1443,7 +1546,7 @@ function ImportTabDS({ onImport, parseCSV, transactionCount }) {
           cursor: 'pointer',
           marginBottom: '24px',
           transition: 'all 0.2s ease',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.05)'
+          boxShadow: theme.cardShadow
         }}
       >
         <input ref={fileInputRef} type="file" accept=".csv" onChange={(e) => handleFile(e.target.files[0])} style={{ display: 'none' }} />
@@ -1495,7 +1598,7 @@ function ImportTabDS({ onImport, parseCSV, transactionCount }) {
 // SETTINGS TAB - DASHSTACK STYLE
 // ============================================================================
 
-function SettingsTabDS() {
+function SettingsTabDS({ theme }) {
   return (
     <div>
       <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Settings</h1>
@@ -1510,15 +1613,15 @@ function SettingsTabDS() {
           { icon: '📤', title: 'Export Data', desc: 'Download your financial data' }
         ].map((item, i) => (
           <div key={i} style={{
-            background: 'white',
+            background: theme.bgCard,
             borderRadius: '12px',
             padding: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
             cursor: 'pointer',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-            border: `1px solid ${theme.border}`
+            boxShadow: theme.cardShadow,
+            border: `1px solid ${theme.borderLight}`
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
               <div style={{ width: '44px', height: '44px', borderRadius: '10px', background: theme.bgMain, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px' }}>
