@@ -12,6 +12,7 @@ import TransactionsTab from './components/TransactionsTab';
 import ReportsTab from './components/ReportsTab';
 import RetirementTab from './components/RetirementTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
+import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
 
 // ============================================================================
 // PROSPERNEST - DASHSTACK UI DESIGN
@@ -405,7 +406,7 @@ function App() {
       parseCSV={parseCSV}
     />
   );
-  return <LandingPage setView={setView} />;
+  return <ProsperNestLandingV4 onNavigate={setView} />;
 }
 
 // ============================================================================
