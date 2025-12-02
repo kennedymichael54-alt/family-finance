@@ -324,29 +324,49 @@ function App() {
   const [lastImportDate, setLastImportDate] = useState(null);
 
   useEffect(() => {
+    let subscription = null;
+    
     const init = async () => {
       const sb = await initSupabase();
       if (sb) {
+        // Set up auth state listener FIRST (catches INITIAL_SESSION)
+        const { data: { subscription: sub } } = sb.auth.onAuthStateChange((event, session) => {
+          console.log('Auth event:', event, session?.user?.email);
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+            if (session?.user) {
+              setUser(session.user);
+              setView('dashboard');
+              loadSavedData(session.user.id);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            setUser(null);
+            setView('landing');
+          }
+          setLoading(false);
+        });
+        subscription = sub;
+        
+        // Also check current session (fallback)
         const { data: { session } } = await sb.auth.getSession();
         if (session?.user) {
           setUser(session.user);
           setView('dashboard');
           loadSavedData(session.user.id);
         }
-        sb.auth.onAuthStateChange((event, session) => {
-          if (session?.user) {
-            setUser(session.user);
-            setView('dashboard');
-            loadSavedData(session.user.id);
-          } else {
-            setUser(null);
-            setView('landing');
-          }
-        });
+        setLoading(false);
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     };
+    
     init();
+    
+    // Cleanup subscription on unmount
+    return () => {
+      if (subscription) {
+        subscription.unsubscribe();
+      }
+    };
   }, []);
 
   const loadSavedData = (userId) => {
@@ -618,12 +638,13 @@ function AuthPage({ setView }) {
               Prosper<span style={{ color: '#A78BFA' }}>Nest</span>
             </span>
             <span style={{ 
-              background: '#007AFF', 
+              background: '#F97316', 
               padding: '4px 10px', 
               borderRadius: '6px', 
               fontSize: '11px', 
               fontWeight: '600', 
-              color: 'white' 
+              color: 'white',
+              textTransform: 'uppercase'
             }}>Beta</span>
           </div>
 
@@ -661,12 +682,13 @@ function AuthPage({ setView }) {
               Prosper<span style={{ color: '#4F46E5' }}>Nest</span>
             </span>
             <span style={{ 
-              background: '#007AFF', 
+              background: '#F97316', 
               padding: '2px 8px', 
               borderRadius: '4px', 
               fontSize: '10px', 
               fontWeight: '600', 
-              color: 'white' 
+              color: 'white',
+              textTransform: 'uppercase'
             }}>Beta</span>
           </div>
           
@@ -740,7 +762,7 @@ function AuthPage({ setView }) {
               </div>
             )}
             
-            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: '#007AFF', border: 'none', borderRadius: '10px', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
+            <button type="submit" disabled={loading} style={{ width: '100%', padding: '14px', background: '#4F46E5', border: 'none', borderRadius: '10px', color: 'white', fontSize: '16px', fontWeight: '600', cursor: 'pointer', opacity: loading ? 0.7 : 1 }}>
               {loading ? 'Please wait...' : (isLogin ? 'Sign In' : 'Create Account')}
             </button>
           </form>
@@ -997,12 +1019,13 @@ function Dashboard({
               Prosper<span style={{ color: theme.primary }}>Nest</span>
             </span>
             <span style={{ 
-              background: '#007AFF', 
+              background: '#F97316', 
               padding: '2px 6px', 
               borderRadius: '4px', 
               fontSize: '9px', 
               fontWeight: '600', 
-              color: 'white' 
+              color: 'white',
+              textTransform: 'uppercase'
             }}>Beta</span>
           </div>
         </div>
@@ -1399,7 +1422,7 @@ function Dashboard({
             flexDirection: 'column',
             overflow: 'hidden'
           }}>
-            <div style={{ padding: '16px', background: 'linear-gradient(135deg, #007AFF, #5856D6)', color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ padding: '16px', background: 'linear-gradient(135deg, #F97316, #EA580C)', color: 'white', display: 'flex', alignItems: 'center', gap: '12px' }}>
               <PennyLogo size={32} />
               <div>
                 <div style={{ fontWeight: '600', fontSize: '14px' }}>Penny</div>
@@ -1443,10 +1466,10 @@ function Dashboard({
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            background: 'linear-gradient(135deg, #007AFF, #5856D6)',
+            background: 'linear-gradient(135deg, #F97316, #EA580C)',
             border: 'none',
             cursor: 'pointer',
-            boxShadow: '0 4px 20px rgba(0, 122, 255, 0.4)',
+            boxShadow: '0 4px 20px rgba(249, 115, 22, 0.4)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -1475,7 +1498,7 @@ function Dashboard({
               </button>
               <button 
                 onClick={() => { setShowIdleModal(false); setShowPennyChat(true); }}
-                style={{ flex: 1, padding: '12px 20px', background: 'linear-gradient(135deg, #007AFF, #5856D6)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
+                style={{ flex: 1, padding: '12px 20px', background: 'linear-gradient(135deg, #F97316, #EA580C)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}
               >
                 Chat with Penny
               </button>
