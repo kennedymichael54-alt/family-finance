@@ -635,11 +635,16 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             )}
             <div style={{ marginBottom: '12px' }}>
               <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>Email Address</label>
-              <input type="email" placeholder="john@example.com"
+              <input 
+                type="text"
+                name="signin-email-field"
+                placeholder="john@example.com"
                 value={signinEmail}
                 onChange={e => { setSigninEmail(e.target.value); setSigninError(''); }}
                 autoComplete="off"
-                data-form-type="other"
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellCheck="false"
                 style={{
                   width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                   borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -648,11 +653,13 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>Password</label>
-              <input type="password" placeholder="••••••••"
+              <input 
+                type="password"
+                name="signin-password-field"
+                placeholder="••••••••"
                 value={signinPassword}
                 onChange={e => { setSigninPassword(e.target.value); setSigninError(''); }}
                 autoComplete="new-password"
-                data-form-type="other"
                 style={{
                   width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                   borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -773,11 +780,15 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>First Name *</label>
-                  <input type="text" value={signupForm.firstName}
+                  <input 
+                    type="text"
+                    name="signup-firstname"
+                    value={signupForm.firstName}
                     onChange={e => setSignupForm(prev => ({ ...prev, firstName: e.target.value }))}
                     placeholder="John"
                     autoComplete="off"
-                    data-form-type="other"
+                    autoCorrect="off"
+                    spellCheck="false"
                     style={{
                       width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                       borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -785,11 +796,15 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 </div>
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>Last Name *</label>
-                  <input type="text" value={signupForm.lastName}
+                  <input 
+                    type="text"
+                    name="signup-lastname"
+                    value={signupForm.lastName}
                     onChange={e => setSignupForm(prev => ({ ...prev, lastName: e.target.value }))}
                     placeholder="Smith"
                     autoComplete="off"
-                    data-form-type="other"
+                    autoCorrect="off"
+                    spellCheck="false"
                     style={{
                       width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                       borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -799,11 +814,16 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>Email Address *</label>
-                <input type="email" value={signupForm.email}
+                <input 
+                  type="text"
+                  name="signup-email"
+                  value={signupForm.email}
                   onChange={e => setSignupForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="john@example.com"
                   autoComplete="off"
-                  data-form-type="other"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
                   style={{
                     width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                     borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -812,11 +832,15 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
               <div style={{ marginBottom: '12px', position: 'relative' }}>
                 <label style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary, display: 'block', marginBottom: '6px' }}>Address *</label>
-                <input type="text" value={signupForm.address}
+                <input 
+                  type="text"
+                  name="signup-address"
+                  value={signupForm.address}
                   onChange={e => handleAddressChange(e.target.value)}
                   placeholder="Start typing your address..."
                   autoComplete="off"
-                  data-form-type="other"
+                  autoCorrect="off"
+                  spellCheck="false"
                   style={{
                     width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                     borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
@@ -849,25 +873,37 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 }}>
                   <div style={{ fontSize: '12px', fontWeight: '600', marginBottom: '12px' }}>Payment Information</div>
                   <div style={{ marginBottom: '10px' }}>
-                    <input type="text" placeholder="Card Number"
+                    <input 
+                      type="text"
+                      name="card-number"
+                      placeholder="Card Number"
                       autoComplete="off"
-                      data-form-type="other"
+                      autoCorrect="off"
+                      spellCheck="false"
                       style={{
                         width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
                         borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
                       }} />
                   </div>
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-                    <input type="text" placeholder="MM/YY"
+                    <input 
+                      type="text"
+                      name="card-expiry"
+                      placeholder="MM/YY"
                       autoComplete="off"
-                      data-form-type="other"
+                      autoCorrect="off"
+                      spellCheck="false"
                       style={{
                         padding: '12px', border: `1px solid ${colors.gray4}`,
                         borderRadius: '10px', fontSize: '14px', outline: 'none'
                       }} />
-                    <input type="text" placeholder="CVC"
+                    <input 
+                      type="text"
+                      name="card-cvc"
+                      placeholder="CVC"
                       autoComplete="off"
-                      data-form-type="other"
+                      autoCorrect="off"
+                      spellCheck="false"
                       style={{
                         padding: '12px', border: `1px solid ${colors.gray4}`,
                         borderRadius: '10px', fontSize: '14px', outline: 'none'
