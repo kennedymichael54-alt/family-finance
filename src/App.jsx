@@ -269,16 +269,31 @@ const saveSessionToStorage = (session) => {
 
 // Helper to load session from manual backup
 const loadSessionFromStorage = () => {
+  // Check primary backup
   try {
     const stored = localStorage.getItem(SESSION_STORAGE_KEY);
     if (stored) {
       const session = JSON.parse(stored);
-      console.log('📂 [Session] Loaded from localStorage:', session?.user?.email);
+      console.log('📂 [Session] Loaded from primary backup:', session?.user?.email);
       return session;
     }
   } catch (e) {
-    console.error('❌ [Session] Load error:', e);
+    console.error('❌ [Session] Primary load error:', e);
   }
+  
+  // Check secondary backup (pn_sb_auth)
+  try {
+    const stored2 = localStorage.getItem('pn_sb_auth');
+    if (stored2) {
+      const session = JSON.parse(stored2);
+      console.log('📂 [Session] Loaded from secondary backup:', session?.user?.email);
+      return session;
+    }
+  } catch (e) {
+    console.error('❌ [Session] Secondary load error:', e);
+  }
+  
+  console.log('ℹ️ [Session] No backup session found in localStorage');
   return null;
 };
 
@@ -383,6 +398,16 @@ function App() {
     
     const init = async () => {
       console.log('🚀 [Auth] Starting initialization...');
+      
+      // Debug: List all session-related localStorage keys
+      const sessionKeys = Object.keys(localStorage).filter(k => 
+        k.includes('pn_') || k.includes('sb-') || k.includes('supabase')
+      );
+      console.log('🔑 [Debug] Session-related localStorage keys:', sessionKeys);
+      sessionKeys.forEach(k => {
+        const val = localStorage.getItem(k);
+        console.log(`   ${k}:`, val?.substring(0, 100) + (val?.length > 100 ? '...' : ''));
+      });
       
       const sb = await initSupabase();
       
@@ -708,6 +733,21 @@ function AuthPage({ setView }) {
         });
         if (error) throw error;
         
+        // CRITICAL: Manually save session immediately after login
+        if (data?.session) {
+          console.log('💾 [Login] Saving session immediately after login');
+          saveSessionToStorage(data.session);
+          // Also manually store in localStorage as extra backup
+          try {
+            localStorage.setItem('pn_sb_auth', JSON.stringify(data.session));
+            console.log('💾 [Login] Session saved to pn_sb_auth');
+          } catch (e) {
+            console.error('❌ [Login] Failed to save to pn_sb_auth:', e);
+          }
+        } else {
+          console.warn('⚠️ [Login] No session returned from signInWithPassword');
+        }
+        
         // Remember email preference (we never store passwords for security)
         if (rememberMe) {
           localStorage.setItem('pn_remember_email', email);
@@ -717,7 +757,7 @@ function AuthPage({ setView }) {
           localStorage.removeItem('pn_remember_me');
         }
         
-        console.log('Login successful:', data?.user?.email);
+        console.log('✅ [Login] Login successful:', data?.user?.email);
       } else {
         const { data, error } = await sb.auth.signUp({ 
           email, 
