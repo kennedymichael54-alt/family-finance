@@ -218,165 +218,214 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
     </div>
   );
 
-  const Logo = ({ size = 40 }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const Logo = ({ size = 40, showBeta = true }) => (
+    <div 
+      onClick={scrollToTop}
+      onTouchEnd={(e) => { e.preventDefault(); scrollToTop(); }}
+      role="button"
+      tabIndex={0}
+      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+    >
       <PennyLogo size={size} />
       <span style={{
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-        fontSize: Math.max(size * 0.45, 14), fontWeight: '600', letterSpacing: '-0.02em', color: colors.label,
+        fontSize: Math.max(size * 0.4, 13), fontWeight: '600', letterSpacing: '-0.02em', color: colors.label,
       }}>
         ProsperNest
       </span>
+      {showBeta && (
+        <span style={{
+          background: `linear-gradient(135deg, ${colors.orange}, ${colors.red})`,
+          color: '#FFF',
+          fontSize: '8px',
+          fontWeight: '700',
+          padding: '3px 6px',
+          borderRadius: '4px',
+          letterSpacing: '0.3px',
+          textTransform: 'uppercase',
+          flexShrink: 0
+        }}>Beta</span>
+      )}
     </div>
   );
 
   // Device Mockups Component - LARGER VERSION
   const DeviceMockups = () => (
-    <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '32px', flexWrap: 'wrap', padding: '30px 0' }}>
-      {/* MacBook/Web */}
-      <div style={{ position: 'relative' }}>
-        <div style={{
-          background: '#1a1a1a', borderRadius: '16px 16px 0 0', padding: '10px 16px',
-          display: 'flex', gap: '8px', width: '420px'
-        }}>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FF5F57' }}/>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FFBD2E' }}/>
-          <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#28CA41' }}/>
-        </div>
-        <div style={{
-          background: colors.gray6, width: '420px', height: '260px', padding: '16px',
-          borderRadius: '0 0 4px 4px', border: '3px solid #1a1a1a', borderTop: 'none'
-        }}>
-          <div style={{ display: 'flex', gap: '12px', height: '100%' }}>
-            <div style={{ width: '90px', background: '#1e1b38', borderRadius: '8px', padding: '12px' }}>
-              {['Dashboard', 'Sales', 'Budget', 'Bills', 'Goals', 'Reports'].map((item, i) => (
-                <div key={item} style={{
-                  padding: '6px 8px', borderRadius: '6px', marginBottom: '4px', fontSize: '10px',
-                  color: i === 0 ? '#FFF' : 'rgba(255,255,255,0.5)',
-                  background: i === 0 ? '#8B5CF6' : 'transparent'
-                }}>{item}</div>
-              ))}
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '12px' }}>
-                {[
-                  { l: 'Income', v: '$12.4K', c: colors.green },
-                  { l: 'Expenses', v: '$4.2K', c: colors.red },
-                ].map((s, i) => (
-                  <div key={i} style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
-                    <div style={{ fontSize: '10px', color: colors.gray }}>{s.l}</div>
-                    <div style={{ fontSize: '18px', fontWeight: '700', color: s.c }}>{s.v}</div>
-                  </div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '32px', flexWrap: 'wrap', padding: '30px 0' }}>
+        {/* MacBook/Web */}
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            background: '#1a1a1a', borderRadius: '16px 16px 0 0', padding: '10px 16px',
+            display: 'flex', gap: '8px', width: '420px'
+          }}>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FF5F57' }}/>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#FFBD2E' }}/>
+            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#28CA41' }}/>
+          </div>
+          <div style={{
+            background: colors.gray6, width: '420px', height: '260px', padding: '16px',
+            borderRadius: '0 0 4px 4px', border: '3px solid #1a1a1a', borderTop: 'none'
+          }}>
+            <div style={{ display: 'flex', gap: '12px', height: '100%' }}>
+              <div style={{ width: '90px', background: '#1e1b38', borderRadius: '8px', padding: '12px' }}>
+                {['Dashboard', 'Sales', 'Budget', 'Bills', 'Goals', 'Reports'].map((item, i) => (
+                  <div key={item} style={{
+                    padding: '6px 8px', borderRadius: '6px', marginBottom: '4px', fontSize: '10px',
+                    color: i === 0 ? '#FFF' : 'rgba(255,255,255,0.5)',
+                    background: i === 0 ? '#8B5CF6' : 'transparent'
+                  }}>{item}</div>
                 ))}
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
-                <div style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '600', marginBottom: '8px' }}>👤 Personal</div>
-                  <div style={{ background: colors.green, borderRadius: '6px', padding: '8px', color: '#FFF', fontSize: '12px' }}>
-                    <div style={{ opacity: 0.9 }}>Income</div>
-                    <div style={{ fontWeight: '700' }}>$6,200</div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px', marginBottom: '12px' }}>
+                  {[
+                    { l: 'Income', v: '$12.4K', c: colors.green },
+                    { l: 'Expenses', v: '$4.2K', c: colors.red },
+                  ].map((s, i) => (
+                    <div key={i} style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
+                      <div style={{ fontSize: '10px', color: colors.gray }}>{s.l}</div>
+                      <div style={{ fontSize: '18px', fontWeight: '700', color: s.c }}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                  <div style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '600', marginBottom: '8px' }}>👤 Personal</div>
+                    <div style={{ background: colors.green, borderRadius: '6px', padding: '8px', color: '#FFF', fontSize: '12px' }}>
+                      <div style={{ opacity: 0.9 }}>Income</div>
+                      <div style={{ fontWeight: '700' }}>$6,200</div>
+                    </div>
+                  </div>
+                  <div style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '600', marginBottom: '8px' }}>💼 Side Hustle</div>
+                    <div style={{ background: colors.purple, borderRadius: '6px', padding: '8px', color: '#FFF', fontSize: '12px' }}>
+                      <div style={{ opacity: 0.9 }}>Revenue</div>
+                      <div style={{ fontWeight: '700' }}>$6,250</div>
+                    </div>
                   </div>
                 </div>
-                <div style={{ background: '#FFF', borderRadius: '8px', padding: '12px' }}>
-                  <div style={{ fontSize: '10px', fontWeight: '600', marginBottom: '8px' }}>💼 Side Hustle</div>
-                  <div style={{ background: colors.purple, borderRadius: '6px', padding: '8px', color: '#FFF', fontSize: '12px' }}>
-                    <div style={{ opacity: 0.9 }}>Revenue</div>
-                    <div style={{ fontWeight: '700' }}>$6,250</div>
-                  </div>
+              </div>
+            </div>
+          </div>
+          <div style={{
+            background: '#c0c0c0', width: '480px', height: '16px', marginLeft: '-30px',
+            borderRadius: '0 0 12px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
+          }}/>
+        </div>
+
+        {/* iPad */}
+        <div style={{ position: 'relative' }}>
+          <div style={{
+            background: '#1a1a1a', borderRadius: '20px', padding: '16px',
+            width: '220px', boxShadow: '0 15px 40px rgba(0,0,0,0.3)'
+          }}>
+            <div style={{
+              background: colors.gray6, borderRadius: '12px', height: '290px', padding: '14px', overflow: 'hidden'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: colors.gray, marginBottom: '12px' }}>
+                <span>9:41</span><span>📶 🔋</span>
+              </div>
+              <div style={{ background: colors.green, borderRadius: '10px', padding: '14px', color: '#FFF', marginBottom: '12px' }}>
+                <div style={{ fontSize: '10px', opacity: 0.8 }}>Net Worth</div>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>$245,830</div>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px' }}>
+                  <div style={{ fontSize: '9px', color: colors.gray }}>Income</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: colors.green }}>$12.4K</div>
+                </div>
+                <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px' }}>
+                  <div style={{ fontSize: '9px', color: colors.gray }}>Side Hustle</div>
+                  <div style={{ fontSize: '14px', fontWeight: '600', color: colors.purple }}>$6.2K</div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-        <div style={{
-          background: '#c0c0c0', width: '480px', height: '16px', marginLeft: '-30px',
-          borderRadius: '0 0 12px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)'
-        }}/>
-        <div style={{ textAlign: 'center', fontSize: '13px', color: colors.gray, marginTop: '12px', fontWeight: '500' }}>Web</div>
-      </div>
 
-      {/* iPad */}
-      <div style={{ position: 'relative' }}>
-        <div style={{
-          background: '#1a1a1a', borderRadius: '20px', padding: '16px',
-          width: '220px', boxShadow: '0 15px 40px rgba(0,0,0,0.3)'
-        }}>
+        {/* iPhone */}
+        <div style={{ position: 'relative' }}>
           <div style={{
-            background: colors.gray6, borderRadius: '12px', height: '290px', padding: '14px', overflow: 'hidden'
+            background: '#1a1a1a', borderRadius: '32px', padding: '12px',
+            width: '140px', boxShadow: '0 15px 40px rgba(0,0,0,0.3)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: colors.gray, marginBottom: '12px' }}>
-              <span>9:41</span><span>📶 🔋</span>
-            </div>
-            <div style={{ background: colors.green, borderRadius: '10px', padding: '14px', color: '#FFF', marginBottom: '12px' }}>
-              <div style={{ fontSize: '10px', opacity: 0.8 }}>Net Worth</div>
-              <div style={{ fontSize: '24px', fontWeight: '700' }}>$245,830</div>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
-              <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px' }}>
-                <div style={{ fontSize: '9px', color: colors.gray }}>Income</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: colors.green }}>$12.4K</div>
+            <div style={{
+              background: colors.gray6, borderRadius: '24px', height: '280px', padding: '12px', overflow: 'hidden'
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
+                <div style={{ width: '50px', height: '6px', background: '#1a1a1a', borderRadius: '3px' }}/>
+              </div>
+              <div style={{ background: colors.blue, borderRadius: '10px', padding: '14px', color: '#FFF', marginBottom: '10px' }}>
+                <div style={{ fontSize: '9px', opacity: 0.8 }}>Balance</div>
+                <div style={{ fontSize: '20px', fontWeight: '700' }}>$8,220</div>
+              </div>
+              <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px', marginBottom: '8px' }}>
+                <div style={{ fontSize: '9px', color: colors.gray }}>Goals</div>
+                <div style={{ background: colors.gray5, borderRadius: '4px', height: '8px', marginTop: '6px' }}>
+                  <div style={{ width: '65%', height: '100%', background: colors.green, borderRadius: '4px' }}/>
+                </div>
               </div>
               <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px' }}>
-                <div style={{ fontSize: '9px', color: colors.gray }}>Side Hustle</div>
-                <div style={{ fontSize: '14px', fontWeight: '600', color: colors.purple }}>$6.2K</div>
+                <div style={{ fontSize: '9px', color: colors.gray }}>This Month</div>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: colors.green }}>+$3,120</div>
               </div>
             </div>
           </div>
         </div>
-        <div style={{ textAlign: 'center', fontSize: '13px', color: colors.gray, marginTop: '12px', fontWeight: '500' }}>iPad</div>
-      </div>
 
-      {/* iPhone */}
-      <div style={{ position: 'relative' }}>
-        <div style={{
-          background: '#1a1a1a', borderRadius: '32px', padding: '12px',
-          width: '140px', boxShadow: '0 15px 40px rgba(0,0,0,0.3)'
-        }}>
+        {/* Apple Watch */}
+        <div style={{ position: 'relative' }}>
           <div style={{
-            background: colors.gray6, borderRadius: '24px', height: '280px', padding: '12px', overflow: 'hidden'
+            background: '#1a1a1a', borderRadius: '16px', padding: '6px',
+            width: '80px', boxShadow: '0 12px 30px rgba(0,0,0,0.3)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '10px' }}>
-              <div style={{ width: '50px', height: '6px', background: '#1a1a1a', borderRadius: '3px' }}/>
-            </div>
-            <div style={{ background: colors.blue, borderRadius: '10px', padding: '14px', color: '#FFF', marginBottom: '10px' }}>
-              <div style={{ fontSize: '9px', opacity: 0.8 }}>Balance</div>
-              <div style={{ fontSize: '20px', fontWeight: '700' }}>$8,220</div>
-            </div>
-            <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px', marginBottom: '8px' }}>
-              <div style={{ fontSize: '9px', color: colors.gray }}>Goals</div>
-              <div style={{ background: colors.gray5, borderRadius: '4px', height: '8px', marginTop: '6px' }}>
-                <div style={{ width: '65%', height: '100%', background: colors.green, borderRadius: '4px' }}/>
-              </div>
-            </div>
-            <div style={{ background: '#FFF', borderRadius: '8px', padding: '10px' }}>
-              <div style={{ fontSize: '9px', color: colors.gray }}>This Month</div>
-              <div style={{ fontSize: '14px', fontWeight: '600', color: colors.green }}>+$3,120</div>
+            <div style={{
+              background: '#000', borderRadius: '14px', height: '100px', padding: '10px',
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
+            }}>
+              <PennyLogo size={28} />
+              <div style={{ color: colors.green, fontSize: '16px', fontWeight: '700', marginTop: '6px' }}>$8.2K</div>
+              <div style={{ color: colors.gray, fontSize: '8px' }}>This Month</div>
             </div>
           </div>
-        </div>
-        <div style={{ textAlign: 'center', fontSize: '13px', color: colors.gray, marginTop: '12px', fontWeight: '500' }}>iPhone</div>
-      </div>
-
-      {/* Apple Watch */}
-      <div style={{ position: 'relative' }}>
-        <div style={{
-          background: '#1a1a1a', borderRadius: '16px', padding: '6px',
-          width: '80px', boxShadow: '0 12px 30px rgba(0,0,0,0.3)'
-        }}>
           <div style={{
-            background: '#000', borderRadius: '14px', height: '100px', padding: '10px',
-            display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center'
-          }}>
-            <PennyLogo size={28} />
-            <div style={{ color: colors.green, fontSize: '16px', fontWeight: '700', marginTop: '6px' }}>$8.2K</div>
-            <div style={{ color: colors.gray, fontSize: '8px' }}>This Month</div>
-          </div>
+            position: 'absolute', right: '-8px', top: '30px',
+            width: '6px', height: '24px', background: '#1a1a1a', borderRadius: '3px'
+          }}/>
         </div>
-        <div style={{
-          position: 'absolute', right: '-8px', top: '30px',
-          width: '6px', height: '24px', background: '#1a1a1a', borderRadius: '3px'
-        }}/>
-        <div style={{ textAlign: 'center', fontSize: '13px', color: colors.gray, marginTop: '12px', fontWeight: '500' }}>Watch</div>
+      </div>
+      
+      {/* iOS and Android badges */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '24px', marginTop: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: colors.secondary, fontSize: '14px' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+          </svg>
+          <span style={{ fontWeight: '500' }}>iOS</span>
+        </div>
+        <div style={{ width: '1px', height: '20px', background: colors.gray4 }}/>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: colors.secondary, fontSize: '14px' }}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17.523 2.3a1 1 0 011.154.8l.572 3.428 3.428.572a1 1 0 010 1.976l-3.428.572-.572 3.428a1 1 0 01-1.976 0l-.572-3.428-3.428-.572a1 1 0 010-1.976l3.428-.572.572-3.428a1 1 0 01.822-.8zM6 4a4 4 0 014 4v8a4 4 0 01-4 4 4 4 0 01-4-4V8a4 4 0 014-4zm12 7a3 3 0 110 6 3 3 0 010-6z"/>
+          </svg>
+          <span style={{ fontWeight: '500' }}>Android</span>
+        </div>
+        <div style={{ 
+          background: colors.green, 
+          color: '#FFF', 
+          padding: '6px 14px', 
+          borderRadius: '20px', 
+          fontSize: '12px', 
+          fontWeight: '600',
+          marginLeft: '8px'
+        }}>
+          Coming Soon
+        </div>
       </div>
     </div>
   );
@@ -778,7 +827,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       background: colors.background,
       fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif',
       color: colors.label,
-      overflowX: 'hidden'
+      overflowX: 'hidden',
+      width: '100%',
+      maxWidth: '100vw'
     }}>
       <style>{`
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
@@ -793,32 +844,127 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         .hub-glow { animation: glow 2s ease-in-out infinite; }
         h1, h2, h3 { letter-spacing: -0.025em; }
         html { scroll-behavior: smooth; }
-        * { -webkit-tap-highlight-color: transparent; }
+        *, *::before, *::after { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        
+        /* Scroll margin for fixed header */
+        section[id] { scroll-margin-top: 100px; }
         
         /* ========================================
-           MOBILE RESPONSIVE - APPLE STYLE
+           MOBILE RESPONSIVE - COMPLETE FIX
            ======================================== */
         
         @media (max-width: 768px) {
+          /* CRITICAL: Prevent ALL overflow */
+          html, body { 
+            overflow-x: hidden !important; 
+            width: 100% !important;
+            max-width: 100vw !important;
+          }
+          
+          /* Scroll margin for fixed header on mobile */
+          section[id] { scroll-margin-top: 80px; }
+          
           /* Navigation */
           .desktop-nav { display: none !important; }
           .mobile-menu-btn { display: flex !important; align-items: center; justify-content: center; }
           
+          /* Nav padding */
+          nav {
+            padding: 12px 16px !important;
+          }
+          
+          /* Section padding - CRITICAL */
+          section { 
+            padding: 50px 16px !important;
+            overflow: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+          }
+          
+          /* All containers */
+          section > div {
+            max-width: 100% !important;
+            padding: 0 !important;
+          }
+          
+          /* Text overflow control */
+          h1, h2, h3, p, li, span {
+            word-wrap: break-word !important;
+            overflow-wrap: break-word !important;
+            max-width: 100% !important;
+          }
+          
+          /* Typography scaling */
+          h1 { font-size: 28px !important; line-height: 1.15 !important; }
+          h2 { font-size: 24px !important; line-height: 1.2 !important; }
+          h3 { font-size: 20px !important; line-height: 1.25 !important; }
+          p { font-size: 15px !important; line-height: 1.5 !important; }
+          
           /* Layouts - Stack everything */
-          .pricing-grid, .hub-grid, .feature-row, .stats-row, .support-cards { 
+          .pricing-grid, .hub-grid, .feature-row, .support-cards, .stats-row { 
             flex-direction: column !important; 
             align-items: stretch !important;
             gap: 16px !important;
-          }
-          
-          /* Cards - Full width on mobile */
-          .pricing-grid > div, .hub-grid > div, .support-cards > div {
-            max-width: 100% !important;
-            flex: none !important;
             width: 100% !important;
           }
           
-          /* Device mockups - Hide on small screens, show simplified version */
+          /* Feature row specific fix */
+          .feature-row > div {
+            min-width: unset !important;
+            width: 100% !important;
+            flex: none !important;
+          }
+          
+          /* HIDE feature mockups on mobile - they're too big */
+          .feature-mockups-wrapper {
+            display: none !important;
+          }
+          
+          /* Pricing cards - CRITICAL FIX */
+          .pricing-grid {
+            padding: 0 !important;
+            gap: 16px !important;
+          }
+          .pricing-grid > div,
+          .pricing-card {
+            max-width: 100% !important;
+            width: 100% !important;
+            flex: none !important;
+            margin: 0 !important;
+            transform: none !important;
+            border-radius: 16px !important;
+            padding: 24px !important;
+            min-width: unset !important;
+          }
+          
+          /* Stats - 2x2 grid on mobile */
+          .stats-row {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            gap: 16px !important;
+            width: 100% !important;
+          }
+          .stats-row > div {
+            text-align: center !important;
+          }
+          
+          /* Hub cards */
+          .hub-grid > div,
+          .hub-card {
+            max-width: 100% !important;
+            width: 100% !important;
+            flex: none !important;
+            min-width: unset !important;
+            padding: 20px !important;
+          }
+          
+          /* Support cards */
+          .support-cards > div {
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          
+          /* Device mockups - Hide completely */
           .device-mockups { 
             display: none !important;
           }
@@ -826,35 +972,15 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             display: block !important;
           }
           
-          /* Section padding */
-          section { 
-            padding: 60px 24px !important; 
-          }
-          
-          /* Typography scaling */
-          h1 { font-size: 38px !important; line-height: 1.1 !important; }
-          h2 { font-size: 32px !important; line-height: 1.15 !important; }
-          h3 { font-size: 22px !important; }
-          
-          /* Buttons - Full width and larger */
+          /* Buttons - Full width */
           .hero-buttons { 
             flex-direction: column !important; 
             width: 100% !important;
           }
           .hero-buttons button {
             width: 100% !important;
-            padding: 18px 24px !important;
-            font-size: 17px !important;
-          }
-          
-          /* Feature mockups - Stack vertically */
-          .feature-mockups-wrapper {
-            flex-direction: column !important;
-            gap: 16px !important;
-          }
-          .feature-mockups-wrapper > div {
-            width: 100% !important;
-            max-width: 100% !important;
+            padding: 16px 20px !important;
+            font-size: 16px !important;
           }
           
           /* Tutorial grid */
@@ -862,19 +988,12 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             grid-template-columns: 1fr !important;
           }
           
-          /* Stats - 2x2 grid on mobile */
-          .stats-row {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            gap: 24px !important;
-          }
-          
           /* Cookie banner */
           .cookie-banner {
             flex-direction: column !important;
             text-align: center !important;
-            padding: 20px !important;
-            gap: 16px !important;
+            padding: 16px !important;
+            gap: 12px !important;
           }
           .cookie-banner > div:first-child {
             flex-direction: column !important;
@@ -887,18 +1006,19 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           .cookie-buttons button {
             width: 100% !important;
           }
+          
+          /* Glow effects - hide on mobile */
+          .glow-effect {
+            display: none !important;
+          }
         }
         
         @media (max-width: 480px) {
-          section { padding: 48px 20px !important; }
-          h1 { font-size: 32px !important; }
-          h2 { font-size: 26px !important; }
-          h3 { font-size: 20px !important; }
-          
-          /* Stats - Single column on very small */
-          .stats-row {
-            grid-template-columns: 1fr !important;
-          }
+          section { padding: 40px 12px !important; }
+          h1 { font-size: 26px !important; }
+          h2 { font-size: 22px !important; }
+          h3 { font-size: 18px !important; }
+          nav { padding: 10px 12px !important; }
         }
         
         @media (min-width: 769px) {
@@ -911,10 +1031,6 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         @media (hover: none) and (pointer: coarse) {
           button, a, .clickable { 
             min-height: 44px; 
-            min-width: 44px; 
-          }
-          .apple-button {
-            min-height: 50px;
           }
         }
       `}</style>
@@ -1021,12 +1137,12 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, padding: '16px 40px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: isScrolled ? 'rgba(255,255,255,0.9)' : 'transparent',
+        background: isScrolled ? 'rgba(255,255,255,0.95)' : 'transparent',
         backdropFilter: isScrolled ? 'saturate(180%) blur(20px)' : 'none',
         borderBottom: isScrolled ? `0.5px solid ${colors.gray5}` : 'none',
         transition: 'all 0.3s ease', zIndex: 1000
       }}>
-        <Logo size={44} />
+        <Logo size={36} showBeta={true} />
         
         <div className="desktop-nav" style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
           {[
@@ -1060,14 +1176,31 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         <div className="mobile-menu" style={{
           position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, 
           background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(20px)', 
-          padding: '100px 24px 40px', zIndex: 999,
+          padding: '24px', zIndex: 1001,
           display: 'flex', flexDirection: 'column', overflowY: 'auto'
         }}>
+          {/* Mobile Menu Header */}
+          <div style={{ 
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center', 
+            marginBottom: '32px', paddingBottom: '16px', borderBottom: `1px solid ${colors.gray5}`
+          }}>
+            <Logo size={36} showBeta={true} />
+            <button 
+              onClick={() => setMobileMenuOpen(false)}
+              style={{ 
+                background: colors.gray6, border: 'none', 
+                width: '40px', height: '40px', borderRadius: '50%',
+                fontSize: '20px', cursor: 'pointer', 
+                display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+            >✕</button>
+          </div>
+          
           <div style={{ flex: 1 }}>
             {['Features', 'Pricing', 'About', 'Tutorials', 'Support'].map(item => (
               <a key={item} onClick={() => { setMobileMenuOpen(false); scrollToSection(item.toLowerCase()); }}
                 style={{ 
-                  display: 'block', padding: '20px 0', fontSize: '28px', fontWeight: '600',
+                  display: 'block', padding: '20px 0', fontSize: '24px', fontWeight: '600',
                   color: colors.label, textDecoration: 'none', 
                   borderBottom: `1px solid ${colors.gray5}`, cursor: 'pointer'
                 }}>
@@ -1169,6 +1302,33 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 ))}
               </div>
             </div>
+            
+            {/* iOS and Android badges - Mobile */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px', marginTop: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.secondary, fontSize: '14px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.71 19.5C17.88 20.74 17 21.95 15.66 21.97C14.32 22 13.89 21.18 12.37 21.18C10.84 21.18 10.37 21.95 9.1 22C7.79 22.05 6.8 20.68 5.96 19.47C4.25 17 2.94 12.45 4.7 9.39C5.57 7.87 7.13 6.91 8.82 6.88C10.1 6.86 11.32 7.75 12.11 7.75C12.89 7.75 14.37 6.68 15.92 6.84C16.57 6.87 18.39 7.1 19.56 8.82C19.47 8.88 17.39 10.1 17.41 12.63C17.44 15.65 20.06 16.66 20.09 16.67C20.06 16.74 19.67 18.11 18.71 19.5ZM13 3.5C13.73 2.67 14.94 2.04 15.94 2C16.07 3.17 15.6 4.35 14.9 5.19C14.21 6.04 13.07 6.7 11.95 6.61C11.8 5.46 12.36 4.26 13 3.5Z"/>
+                </svg>
+                <span style={{ fontWeight: '500' }}>iOS</span>
+              </div>
+              <div style={{ width: '1px', height: '16px', background: colors.gray4 }}/>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: colors.secondary, fontSize: '14px' }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.523 2.3a1 1 0 011.154.8l.572 3.428 3.428.572a1 1 0 010 1.976l-3.428.572-.572 3.428a1 1 0 01-1.976 0l-.572-3.428-3.428-.572a1 1 0 010-1.976l3.428-.572.572-3.428a1 1 0 01.822-.8zM6 4a4 4 0 014 4v8a4 4 0 01-4 4 4 4 0 01-4-4V8a4 4 0 014-4zm12 7a3 3 0 110 6 3 3 0 010-6z"/>
+                </svg>
+                <span style={{ fontWeight: '500' }}>Android</span>
+              </div>
+              <div style={{ 
+                background: colors.green, 
+                color: '#FFF', 
+                padding: '4px 12px', 
+                borderRadius: '12px', 
+                fontSize: '11px', 
+                fontWeight: '600'
+              }}>
+                Coming Soon
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1191,22 +1351,22 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Hub Cards with Animation */}
-      <section style={{ padding: '100px 40px', background: colors.gray6 }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h2 style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>Three hubs. One mission.</h2>
-            <p style={{ fontSize: '19px', color: colors.secondary }}>Household, business, and real estate—all covered.</p>
+      <section style={{ padding: '80px 40px', background: colors.gray6, overflow: 'hidden' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ fontSize: 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '12px' }}>Three hubs. One mission.</h2>
+            <p style={{ fontSize: 'clamp(14px, 3vw, 19px)', color: colors.secondary }}>Household, business, and real estate—all covered.</p>
           </div>
           
-          <div className="hub-grid" style={{ display: 'flex', gap: '28px', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <div className="hub-grid" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
             {[
               { icon: '🏠', title: 'HomeBudget Hub', desc: 'Master household finances with smart budgeting tools designed for families.', color: colors.green, badge: 'Most Popular', available: true },
               { icon: '💼', title: 'BizBudget Hub', desc: 'Track side hustle and 1099 income with dedicated business tools.', color: colors.blue, badge: 'Coming Soon', available: false },
               { icon: '🏢', title: 'REBudget Hub', desc: 'Manage real estate investments and rental income all in one place.', color: colors.purple, badge: 'Coming Soon', available: false }
             ].map((hub, i) => (
-              <div key={i} className={`hover-lift ${activeHubIndex === i ? 'hub-glow' : ''}`} style={{
-                background: colors.background, borderRadius: '24px', padding: '36px',
-                flex: '1 1 340px', maxWidth: '420px', position: 'relative',
+              <div key={i} className={`hover-lift hub-card ${activeHubIndex === i ? 'hub-glow' : ''}`} style={{
+                background: colors.background, borderRadius: '20px', padding: 'clamp(20px, 4vw, 36px)',
+                flex: '1 1 280px', maxWidth: '420px', position: 'relative', width: '100%',
                 boxShadow: activeHubIndex === i ? `0 8px 40px ${hub.color}40` : '0 4px 20px rgba(0,0,0,0.06)',
                 border: activeHubIndex === i || hub.available ? `2px solid ${hub.color}` : `1px solid ${colors.gray5}`,
                 opacity: hub.available ? 1 : 0.85,
@@ -1214,24 +1374,24 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               }}>
                 {hub.badge && (
                   <div style={{
-                    position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)',
+                    position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
                     background: hub.available ? colors.orange : colors.gray,
-                    padding: '6px 18px', borderRadius: '14px', fontSize: '13px', fontWeight: '600', color: '#FFF'
+                    padding: '5px 14px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', color: '#FFF', whiteSpace: 'nowrap'
                   }}>{hub.badge}</div>
                 )}
                 <div style={{
-                  width: '64px', height: '64px', borderRadius: '18px', background: `${hub.color}15`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '32px', marginBottom: '20px'
+                  width: '52px', height: '52px', borderRadius: '14px', background: `${hub.color}15`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '26px', marginBottom: '16px'
                 }}>{hub.icon}</div>
-                <h3 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '12px' }}>{hub.title}</h3>
-                <p style={{ fontSize: '16px', color: colors.secondary, lineHeight: 1.6 }}>{hub.desc}</p>
+                <h3 style={{ fontSize: 'clamp(18px, 3vw, 24px)', fontWeight: '600', marginBottom: '10px' }}>{hub.title}</h3>
+                <p style={{ fontSize: 'clamp(13px, 2vw, 16px)', color: colors.secondary, lineHeight: 1.5 }}>{hub.desc}</p>
               </div>
             ))}
           </div>
           
-          <div style={{ textAlign: 'center', marginTop: '50px' }}>
+          <div style={{ textAlign: 'center', marginTop: '40px' }}>
             <button onClick={() => scrollToSection('features')} className="apple-button"
-              style={{ padding: '18px 36px', background: colors.green, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '17px', fontWeight: '500' }}>
+              style={{ padding: '16px 32px', background: colors.green, border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '15px', fontWeight: '600' }}>
               Explore all features
             </button>
           </div>
@@ -1239,31 +1399,50 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Features Section */}
-      <section id="features" style={{ padding: '100px 40px', background: colors.background }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '60px' }}>
-            <h2 style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>All your accounts in one place</h2>
-            <p style={{ fontSize: '19px', color: colors.secondary, maxWidth: '600px', margin: '0 auto' }}>
+      <section id="features" style={{ 
+        padding: '100px 40px', 
+        background: `linear-gradient(180deg, ${colors.background} 0%, ${colors.gray6} 50%, ${colors.background} 100%)`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle glow effects - hidden on mobile */}
+        <div className="glow-effect" style={{
+          position: 'absolute', top: '20%', left: '10%',
+          width: '400px', height: '400px',
+          background: `radial-gradient(circle, ${colors.blue}15 0%, transparent 70%)`,
+          borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none'
+        }}/>
+        <div className="glow-effect" style={{
+          position: 'absolute', bottom: '20%', right: '10%',
+          width: '300px', height: '300px',
+          background: `radial-gradient(circle, ${colors.purple}15 0%, transparent 70%)`,
+          borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none'
+        }}/>
+        
+        <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 1, width: '100%' }}>
+          <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+            <h2 style={{ fontSize: 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>All your accounts in one place</h2>
+            <p style={{ fontSize: 'clamp(14px, 3vw, 19px)', color: colors.secondary, maxWidth: '600px', margin: '0 auto', padding: '0 16px' }}>
               Dashboard, Sales Tracker, Budget, Transactions, Bills, Goals, Retirement, Reports—everything unified.
             </p>
           </div>
 
-          <div className="feature-row" style={{ display: 'flex', gap: '60px', alignItems: 'center', marginBottom: '80px', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: '350px' }}>
-              <div style={{ width: '72px', height: '72px', borderRadius: '18px', background: `${colors.orange}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '36px', marginBottom: '24px' }}>📱</div>
-              <h3 style={{ fontSize: '36px', fontWeight: '600', marginBottom: '16px' }}>Personal & Side Hustle</h3>
-              <p style={{ fontSize: '18px', color: colors.secondary, lineHeight: 1.7, marginBottom: '28px' }}>
+          <div className="feature-row" style={{ display: 'flex', gap: '40px', alignItems: 'center', marginBottom: '60px', flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: '250px', width: '100%' }}>
+              <div style={{ width: '56px', height: '56px', borderRadius: '14px', background: `${colors.orange}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', marginBottom: '20px' }}>📱</div>
+              <h3 style={{ fontSize: 'clamp(20px, 4vw, 36px)', fontWeight: '600', marginBottom: '12px' }}>Personal & Side Hustle</h3>
+              <p style={{ fontSize: 'clamp(14px, 2.5vw, 18px)', color: colors.secondary, lineHeight: 1.6, marginBottom: '20px' }}>
                 See your W2 income and 1099 earnings side by side. Track commissions, monitor profit margins, and never miss a bill payment.
               </p>
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {['Dashboard with real-time overview', 'Sales Tracker for side hustle income', 'Budget planning and monitoring', 'Bill reminders so you never miss a payment'].map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '14px', fontSize: '16px', color: colors.secondary }}>
-                    <span style={{ color: colors.green, fontSize: '18px' }}>✓</span>{f}
+                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px', fontSize: 'clamp(13px, 2vw, 16px)', color: colors.secondary }}>
+                    <span style={{ color: colors.green, fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✓</span><span>{f}</span>
                   </li>
                 ))}
               </ul>
             </div>
-            <div style={{ flex: 1, minWidth: '350px' }}>
+            <div className="feature-mockups-wrapper" style={{ flex: 1, minWidth: '280px' }}>
               <FeatureMockups />
             </div>
           </div>
@@ -1271,15 +1450,34 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Tutorials Section */}
-      <section id="tutorials" style={{ padding: '100px 40px', background: colors.gray6 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="tutorials" style={{ 
+        padding: '100px 40px', 
+        background: `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 50%, ${colors.gray6} 100%)`,
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle glow effects - hidden on mobile */}
+        <div className="glow-effect" style={{
+          position: 'absolute', top: '10%', right: '15%',
+          width: '350px', height: '350px',
+          background: `radial-gradient(circle, ${colors.green}12 0%, transparent 70%)`,
+          borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none'
+        }}/>
+        <div className="glow-effect" style={{
+          position: 'absolute', bottom: '15%', left: '10%',
+          width: '300px', height: '300px',
+          background: `radial-gradient(circle, ${colors.orange}12 0%, transparent 70%)`,
+          borderRadius: '50%', filter: 'blur(60px)', pointerEvents: 'none'
+        }}/>
+        
+        <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ textAlign: 'center', marginBottom: '60px' }}>
             <div style={{ fontSize: '64px', marginBottom: '20px' }}>📚</div>
             <h2 style={{ fontSize: 'clamp(32px, 5vw, 48px)', fontWeight: '700', marginBottom: '16px' }}>Learn & Grow</h2>
             <p style={{ fontSize: '19px', color: colors.secondary }}>Master your finances with our tutorials and guides</p>
           </div>
           
-          <div className="tutorials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+          <div className="tutorials-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
             {[
               { icon: '🚀', title: 'Getting Started', desc: 'Set up your account in 5 minutes', time: '5 min' },
               { icon: '💰', title: 'Budget Basics', desc: 'Create your first budget', time: '10 min' },
@@ -1337,62 +1535,68 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Pricing Section */}
-      <section id="pricing" style={{ padding: '100px 40px', background: colors.gray6 }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+      <section id="pricing" style={{ padding: '100px 40px', background: colors.gray6, overflow: 'hidden' }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '50px' }}>
-            <h2 style={{ fontSize: 'clamp(36px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>Simple, transparent pricing</h2>
-            <p style={{ fontSize: '19px', color: colors.secondary, marginBottom: '28px' }}>Start free. Upgrade when you're ready.</p>
+            <h2 style={{ fontSize: 'clamp(28px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>Simple, transparent pricing</h2>
+            <p style={{ fontSize: 'clamp(15px, 3vw, 19px)', color: colors.secondary, marginBottom: '28px' }}>Start free. Upgrade when you're ready.</p>
             
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0', background: colors.background, padding: '6px', borderRadius: '14px', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0', background: colors.background, padding: '4px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }}>
               <button onClick={() => setBillingCycle('monthly')} className="apple-button"
                 style={{
-                  padding: '14px 28px', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '500',
+                  padding: '12px 20px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '500',
                   background: billingCycle === 'monthly' ? colors.blue : 'transparent',
                   color: billingCycle === 'monthly' ? '#FFF' : colors.secondary
                 }}>Monthly</button>
               <button onClick={() => setBillingCycle('annual')} className="apple-button"
                 style={{
-                  padding: '14px 28px', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '500',
+                  padding: '12px 20px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '500',
                   background: billingCycle === 'annual' ? colors.blue : 'transparent',
                   color: billingCycle === 'annual' ? '#FFF' : colors.secondary
                 }}>
-                Annual <span style={{ background: colors.green, color: '#FFF', padding: '4px 10px', borderRadius: '10px', fontSize: '12px', marginLeft: '8px' }}>15% OFF</span>
+                Annual <span style={{ background: colors.green, color: '#FFF', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', marginLeft: '6px' }}>15% OFF</span>
               </button>
             </div>
           </div>
           
-          <div className="pricing-grid" style={{ display: 'flex', gap: '28px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className="pricing-grid" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', width: '100%' }}>
             {[
               { name: 'Starter', price: 0, desc: 'For getting started', features: ['Personal budgeting', '1 account', 'Basic reports', 'Mobile app'], cta: 'Get Started', highlighted: false, plan: 'starter' },
               { name: 'Pro', price: getPricing('pro'), desc: 'For couples building wealth', features: ['Everything in Starter', '2 accounts (couples)', 'Side hustle tracking', 'FIRE calculator', 'Advanced analytics', 'Priority support'], cta: 'Start Free Trial', highlighted: true, plan: 'pro' },
               { name: 'Family', price: getPricing('family'), desc: 'For the whole household', features: ['Everything in Pro', 'Up to 5 members', 'Shared goals', 'Investment tracking', 'RE portfolio tools'], cta: 'Start Free Trial', highlighted: false, plan: 'family' }
             ].map((plan, i) => (
-              <div key={i} className="hover-lift" style={{
-                background: plan.highlighted ? colors.blue : colors.background,
+              <div key={i} className="hover-lift pricing-card" style={{
+                background: plan.highlighted ? colors.blue : '#FFFFFF',
                 color: plan.highlighted ? '#FFF' : colors.label,
-                borderRadius: '24px', padding: '40px', flex: '1 1 320px', maxWidth: '380px',
-                boxShadow: plan.highlighted ? `0 25px 50px ${colors.blue}40` : '0 4px 25px rgba(0,0,0,0.08)',
-                transform: plan.highlighted ? 'scale(1.04)' : 'none', position: 'relative'
+                borderRadius: '20px', 
+                padding: 'clamp(24px, 4vw, 40px)', 
+                flex: '1 1 280px', 
+                maxWidth: '380px',
+                minWidth: '280px',
+                boxShadow: plan.highlighted ? `0 20px 40px ${colors.blue}40` : '0 4px 20px rgba(0,0,0,0.1)',
+                transform: plan.highlighted ? 'scale(1.02)' : 'none', 
+                position: 'relative',
+                border: plan.highlighted ? 'none' : `1px solid ${colors.gray5}`
               }}>
                 {plan.highlighted && (
-                  <div style={{ position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', background: colors.orange, padding: '6px 18px', borderRadius: '14px', fontSize: '13px', fontWeight: '600', color: '#FFF' }}>Most Popular</div>
+                  <div style={{ position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)', background: colors.orange, padding: '5px 14px', borderRadius: '12px', fontSize: '12px', fontWeight: '600', color: '#FFF', whiteSpace: 'nowrap' }}>Most Popular</div>
                 )}
-                <div style={{ fontSize: '22px', fontWeight: '600', marginBottom: '8px' }}>{plan.name}</div>
+                <div style={{ fontSize: 'clamp(18px, 3vw, 22px)', fontWeight: '600', marginBottom: '8px' }}>{plan.name}</div>
                 <div style={{ marginBottom: '8px' }}>
-                  <span style={{ fontSize: '52px', fontWeight: '700' }}>{plan.price === 0 ? 'Free' : `$${plan.price.toFixed(2)}`}</span>
-                  {plan.price > 0 && <span style={{ fontSize: '18px', opacity: 0.8 }}>/mo</span>}
+                  <span style={{ fontSize: 'clamp(36px, 6vw, 52px)', fontWeight: '700' }}>{plan.price === 0 ? 'Free' : `$${plan.price.toFixed(2)}`}</span>
+                  {plan.price > 0 && <span style={{ fontSize: 'clamp(14px, 2vw, 18px)', opacity: 0.8 }}>/mo</span>}
                 </div>
-                <div style={{ fontSize: '15px', opacity: 0.8, marginBottom: '28px' }}>{plan.desc}</div>
-                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px 0' }}>
+                <div style={{ fontSize: 'clamp(13px, 2vw, 15px)', opacity: 0.8, marginBottom: '24px' }}>{plan.desc}</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0' }}>
                   {plan.features.map((f, j) => (
-                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '14px', fontSize: '15px' }}>
-                      <span style={{ color: plan.highlighted ? '#FFF' : colors.green, fontSize: '16px' }}>✓</span>{f}
+                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: 'clamp(13px, 2vw, 15px)' }}>
+                      <span style={{ color: plan.highlighted ? '#FFF' : colors.green, fontSize: '14px', flexShrink: 0 }}>✓</span><span>{f}</span>
                     </li>
                   ))}
                 </ul>
                 <button onClick={() => handleStartTrial(plan.plan)} className="apple-button"
                   style={{
-                    width: '100%', padding: '18px', border: 'none', borderRadius: '14px', fontSize: '16px', fontWeight: '600',
+                    width: '100%', padding: '16px', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600',
                     background: plan.highlighted ? '#FFF' : colors.blue,
                     color: plan.highlighted ? colors.blue : '#FFF'
                   }}>{plan.cta}</button>
