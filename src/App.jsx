@@ -17,6 +17,110 @@ import SalesTrackerTab from './components/SalesTrackerTab';
 // FAMILY FINANCE - COMPREHENSIVE APP WITH REAL DATA SUPPORT
 // ============================================================================
 
+// ============================================================================
+// SIDEBAR ICONS
+// ============================================================================
+
+const Icons = {
+  Dashboard: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+    </svg>
+  ),
+  Sales: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  ),
+  Budget: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+    </svg>
+  ),
+  Transactions: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>
+    </svg>
+  ),
+  Calendar: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+    </svg>
+  ),
+  Goals: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+    </svg>
+  ),
+  Retirement: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/>
+    </svg>
+  ),
+  Reports: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+    </svg>
+  ),
+  Settings: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  ),
+  Import: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+    </svg>
+  ),
+  Search: () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    </svg>
+  ),
+  Bell: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  ),
+  ChevronDown: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="6 9 12 15 18 9"/>
+    </svg>
+  ),
+  Menu: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+    </svg>
+  ),
+  SignOut: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+    </svg>
+  ),
+};
+
+// Language options for selector
+const languages = [
+  { code: 'en', name: 'English', flag: '🇺🇸' },
+  { code: 'es', name: 'Español', flag: '🇪🇸' },
+  { code: 'fr', name: 'Français', flag: '🇫🇷' },
+  { code: 'de', name: 'Deutsch', flag: '🇩🇪' },
+  { code: 'zh', name: '中文', flag: '🇨🇳' },
+  { code: 'ja', name: '日本語', flag: '🇯🇵' },
+  { code: 'pt', name: 'Português', flag: '🇧🇷' },
+  { code: 'ko', name: '한국어', flag: '🇰🇷' },
+];
+
 // Currency formatter helper - consistent $1,000.00 format
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
@@ -970,7 +1074,7 @@ function ProfileModal({ profile, email, onSave, onClose }) {
 }
 
 // ============================================================================
-// DASHBOARD
+// DASHBOARD WITH NEW SIDEBAR UI
 // ============================================================================
 
 function Dashboard({ 
@@ -986,15 +1090,19 @@ function Dashboard({
   parseCSV
 }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAIChat, setShowAIChat] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLanguage, setSelectedLanguage] = useState(languages[0]);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
   
   // Session timer state
   const [sessionStartTime] = useState(() => Date.now());
   const [sessionDuration, setSessionDuration] = useState('0:00');
   
   // Update session timer every second
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setInterval(() => {
       const elapsed = Date.now() - sessionStartTime;
       const minutes = Math.floor(elapsed / 60000);
@@ -1044,222 +1152,463 @@ function Dashboard({
     return user?.email?.[0]?.toUpperCase() || 'U';
   };
 
+  // Navigation items for sidebar
+  const navItems = [
+    { id: 'home', label: 'Dashboard', icon: Icons.Dashboard, emoji: '🏠' },
+    { id: 'sales', label: 'Sales Tracker', icon: Icons.Sales, emoji: '🏠' },
+    { id: 'budget', label: 'Budget', icon: Icons.Budget, emoji: '💰' },
+    { id: 'transactions', label: 'Transactions', icon: Icons.Transactions, emoji: '📋' },
+    { id: 'bills', label: 'Bills', icon: Icons.Calendar, emoji: '📅' },
+    { id: 'goals', label: 'Goals', icon: Icons.Goals, emoji: '🎯' },
+    { id: 'retirement', label: 'Retirement', icon: Icons.Retirement, emoji: '🏖️' },
+    { id: 'reports', label: 'Reports', icon: Icons.Reports, emoji: '📊' },
+  ];
+
+  const bottomNavItems = [
+    { id: 'settings', label: 'Settings', icon: Icons.Settings, emoji: '⚙️' },
+    { id: 'import', label: 'Import', icon: Icons.Import, emoji: '📂' },
+  ];
+
+  // Render the active tab content
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'home':
+        return <HomeTab transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} />;
+      case 'sales':
+        return <SalesTrackerTab />;
+      case 'budget':
+        return <BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} />;
+      case 'transactions':
+        return <TransactionsTab transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} />;
+      case 'bills':
+        return <BillsCalendarView />;
+      case 'goals':
+        return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} />;
+      case 'retirement':
+        return <RetirementTab />;
+      case 'reports':
+        return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} />;
+      case 'settings':
+        return <SettingsTab />;
+      case 'import':
+        return <ImportTab onImport={onImportTransactions} parseCSV={parseCSV} transactionCount={transactions.length} />;
+      default:
+        return <HomeTab transactions={transactions} goals={goals} onNavigateToImport={() => setActiveTab('import')} />;
+    }
+  };
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0c0a1d', color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
-      {/* Header */}
-      <header style={{ 
-        background: 'rgba(30, 27, 56, 0.8)', 
-        backdropFilter: 'blur(20px)', 
-        borderBottom: '1px solid rgba(255,255,255,0.1)', 
-        padding: '16px 24px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between' 
+    <div style={{ display: 'flex', minHeight: '100vh', background: '#0c0a1d', color: 'white', fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
+      
+      {/* ===== SIDEBAR ===== */}
+      <aside style={{
+        width: sidebarCollapsed ? '80px' : '260px',
+        background: '#1a1230',
+        borderRight: '1px solid rgba(139, 92, 246, 0.2)',
+        display: 'flex',
+        flexDirection: 'column',
+        transition: 'all 0.3s ease',
+        position: 'fixed',
+        height: '100vh',
+        zIndex: 100
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Logo Button - navigates to Dashboard */}
-          <button 
-            onClick={() => setActiveTab('home')} 
-            style={{ 
-              width: '48px', 
-              height: '48px', 
-              borderRadius: '14px', 
-              background: 'linear-gradient(135deg, #8B5CF6 0%, #EC4899 50%, #8B5CF6 100%)', 
-              border: 'none', 
-              cursor: 'pointer', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center',
-              boxShadow: '0 4px 15px rgba(139, 92, 246, 0.4), inset 0 1px 0 rgba(255,255,255,0.2)',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            title="Go to Dashboard"
+        {/* Sidebar Header */}
+        <div style={{ 
+          padding: '20px', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: sidebarCollapsed ? 'center' : 'space-between',
+          borderBottom: '1px solid rgba(139, 92, 246, 0.2)'
+        }}>
+          <div 
+            style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+            onClick={() => setActiveTab('home')}
           >
-            {/* Shine effect */}
-            <div style={{ 
-              position: 'absolute', 
-              top: 0, 
-              left: '-50%', 
-              width: '50%', 
-              height: '100%', 
-              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent)',
-              transform: 'skewX(-20deg)'
-            }} />
-            {/* Logo SVG */}
-            <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-              {/* Outer ring */}
-              <circle cx="14" cy="14" r="12" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" fill="none"/>
-              {/* Dollar sign stylized */}
-              <path 
-                d="M14 6V8M14 20V22M10 12C10 10.3431 11.7909 9 14 9C16.2091 9 18 10.3431 18 12C18 13.6569 16.2091 15 14 15C11.7909 15 10 16.3431 10 18C10 19.6569 11.7909 21 14 21C16.2091 21 18 19.6569 18 18" 
-                stroke="white" 
-                strokeWidth="2" 
-                strokeLinecap="round"
-                fill="none"
-              />
-              {/* Sparkle accents */}
-              <circle cx="7" cy="10" r="1" fill="rgba(255,255,255,0.6)"/>
-              <circle cx="21" cy="18" r="1" fill="rgba(255,255,255,0.6)"/>
-            </svg>
-          </button>
-          <div>
-            <div style={{ fontWeight: '600', fontSize: '18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              Family Finance
-              <span style={{ 
-                fontSize: '10px', 
-                fontWeight: '700', 
-                padding: '3px 8px', 
-                background: 'linear-gradient(135deg, #F59E0B, #D97706)', 
-                borderRadius: '6px', 
+            <div style={{
+              width: '40px',
+              height: '40px',
+              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+              borderRadius: '12px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontWeight: '700',
+              fontSize: '14px',
+              boxShadow: '0 0 20px rgba(139, 92, 246, 0.4)'
+            }}>
+              FF
+            </div>
+            {!sidebarCollapsed && (
+              <span style={{
+                fontWeight: '700',
+                fontSize: '16px',
+                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent'
+              }}>
+                Family Finance
+              </span>
+            )}
+          </div>
+          {!sidebarCollapsed && (
+            <button
+              onClick={() => setSidebarCollapsed(true)}
+              style={{
+                background: 'rgba(139, 92, 246, 0.2)',
+                border: '1px solid rgba(139, 92, 246, 0.3)',
                 color: 'white',
-                letterSpacing: '0.5px',
-                textTransform: 'uppercase'
-              }}>BETA</span>
-            </div>
-            <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.6)' }}>Welcome back, {displayName}!</div>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          {/* Session Timer */}
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '8px', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
-            <span style={{ fontSize: '14px' }}>⏱️</span>
-            <span style={{ fontWeight: '500', color: '#10B981' }}>{sessionDuration}</span>
-          </div>
-
-          {lastImportDate && (
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '16px' }}>📥</span>
-              <span>Last import: {lastImportDate.toLocaleDateString()} at {lastImportDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-            </div>
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <Icons.ChevronLeft />
+            </button>
           )}
+        </div>
 
-          <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 12px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-            <span style={{ fontSize: '16px' }}>📅</span>
-            <span>{new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          </div>
+        {/* Main Navigation */}
+        <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
+          {navItems.map(item => (
+            <div
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              title={sidebarCollapsed ? item.label : ''}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: sidebarCollapsed ? '14px' : '14px 16px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)',
+                background: activeTab === item.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'transparent',
+                boxShadow: activeTab === item.id ? '0 4px 15px rgba(139, 92, 246, 0.4)' : 'none',
+                transition: 'all 0.2s ease',
+                marginBottom: '4px',
+                justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+              }}
+            >
+              <item.icon />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </div>
+          ))}
+          
+          {/* Divider */}
+          <div style={{ 
+            height: '1px', 
+            background: 'rgba(139, 92, 246, 0.2)', 
+            margin: '16px 0' 
+          }} />
+          
+          {/* Bottom nav items */}
+          {bottomNavItems.map(item => (
+            <div
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              title={sidebarCollapsed ? item.label : ''}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: sidebarCollapsed ? '14px' : '14px 16px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                color: activeTab === item.id ? 'white' : 'rgba(255,255,255,0.6)',
+                background: activeTab === item.id ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' : 'transparent',
+                boxShadow: activeTab === item.id ? '0 4px 15px rgba(139, 92, 246, 0.4)' : 'none',
+                transition: 'all 0.2s ease',
+                marginBottom: '4px',
+                justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
+              }}
+            >
+              <item.icon />
+              {!sidebarCollapsed && <span>{item.label}</span>}
+            </div>
+          ))}
+        </nav>
 
-          {/* Profile Button - now left of Sign Out */}
-          <button 
+        {/* Sidebar Footer - User Profile */}
+        <div style={{ 
+          padding: '16px', 
+          borderTop: '1px solid rgba(139, 92, 246, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px'
+        }}>
+          <div 
             onClick={() => setShowProfileModal(true)}
-            style={{ 
-              display: 'flex', 
-              alignItems: 'center', 
-              gap: '10px', 
-              padding: '8px 16px', 
-              background: 'rgba(255,255,255,0.08)', 
-              border: '1px solid rgba(255,255,255,0.1)', 
-              borderRadius: '10px', 
-              color: 'white', 
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(10px)'
+            style={{
+              flex: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '12px',
+              padding: '10px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              borderRadius: '12px',
+              cursor: 'pointer'
             }}
           >
-            <div style={{ 
-              width: '32px', 
-              height: '32px', 
-              borderRadius: '50%', 
-              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
-              display: 'flex', 
-              alignItems: 'center', 
+            <div style={{
+              width: '36px',
+              height: '36px',
+              background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
+              borderRadius: '10px',
+              display: 'flex',
+              alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '13px',
-              fontWeight: '600'
+              fontWeight: '600',
+              fontSize: '13px'
             }}>
               {getInitials()}
             </div>
-            <span style={{ fontSize: '14px' }}>Profile</span>
-          </button>
-
-          <button onClick={handleSignOut} style={{ padding: '10px 20px', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '10px', color: 'white', cursor: 'pointer', fontSize: '14px', backdropFilter: 'blur(10px)' }}>
-            Sign Out
+            {!sidebarCollapsed && (
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: '600', fontSize: '13px' }}>{displayName}</div>
+                <div style={{ fontSize: '11px', color: '#8B5CF6' }}>Premium</div>
+              </div>
+            )}
+          </div>
+          <button
+            onClick={handleSignOut}
+            title="Sign Out"
+            style={{
+              background: 'rgba(239, 68, 68, 0.2)',
+              border: 'none',
+              color: '#EF4444',
+              width: '36px',
+              height: '36px',
+              borderRadius: '10px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <Icons.SignOut />
           </button>
         </div>
-      </header>
+      </aside>
 
-      {/* Navigation Tabs - Softer inactive styling */}
-      <nav style={{ background: 'rgba(30, 27, 56, 0.5)', padding: '8px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          {[
-            { id: 'home', label: '🏠 Dashboard' },
-            { id: 'sales', label: '🏠 Sales Tracker' },
-            { id: 'budget', label: '💰 Budget' },
-            { id: 'transactions', label: '📋 Transactions' },
-            { id: 'bills', label: '📅 Bills' },
-            { id: 'goals', label: '🎯 Goals' },
-            { id: 'retirement', label: '🏖️ Retirement' },
-            { id: 'reports', label: '📊 Reports' }
-          ].map(tab => (
+      {/* ===== MAIN CONTENT ===== */}
+      <main style={{
+        flex: 1,
+        marginLeft: sidebarCollapsed ? '80px' : '260px',
+        transition: 'all 0.3s ease',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {/* Top Header */}
+        <header style={{
+          height: '72px',
+          background: '#1a1230',
+          borderBottom: '1px solid rgba(139, 92, 246, 0.2)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '0 24px',
+          position: 'sticky',
+          top: 0,
+          zIndex: 50
+        }}>
+          {/* Left side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {sidebarCollapsed && (
+              <button
+                onClick={() => setSidebarCollapsed(false)}
+                style={{
+                  background: 'rgba(139, 92, 246, 0.2)',
+                  border: 'none',
+                  color: 'white',
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <Icons.Menu />
+              </button>
+            )}
+            
+            {/* Search Bar */}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+              <div style={{ position: 'absolute', left: '14px', color: 'rgba(255,255,255,0.4)' }}>
+                <Icons.Search />
+              </div>
+              <input
+                type="text"
+                placeholder="Search anything..."
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                style={{
+                  width: '300px',
+                  height: '44px',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '12px',
+                  padding: '0 16px 0 44px',
+                  color: 'white',
+                  fontSize: '14px',
+                  outline: 'none'
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Right side */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            {/* Session Timer */}
+            <div style={{ 
+              fontSize: '13px', 
+              color: 'rgba(255,255,255,0.6)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '6px', 
+              padding: '8px 12px', 
+              background: 'rgba(16, 185, 129, 0.15)', 
+              borderRadius: '8px', 
+              border: '1px solid rgba(16, 185, 129, 0.3)' 
+            }}>
+              <span style={{ fontSize: '14px' }}>⏱️</span>
+              <span style={{ fontWeight: '500', color: '#10B981' }}>{sessionDuration}</span>
+            </div>
+
+            {/* Last Import Date */}
+            {lastImportDate && (
+              <div style={{ 
+                fontSize: '13px', 
+                color: 'rgba(255,255,255,0.5)', 
+                padding: '8px 12px', 
+                background: 'rgba(139, 92, 246, 0.1)', 
+                borderRadius: '8px' 
+              }}>
+                📥 {lastImportDate.toLocaleDateString()}
+              </div>
+            )}
+
+            {/* Language Selector */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setShowLangDropdown(!showLangDropdown)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 14px',
+                  background: 'rgba(139, 92, 246, 0.1)',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '10px',
+                  color: 'white',
+                  fontSize: '14px',
+                  cursor: 'pointer'
+                }}
+              >
+                <span>{selectedLanguage.flag}</span>
+                <span>{selectedLanguage.name}</span>
+                <Icons.ChevronDown />
+              </button>
+              {showLangDropdown && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  right: 0,
+                  background: '#1a1230',
+                  border: '1px solid rgba(139, 92, 246, 0.2)',
+                  borderRadius: '12px',
+                  padding: '8px',
+                  minWidth: '160px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.3)',
+                  zIndex: 100
+                }}>
+                  {languages.map(lang => (
+                    <div
+                      key={lang.code}
+                      onClick={() => { setSelectedLanguage(lang); setShowLangDropdown(false); }}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '8px',
+                        cursor: 'pointer',
+                        background: selectedLanguage.code === lang.code ? '#8B5CF6' : 'transparent'
+                      }}
+                    >
+                      <span>{lang.flag}</span>
+                      <span>{lang.name}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Notifications */}
+            <button style={{
+              position: 'relative',
+              width: '44px',
+              height: '44px',
+              background: 'rgba(139, 92, 246, 0.1)',
+              border: '1px solid rgba(139, 92, 246, 0.2)',
+              borderRadius: '10px',
+              color: 'white',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Icons.Bell />
+              <span style={{
+                position: 'absolute',
+                top: '-4px',
+                right: '-4px',
+                background: '#EC4899',
+                color: 'white',
+                fontSize: '10px',
+                fontWeight: '600',
+                minWidth: '18px',
+                height: '18px',
+                borderRadius: '9px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                {bills.filter(b => b.status === 'pending').length || 3}
+              </span>
+            </button>
+
+            {/* Settings Button */}
             <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setActiveTab('settings')}
               style={{
-                padding: '12px 24px',
-                background: activeTab === tab.id 
-                  ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
-                  : 'rgba(139, 92, 246, 0.1)',
-                border: 'none',
+                width: '44px',
+                height: '44px',
+                background: 'rgba(139, 92, 246, 0.1)',
+                border: '1px solid rgba(139, 92, 246, 0.2)',
                 borderRadius: '10px',
                 color: 'white',
                 cursor: 'pointer',
-                fontSize: '14px',
-                fontWeight: activeTab === tab.id ? '600' : '400',
-                opacity: activeTab === tab.id ? 1 : 0.8,
-                transition: 'all 0.2s ease',
-                backdropFilter: 'blur(10px)'
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
               }}
             >
-              {tab.label}
+              <Icons.Settings />
             </button>
-          ))}
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto' }}>
+          {renderContent()}
         </div>
-        
-        {/* Settings and Import on far right */}
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button
-            onClick={() => setActiveTab('settings')}
-            style={{
-              padding: '12px 24px',
-              background: activeTab === 'settings' 
-                ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
-                : 'rgba(139, 92, 246, 0.1)',
-              border: 'none',
-              borderRadius: '10px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: activeTab === 'settings' ? '600' : '400',
-              opacity: activeTab === 'settings' ? 1 : 0.8,
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(10px)'
-            }}
-          >
-            ⚙️ Settings
-          </button>
-          <button
-            onClick={() => setActiveTab('import')}
-            style={{
-              padding: '12px 24px',
-              background: activeTab === 'import' 
-                ? 'linear-gradient(135deg, #8B5CF6, #EC4899)' 
-                : 'rgba(139, 92, 246, 0.1)',
-              border: 'none',
-              borderRadius: '10px',
-              color: 'white',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: activeTab === 'import' ? '600' : '400',
-              opacity: activeTab === 'import' ? 1 : 0.8,
-              transition: 'all 0.2s ease',
-              backdropFilter: 'blur(10px)'
-            }}
-          >
-            📂 Import
-          </button>
-        </div>
-      </nav>
+      </main>
 
       {/* Profile Modal */}
       {showProfileModal && (
@@ -1271,63 +1620,26 @@ function Dashboard({
         />
       )}
 
-      {/* Main Content - Full Width */}
-      <main style={{ padding: '24px 40px' }}>
-        {activeTab === 'home' && (
-          <HomeTab 
-            transactions={transactions}
-            goals={goals}
-            onNavigateToImport={() => setActiveTab('import')}
-          />
-        )}
-        {activeTab === 'sales' && <SalesTrackerTab />}
-        {activeTab === 'budget' && (
-          <BudgetTab 
-            transactions={transactions}
-            onNavigateToImport={() => setActiveTab('import')}
-          />
-        )}
-        {activeTab === 'bills' && <BillsCalendarView />}
-        {activeTab === 'goals' && (
-          <GoalsTab 
-            goals={goals}
-            onUpdateGoals={onUpdateGoals}
-          />
-        )}
-        {activeTab === 'retirement' && <RetirementTab />}
-        {activeTab === 'import' && (
-          <ImportTab 
-            onImport={onImportTransactions}
-            parseCSV={parseCSV}
-            transactionCount={transactions.length}
-          />
-        )}
-        {activeTab === 'transactions' && (
-          <TransactionsTab 
-            transactions={transactions}
-            goals={goals}
-            onNavigateToImport={() => setActiveTab('import')}
-          />
-        )}
-        {activeTab === 'reports' && (
-          <ReportsTab 
-            transactions={transactions}
-            onNavigateToImport={() => setActiveTab('import')}
-          />
-        )}
-        {activeTab === 'settings' && <SettingsTab />}
-      </main>
-
       {/* AI Assistant Button */}
       <button
         onClick={() => setShowAIChat(true)}
         style={{
-          position: 'fixed', bottom: '24px', right: '24px',
-          width: '60px', height: '60px', borderRadius: '50%',
+          position: 'fixed', 
+          bottom: '24px', 
+          right: '24px',
+          width: '60px', 
+          height: '60px', 
+          borderRadius: '50%',
           background: 'linear-gradient(135deg, #8B5CF6, #EC4899)',
-          border: 'none', cursor: 'pointer', fontSize: '28px', color: 'white',
+          border: 'none', 
+          cursor: 'pointer', 
+          fontSize: '28px', 
+          color: 'white',
           boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center'
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          zIndex: 1000
         }}
       >
         🤖
@@ -1337,6 +1649,17 @@ function Dashboard({
 
       <style>{`
         @keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Hide scrollbar but keep functionality */
+        nav::-webkit-scrollbar { width: 4px; }
+        nav::-webkit-scrollbar-track { background: transparent; }
+        nav::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 2px; }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+          aside { transform: translateX(-100%); }
+          main { margin-left: 0 !important; }
+        }
       `}</style>
     </div>
   );
@@ -1383,13 +1706,11 @@ function GoalsTab({ goals, onUpdateGoals }) {
 
   const personalGoals = goals.filter(g => g.type !== 'sidehustle');
   const sideHustleGoals = goals.filter(g => g.type === 'sidehustle');
-  const hasSideHustleGoals = sideHustleGoals.length > 0;
 
   const GoalCard = ({ goal }) => {
     const percentage = Math.min((goal.current / goal.target) * 100, 100);
     const remaining = goal.target - goal.current;
-    const isPersonal = goal.type !== 'sidehustle';
-    const themeColor = isPersonal ? '#8B5CF6' : '#EC4899';
+    const themeColor = goal.type !== 'sidehustle' ? '#8B5CF6' : '#EC4899';
     
     return (
       <div style={{ background: 'rgba(30, 27, 56, 0.8)', borderRadius: '16px', padding: '20px', border: `1px solid ${themeColor}30` }}>
@@ -1457,7 +1778,6 @@ function GoalsTab({ goals, onUpdateGoals }) {
         </button>
       </div>
 
-      {/* Split View - Full Width with Centered Headers */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 2px 1fr', gap: '0' }}>
         <div style={{ paddingRight: '20px' }}>
           <GoalsPanel title="👤 Personal Goals" icon="🏠" color="#8B5CF6" goalsList={personalGoals} type="personal" />
@@ -1468,13 +1788,11 @@ function GoalsTab({ goals, onUpdateGoals }) {
         </div>
       </div>
 
-      {/* Add Goal Modal */}
       {showAddGoal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }} onClick={() => setShowAddGoal(false)}>
           <div style={{ background: 'rgba(30, 27, 56, 0.98)', backdropFilter: 'blur(20px)', borderRadius: '24px', padding: '32px', width: '420px', border: '1px solid rgba(255,255,255,0.1)' }} onClick={e => e.stopPropagation()}>
             <h3 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '24px' }}>🎯 Create New Goal</h3>
 
-            {/* Goal Type Selection */}
             <div style={{ marginBottom: '20px' }}>
               <label style={{ display: 'block', marginBottom: '8px', color: 'rgba(255,255,255,0.7)', fontSize: '14px' }}>Goal Type</label>
               <div style={{ display: 'flex', gap: '10px' }}>
@@ -1588,7 +1906,6 @@ function ImportTab({ onImport, parseCSV, transactionCount }) {
     <div style={{ animation: 'slideIn 0.3s ease' }}>
       <h2 style={{ fontSize: '24px', fontWeight: '600', marginBottom: '24px' }}>📂 Import Data</h2>
 
-      {/* Current Status */}
       <div style={{ 
         background: 'rgba(30, 27, 56, 0.8)', 
         borderRadius: '16px', 
@@ -1612,7 +1929,6 @@ function ImportTab({ onImport, parseCSV, transactionCount }) {
         )}
       </div>
 
-      {/* Drop Zone */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -1665,7 +1981,6 @@ function ImportTab({ onImport, parseCSV, transactionCount }) {
         )}
       </div>
 
-      {/* Import Result */}
       {importResult && (
         <div style={{
           background: importResult.success ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
@@ -1694,7 +2009,6 @@ function ImportTab({ onImport, parseCSV, transactionCount }) {
         </div>
       )}
 
-      {/* Supported Format */}
       <div style={{ 
         background: 'rgba(30, 27, 56, 0.8)', 
         borderRadius: '16px', 
