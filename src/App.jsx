@@ -1414,35 +1414,57 @@ function AuthPage({ setView }) {
   );
 }
 // ============================================================================
-// THEME TOGGLE COMPONENT
+// THEME TOGGLE COMPONENT - Sun/Toggle/Moon Style
 // ============================================================================
 function ThemeToggle({ isDark, onToggle }) {
   return (
-    <button
-      onClick={onToggle}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        width: '42px',
-        height: '42px',
-        background: isDark 
-          ? 'linear-gradient(135deg, #312e81 0%, #4c1d95 100%)' 
-          : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-        border: `1px solid ${isDark ? '#4c1d95' : '#fcd34d'}`,
-        borderRadius: '12px',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease',
-        position: 'relative'
-      }}
-    >
-      <span style={{ 
-        fontSize: '20px',
-        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
-      }}>
-        {isDark ? '🌙' : '☀️'}
-      </span>
-    </button>
+    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+      {/* Sun icon */}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isDark ? '#9CA3AF' : '#F59E0B'} strokeWidth="2" strokeLinecap="round">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+      
+      {/* Toggle switch */}
+      <button
+        onClick={onToggle}
+        style={{
+          width: '44px',
+          height: '24px',
+          borderRadius: '12px',
+          background: isDark ? '#6366F1' : '#E5E7EB',
+          border: 'none',
+          cursor: 'pointer',
+          position: 'relative',
+          transition: 'background 0.2s ease',
+          padding: 0
+        }}
+      >
+        <div style={{
+          width: '18px',
+          height: '18px',
+          borderRadius: '50%',
+          background: 'white',
+          position: 'absolute',
+          top: '3px',
+          left: isDark ? '23px' : '3px',
+          transition: 'left 0.2s ease',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.2)'
+        }} />
+      </button>
+      
+      {/* Moon icon */}
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke={isDark ? '#6366F1' : '#9CA3AF'} strokeWidth="2" strokeLinecap="round">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    </div>
   );
 }
 // ============================================================================
@@ -1803,83 +1825,77 @@ function Dashboard({
           top: 0,
           zIndex: 50
         }}>
-          {/* Search and Welcome */}
+          {/* Search Bar - Clean Style (Image 3) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <div style={{ position: 'absolute', left: '14px', color: theme.textMuted }}>
-                <Icons.Search />
+              <div style={{ position: 'absolute', left: '16px', color: theme.textMuted }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                  <circle cx="11" cy="11" r="8"/>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
               </div>
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search here..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{
-                  width: '200px',
-                  height: '40px',
-                  background: theme.bgMain,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '10px',
-                  padding: '0 16px 0 44px',
+                  width: '240px',
+                  height: '44px',
+                  background: theme.bgCard,
+                  border: `1px solid ${theme.borderLight}`,
+                  borderRadius: '12px',
+                  padding: '0 16px 0 48px',
                   fontSize: '14px',
                   outline: 'none',
-                  color: theme.textPrimary
+                  color: theme.textPrimary,
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                 }}
               />
-            </div>
-            <div style={{ 
-              fontSize: '14px', 
-              color: theme.textSecondary, 
-              fontWeight: '500',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis'
-            }}>
-              Welcome back, <span style={{ color: theme.primary, fontWeight: '600' }}>{displayName}</span>! 👋
             </div>
           </div>
 
           {/* Right side - Clean and Simple */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexShrink: 0 }}>
             
             {/* Theme Toggle */}
             <ThemeToggle isDark={isDarkMode} onToggle={toggleTheme} />
 
-            {/* Notifications */}
+            {/* Notifications - Clean Bell Style (Image 5) */}
             <div style={{ position: 'relative' }}>
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 style={{
-                  width: '42px',
-                  height: '42px',
-                  background: theme.bgCard,
-                  border: `1px solid ${theme.borderLight}`,
-                  borderRadius: '12px',
+                  background: 'transparent',
+                  border: 'none',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  transition: 'all 0.2s ease',
-                  position: 'relative'
+                  position: 'relative',
+                  padding: '8px'
                 }}
               >
-                <span style={{ fontSize: '18px' }}>🔔</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round">
+                  <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                  <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+                </svg>
                 <span style={{
                   position: 'absolute',
-                  top: '-4px',
-                  right: '-4px',
-                  background: '#EF4444',
+                  top: '4px',
+                  right: '4px',
+                  background: '#6366F1',
                   color: 'white',
                   fontSize: '10px',
-                  fontWeight: '700',
-                  minWidth: '18px',
-                  height: '18px',
-                  borderRadius: '9px',
+                  fontWeight: '600',
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}>
-                  6
+                  1
                 </span>
               </button>
 
@@ -1896,7 +1912,7 @@ function Dashboard({
                   zIndex: 100
                 }}>
                   <div style={{ padding: '16px', borderBottom: `1px solid ${theme.borderLight}`, fontWeight: '600', color: theme.textPrimary }}>
-                    Notification
+                    Notifications
                   </div>
                   <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
                     {[
@@ -1917,41 +1933,42 @@ function Dashboard({
                     ))}
                   </div>
                   <div style={{ padding: '12px 16px', textAlign: 'center', color: theme.primary, fontSize: '14px', fontWeight: '500', cursor: 'pointer' }}>
-                    See all notification
+                    See all notifications
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Profile with Memoji Avatar */}
-            <div style={{ position: 'relative' }}>
-              <div
-                onClick={() => setShowProfileMenu(!showProfileMenu)}
-                style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: '8px', 
-                  cursor: 'pointer',
-                  padding: '4px 8px 4px 4px',
-                  background: theme.bgCard,
-                  borderRadius: '25px',
-                  border: `1px solid ${theme.borderLight}`
-                }}
-              >
-                <div style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${theme.primary}20, ${theme.secondary}20)`,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '24px',
-                  border: `2px solid ${theme.primary}30`
-                }}>
-                  {userAvatar || '👨‍💼'}
+            {/* Profile Section - Name + Online + Avatar + Settings (Image 6) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Name and Online status */}
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{displayName}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', justifyContent: 'flex-end' }}>
+                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#10B981' }} />
+                  <span style={{ fontSize: '12px', color: '#10B981' }}>Online</span>
                 </div>
               </div>
+              
+              {/* Avatar */}
+              <div style={{ position: 'relative' }}>
+                <div
+                  onClick={() => setShowProfileMenu(!showProfileMenu)}
+                  style={{ 
+                    width: '44px',
+                    height: '44px',
+                    borderRadius: '50%',
+                    background: '#F3E8FF',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '26px',
+                    cursor: 'pointer',
+                    border: '2px solid #E9D5FF'
+                  }}
+                >
+                  {userAvatar || '👨‍💼'}
+                </div>
 
               {showProfileMenu && (
                 <div style={{
@@ -2030,6 +2047,26 @@ function Dashboard({
                   </div>
                 </div>
               )}
+              </div>
+              
+              {/* Settings Gear Icon (Image 6) */}
+              <button
+                onClick={() => setActiveTab('settings')}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
             </div>
           </div>
         </header>
@@ -2274,7 +2311,6 @@ function Dashboard({
 function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate }) {
   const [timeRange, setTimeRange] = useState('month');
   const [activeAccount, setActiveAccount] = useState('all');
-  const [selectedYear, setSelectedYear] = useState('2025');
   const [txnSearchQuery, setTxnSearchQuery] = useState('');
   const [txnStatusFilter, setTxnStatusFilter] = useState('');
 
@@ -2315,17 +2351,16 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
   const sortedCategories = Object.entries(categorySpending).sort((a, b) => b[1] - a[1]).slice(0, 8);
   const totalCategorySpending = sortedCategories.reduce((sum, [_, val]) => sum + val, 0);
 
-  // Calculate monthly trends
+  // Calculate monthly trends - Full Year (Jan-Dec)
   const monthlyData = [];
-  const now = new Date();
-  for (let i = 5; i >= 0; i--) {
-    const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-    const monthStr = monthDate.toISOString().slice(0, 7);
-    const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
+  const currentYear = new Date().getFullYear();
+  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  for (let i = 0; i < 12; i++) {
+    const monthStr = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
     const monthTxns = activeTransactions.filter(t => t.date?.startsWith(monthStr));
     const income = monthTxns.filter(t => parseFloat(t.amount) > 0).reduce((sum, t) => sum + parseFloat(t.amount), 0);
     const expenses = monthTxns.filter(t => parseFloat(t.amount) < 0).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
-    monthlyData.push({ month: monthName, income, expenses });
+    monthlyData.push({ month: monthNames[i], income, expenses });
   }
 
   // Budget calculations
@@ -2348,8 +2383,6 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
   const savingsRate = activeTotals.income > 0 ? ((activeTotals.net) / activeTotals.income) * 100 : 0;
   const budgetAdherence = totalBudget > 0 ? Math.max(0, 100 - ((totalSpentOnBudgeted - totalBudget) / totalBudget) * 100) : 100;
   const healthScore = Math.round(Math.min(100, Math.max(0, (savingsRate * 0.5 + budgetAdherence * 0.5))));
-  const healthyTasks = Math.round((healthScore / 100) * 50000);
-  const progressTasks = 50000 - healthyTasks;
 
   const recentTransactions = [...activeTransactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
@@ -2572,6 +2605,60 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
     );
   };
 
+  // Budget Bar Chart - Budgeted vs. Actual Expenses (Image 8)
+  const BudgetBarChart = ({ data, budgets, theme, height = 240 }) => {
+    const padding = { top: 20, right: 20, bottom: 50, left: 60 };
+    const chartWidth = 500;
+    const chartHeight = height - padding.top - padding.bottom;
+    const barWidth = 24;
+    const groupWidth = barWidth * 2 + 8;
+    
+    // Calculate monthly budget (total monthly budget from budgets array)
+    const monthlyBudget = budgets.reduce((sum, b) => sum + b.budget, 0);
+    
+    // Use only the last 6 months of data
+    const recentData = data.slice(-6);
+    const maxVal = Math.max(...recentData.map(d => Math.max(d.expenses, monthlyBudget)), 1);
+    
+    return (
+      <svg width="100%" height={height} viewBox={`0 0 ${chartWidth} ${height}`} preserveAspectRatio="xMidYMid meet">
+        {/* Bars */}
+        {recentData.map((d, i) => {
+          const x = padding.left + 30 + i * ((chartWidth - padding.left - padding.right - 60) / (recentData.length - 1 || 1)) - groupWidth / 2;
+          const actualHeight = Math.max(0, (d.expenses / maxVal) * chartHeight);
+          const budgetHeight = Math.max(0, (monthlyBudget / maxVal) * chartHeight);
+          
+          return (
+            <g key={i}>
+              {/* Actual bar (darker) */}
+              <rect
+                x={x}
+                y={padding.top + chartHeight - actualHeight}
+                width={barWidth}
+                height={actualHeight || 1}
+                fill="#6366F1"
+                rx="4"
+              />
+              {/* Budget bar (lighter) */}
+              <rect
+                x={x + barWidth + 4}
+                y={padding.top + chartHeight - budgetHeight}
+                width={barWidth}
+                height={budgetHeight || 1}
+                fill="#C7D2FE"
+                rx="4"
+              />
+              {/* Month label */}
+              <text x={x + groupWidth / 2} y={height - 20} textAnchor="middle" fill={theme.textMuted} fontSize="12">
+                {d.month}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    );
+  };
+
   // Spending Category Cards (like Image 5)
   const spendingCards = sortedCategories.slice(0, 4).map(([cat, val]) => {
     const budget = budgets.find(b => b.category === cat)?.budget || val * 1.5;
@@ -2616,11 +2703,11 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
 
       {/* Top Stats Row - OrbitNest Style (Image 1) */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
-        {/* Revenue/Income Card */}
+        {/* Income Card */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ fontSize: '16px' }}>💰</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Revenue</span>
+            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Income</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
@@ -2628,7 +2715,7 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: theme.textMuted }}>From last month</span>
                 <span style={{ fontSize: '12px', color: '#10B981', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '10px' }}>↗</span> 25%
+                  <span style={{ fontSize: '10px' }}>↗</span>25%
                 </span>
               </div>
             </div>
@@ -2636,11 +2723,11 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
           </div>
         </div>
 
-        {/* Costs/Expenses Card */}
+        {/* Expenses Card */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ fontSize: '16px' }}>💳</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Costs</span>
+            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Expenses</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
@@ -2648,7 +2735,7 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: theme.textMuted }}>From last month</span>
                 <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '10px' }}>↘</span> 5%
+                  <span style={{ fontSize: '10px' }}>↘</span>5%
                 </span>
               </div>
             </div>
@@ -2656,11 +2743,11 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
           </div>
         </div>
 
-        {/* Profits/Net Card */}
+        {/* Savings Card */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ fontSize: '16px' }}>📊</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Profits</span>
+            <span style={{ fontSize: '14px', color: theme.textMuted, fontWeight: '500' }}>Savings</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
             <div>
@@ -2668,7 +2755,7 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: theme.textMuted }}>From last month</span>
                 <span style={{ fontSize: '12px', color: activeTotals.net >= 0 ? '#10B981' : '#EF4444', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '10px' }}>{activeTotals.net >= 0 ? '↗' : '↘'}</span> 15%
+                  <span style={{ fontSize: '10px' }}>{activeTotals.net >= 0 ? '↗' : '↘'}</span>15%
                 </span>
               </div>
             </div>
@@ -2676,7 +2763,7 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
           </div>
         </div>
 
-        {/* Shipments/Transactions Card */}
+        {/* Transactions Card */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
             <span style={{ fontSize: '16px' }}>📦</span>
@@ -2688,7 +2775,7 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span style={{ fontSize: '12px', color: theme.textMuted }}>From last month</span>
                 <span style={{ fontSize: '12px', color: '#EF4444', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                  <span style={{ fontSize: '10px' }}>↘</span> 10%
+                  <span style={{ fontSize: '10px' }}>↘</span>10%
                 </span>
               </div>
             </div>
@@ -2709,45 +2796,28 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
 
       {/* Chart Row - Line Chart + Health Gauge */}
       <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
-        {/* Yearly Order Rate / Income vs Expenses (Image 2) */}
+        {/* Income vs. Expenses Line Chart (Image 2) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Yearly Order Rate</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Income vs. Expenses</h3>
             <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#06B6D4' }} />
-                <span style={{ fontSize: '13px', color: theme.textMuted }}>Week</span>
+                <span style={{ fontSize: '13px', color: theme.textMuted }}>Income</span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                 <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#8B5CF6' }} />
-                <span style={{ fontSize: '13px', color: theme.textMuted }}>Month</span>
+                <span style={{ fontSize: '13px', color: theme.textMuted }}>Expenses</span>
               </div>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(e.target.value)}
-                style={{ 
-                  padding: '6px 12px', 
-                  borderRadius: '8px', 
-                  border: `1px solid ${theme.borderLight}`, 
-                  background: theme.bgMain,
-                  fontSize: '13px',
-                  color: theme.textPrimary,
-                  cursor: 'pointer'
-                }}
-              >
-                <option>2025</option>
-                <option>2024</option>
-                <option>2023</option>
-              </select>
             </div>
           </div>
           <LineChart data={monthlyData} height={260} />
         </div>
 
-        {/* Financial Health / Progress Gauge (Image 3) */}
+        {/* Financial Health Gauge (Image 7) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Progress</h3>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Financial Health</h3>
             <button style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '18px' }}>⋮</button>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
@@ -2757,18 +2827,18 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', justifyContent: 'center' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#3B82F6' }} />
-                <span style={{ fontSize: '12px', color: theme.textMuted }}>Completed</span>
+                <span style={{ fontSize: '12px', color: theme.textMuted }}>Healthy</span>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary }}>{healthyTasks.toLocaleString()}</div>
-              <div style={{ fontSize: '12px', color: theme.textMuted }}>Total tasks</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary }}>{healthScore >= 50 ? healthScore : 100 - healthScore}%</div>
+              <div style={{ fontSize: '12px', color: theme.textMuted }}>Score</div>
             </div>
             <div style={{ textAlign: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '8px', justifyContent: 'center' }}>
                 <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#06B6D4' }} />
-                <span style={{ fontSize: '12px', color: theme.textMuted }}>In Progress</span>
+                <span style={{ fontSize: '12px', color: theme.textMuted }}>Savings Rate</span>
               </div>
-              <div style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary }}>{progressTasks.toLocaleString()}</div>
-              <div style={{ fontSize: '12px', color: theme.textMuted }}>Total tasks</div>
+              <div style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary }}>{savingsRate.toFixed(0)}%</div>
+              <div style={{ fontSize: '12px', color: theme.textMuted }}>of income</div>
             </div>
           </div>
         </div>
@@ -2776,12 +2846,12 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
 
       {/* Spending & Budget Row */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
-        {/* Budget Progress - Bar Chart (Image 4) */}
+        {/* Budgeted vs. Actual Expenses - Bar Chart (Image 8) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
             <div style={{ flex: 1, paddingRight: '20px' }}>
               <p style={{ fontSize: '13px', color: theme.textMuted, margin: '0 0 12px', lineHeight: '1.5' }}>
-                Track your income vs expenses over the past 6 months to understand your financial trends.
+                Track your budgeted vs actual expenses over the past 6 months to understand your financial trends.
               </p>
             </div>
             <button style={{ 
@@ -2792,15 +2862,15 @@ function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate 
               Download Report <span>📥</span>
             </button>
           </div>
-          <BarChart data={monthlyData} height={220} />
+          <BudgetBarChart data={monthlyData} budgets={budgets} theme={theme} height={220} />
           <div style={{ display: 'flex', justifyContent: 'center', gap: '30px', marginTop: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#6366F1' }} />
-              <span style={{ fontSize: '13px', color: theme.textMuted }}>Income</span>
+              <span style={{ fontSize: '13px', color: theme.textMuted }}>Actual</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#C7D2FE' }} />
-              <span style={{ fontSize: '13px', color: theme.textMuted }}>Expenses</span>
+              <span style={{ fontSize: '13px', color: theme.textMuted }}>Budgeted</span>
             </div>
           </div>
         </div>
