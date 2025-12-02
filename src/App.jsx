@@ -245,30 +245,45 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
-// Supabase initialization
+// Supabase initialization - SINGLETON pattern for session persistence
 let supabase = null;
-const initSupabase = async () => {
-  if (supabase) return supabase;
-  try {
-    const { createClient } = await import('@supabase/supabase-js');
-    supabase = createClient(
-      import.meta.env.VITE_SUPABASE_URL,
-      import.meta.env.VITE_SUPABASE_ANON_KEY,
-      {
-        auth: {
-          persistSession: true,
-          storageKey: 'pn_auth_token',
-          storage: window.localStorage,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
+let supabaseInitPromise = null;
+
+const initSupabase = () => {
+  // Return existing instance if already initialized
+  if (supabase) return Promise.resolve(supabase);
+  
+  // Return existing promise if initialization is in progress
+  if (supabaseInitPromise) return supabaseInitPromise;
+  
+  // Create new initialization promise
+  supabaseInitPromise = (async () => {
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      supabase = createClient(
+        import.meta.env.VITE_SUPABASE_URL,
+        import.meta.env.VITE_SUPABASE_ANON_KEY,
+        {
+          auth: {
+            persistSession: true,
+            storageKey: 'prospernest-auth',
+            storage: window.localStorage,
+            autoRefreshToken: true,
+            detectSessionInUrl: true,
+            flowType: 'pkce'
+          }
         }
-      }
-    );
-    return supabase;
-  } catch (e) {
-    console.error('Supabase init error:', e);
-    return null;
-  }
+      );
+      console.log('Supabase initialized successfully');
+      return supabase;
+    } catch (e) {
+      console.error('Supabase init error:', e);
+      supabaseInitPromise = null; // Reset so we can retry
+      return null;
+    }
+  })();
+  
+  return supabaseInitPromise;
 };
 // CSV Parser
 const parseCSV = (csvText) => {
@@ -324,45 +339,66 @@ function App() {
   const [lastImportDate, setLastImportDate] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     let subscription = null;
     
     const init = async () => {
+      console.log('Initializing auth...');
       const sb = await initSupabase();
-      if (sb) {
-        // Set up auth state listener FIRST (catches INITIAL_SESSION)
-        const { data: { subscription: sub } } = sb.auth.onAuthStateChange((event, session) => {
-          console.log('Auth event:', event, session?.user?.email);
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-            if (session?.user) {
-              setUser(session.user);
-              setView('dashboard');
-              loadSavedData(session.user.id);
-            }
-          } else if (event === 'SIGNED_OUT') {
-            setUser(null);
-            setView('landing');
-          }
-          setLoading(false);
-        });
-        subscription = sub;
+      
+      if (!sb || !isMounted) {
+        setLoading(false);
+        return;
+      }
+      
+      // FIRST: Check for existing session BEFORE setting up listener
+      // This handles the refresh case
+      try {
+        const { data: { session }, error } = await sb.auth.getSession();
+        console.log('Initial session check:', session?.user?.email || 'No session', error || '');
         
-        // Also check current session (fallback)
-        const { data: { session } } = await sb.auth.getSession();
-        if (session?.user) {
+        if (session?.user && isMounted) {
+          console.log('Found existing session, restoring...');
           setUser(session.user);
           setView('dashboard');
           loadSavedData(session.user.id);
         }
-        setLoading(false);
-      } else {
+      } catch (err) {
+        console.error('Error getting session:', err);
+      }
+      
+      // THEN: Set up auth state listener for future changes
+      const { data: { subscription: sub } } = sb.auth.onAuthStateChange((event, session) => {
+        console.log('Auth state change:', event, session?.user?.email || 'No user');
+        
+        if (!isMounted) return;
+        
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          if (session?.user) {
+            setUser(session.user);
+            setView('dashboard');
+            loadSavedData(session.user.id);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          setView('landing');
+          setTransactions([]);
+          setBills([]);
+          setGoals([]);
+        }
+      });
+      subscription = sub;
+      
+      if (isMounted) {
         setLoading(false);
       }
     };
     
     init();
     
-    // Cleanup subscription on unmount
+    // Cleanup
     return () => {
+      isMounted = false;
       if (subscription) {
         subscription.unsubscribe();
       }
@@ -580,47 +616,83 @@ function AuthPage({ setView }) {
 
     try {
       if (isLogin) {
-        const { error } = await sb.auth.signInWithPassword({ 
+        // Sign in - session persistence is handled by Supabase client config
+        const { data, error } = await sb.auth.signInWithPassword({ 
+          email, 
+          password
+        });
+        if (error) throw error;
+        
+        // Remember email preference (we never store passwords for security)
+        if (rememberMe) {
+          localStorage.setItem('pn_remember_email', email);
+          localStorage.setItem('pn_remember_me', 'true');
+        } else {
+          localStorage.removeItem('pn_remember_email');
+          localStorage.removeItem('pn_remember_me');
+        }
+        
+        console.log('Login successful:', data?.user?.email);
+      } else {
+        const { data, error } = await sb.auth.signUp({ 
           email, 
           password,
           options: {
-            // Session will persist based on rememberMe
-            persistSession: rememberMe
+            emailRedirectTo: window.location.origin
           }
         });
         if (error) throw error;
-        // Store remember preference
-        if (rememberMe) {
-          localStorage.setItem('pn_remember_email', email);
-        } else {
-          localStorage.removeItem('pn_remember_email');
+        
+        // Show success message for signup
+        if (data?.user && !data?.session) {
+          setError('Check your email to confirm your account!');
+          setLoading(false);
+          return;
         }
-      } else {
-        const { error } = await sb.auth.signUp({ email, password });
-        if (error) throw error;
       }
     } catch (err) {
+      console.error('Auth error:', err);
       setError(err.message);
     }
     setLoading(false);
   };
 
   const handleGoogleSignIn = async () => {
+    setLoading(true);
+    setError('');
+    
     const sb = await initSupabase();
     if (sb) {
-      await sb.auth.signInWithOAuth({ 
+      const { error } = await sb.auth.signInWithOAuth({ 
         provider: 'google',
-        options: { redirectTo: window.location.origin }
+        options: { 
+          redirectTo: `${window.location.origin}`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
       });
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      }
+    } else {
+      setError('Connection error. Please try again.');
+      setLoading(false);
     }
   };
 
   // Load remembered email on mount
   useEffect(() => {
     const rememberedEmail = localStorage.getItem('pn_remember_email');
-    if (rememberedEmail) {
+    const shouldRemember = localStorage.getItem('pn_remember_me') === 'true';
+    
+    if (rememberedEmail && shouldRemember) {
       setEmail(rememberedEmail);
       setRememberMe(true);
+    } else {
+      setRememberMe(false);
     }
   }, []);
 
@@ -937,8 +1009,16 @@ function Dashboard({
   };
 
   const handleSignOut = async () => {
-    const sb = await initSupabase();
-    if (sb) await sb.auth.signOut();
+    try {
+      const sb = await initSupabase();
+      if (sb) {
+        await sb.auth.signOut({ scope: 'local' });
+      }
+      // Clear any cached auth state
+      localStorage.removeItem('prospernest-auth');
+    } catch (err) {
+      console.error('Sign out error:', err);
+    }
   };
 
   const displayName = profile.firstName || user?.user_metadata?.full_name?.split(' ')[0] || user?.email?.split('@')[0] || 'User';
