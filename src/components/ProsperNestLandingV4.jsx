@@ -48,7 +48,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [onboardingData, setOnboardingData] = useState({
-    motivation: '',
+    motivations: [], // Changed to array for multi-select
     startWith: [],
     invitedMembers: ['', '', '', '', ''],
     pennyEnabled: true
@@ -1075,7 +1075,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             </div>
           )}
 
-          {/* Step 1: Motivation */}
+          {/* Step 1: Motivation - MULTI-SELECT */}
           {onboardingStep === 1 && (
             <div style={{ padding: '32px 24px' }}>
               <div style={{ textAlign: 'center', marginBottom: '24px' }}>
@@ -1084,22 +1084,41 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                   What brings you here?
                 </h2>
                 <p style={{ fontSize: '14px', color: colors.secondary }}>
-                  Help us personalize your experience
+                  Select all that apply
                 </p>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px', marginBottom: '24px' }}>
-                {motivations.map(m => (
-                  <button key={m.id}
-                    onClick={() => setOnboardingData(prev => ({ ...prev, motivation: m.id }))}
-                    style={{
-                      padding: '16px', border: `2px solid ${onboardingData.motivation === m.id ? colors.blue : colors.gray5}`,
-                      borderRadius: '14px', background: onboardingData.motivation === m.id ? `${colors.blue}08` : '#FFF',
-                      cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s'
-                    }}>
-                    <div style={{ fontSize: '24px', marginBottom: '8px' }}>{m.icon}</div>
-                    <div style={{ fontSize: '14px', fontWeight: '500' }}>{m.label}</div>
-                  </button>
-                ))}
+                {motivations.map(m => {
+                  const isSelected = onboardingData.motivations.includes(m.id);
+                  return (
+                    <button key={m.id}
+                      onClick={() => {
+                        const current = onboardingData.motivations;
+                        const updated = isSelected
+                          ? current.filter(x => x !== m.id)
+                          : [...current, m.id];
+                        setOnboardingData(prev => ({ ...prev, motivations: updated }));
+                      }}
+                      style={{
+                        padding: '16px', border: `2px solid ${isSelected ? colors.blue : colors.gray5}`,
+                        borderRadius: '14px', background: isSelected ? `${colors.blue}08` : '#FFF',
+                        cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s',
+                        position: 'relative'
+                      }}>
+                      {isSelected && (
+                        <div style={{
+                          position: 'absolute', top: '8px', right: '8px',
+                          width: '20px', height: '20px', borderRadius: '50%',
+                          background: colors.blue, color: '#FFF',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: '12px', fontWeight: '600'
+                        }}>✓</div>
+                      )}
+                      <div style={{ fontSize: '24px', marginBottom: '8px' }}>{m.icon}</div>
+                      <div style={{ fontSize: '14px', fontWeight: '500' }}>{m.label}</div>
+                    </button>
+                  );
+                })}
               </div>
               <div style={{ display: 'flex', gap: '12px' }}>
                 <button onClick={() => setOnboardingStep(0)}
@@ -1110,11 +1129,11 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                   Back
                 </button>
                 <button onClick={() => setOnboardingStep(2)}
-                  disabled={!onboardingData.motivation}
+                  disabled={onboardingData.motivations.length === 0}
                   style={{
-                    flex: 2, padding: '14px', background: onboardingData.motivation ? colors.blue : colors.gray4,
+                    flex: 2, padding: '14px', background: onboardingData.motivations.length > 0 ? colors.blue : colors.gray4,
                     border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '15px',
-                    fontWeight: '600', cursor: onboardingData.motivation ? 'pointer' : 'not-allowed'
+                    fontWeight: '600', cursor: onboardingData.motivations.length > 0 ? 'pointer' : 'not-allowed'
                   }}>
                   Continue
                 </button>
