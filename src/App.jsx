@@ -260,34 +260,29 @@ const initSupabase = () => {
   supabaseInitPromise = (async () => {
     try {
       const { createClient } = await import('@supabase/supabase-js');
+      
+      // Clear empty hash from URL (leftover from OAuth)
+      if (window.location.hash === '#' || window.location.hash === '') {
+        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      }
+      
       supabase = createClient(
         import.meta.env.VITE_SUPABASE_URL,
         import.meta.env.VITE_SUPABASE_ANON_KEY,
         {
           auth: {
-            persistSession: true,
-            storageKey: 'prospernest-auth',
-            storage: window.localStorage,
             autoRefreshToken: true,
+            persistSession: true,
             detectSessionInUrl: true
           }
         }
       );
       
-      // Handle OAuth callback if tokens are in URL hash
-      if (window.location.hash && window.location.hash.includes('access_token')) {
-        console.log('Detected OAuth callback, processing...');
-        // Clear the hash after processing
-        setTimeout(() => {
-          window.history.replaceState(null, '', window.location.pathname);
-        }, 100);
-      }
-      
-      console.log('Supabase initialized successfully');
+      console.log('✅ [Supabase] Initialized');
       return supabase;
     } catch (e) {
-      console.error('Supabase init error:', e);
-      supabaseInitPromise = null; // Reset so we can retry
+      console.error('❌ [Supabase] Init error:', e);
+      supabaseInitPromise = null;
       return null;
     }
   })();
@@ -352,73 +347,69 @@ function App() {
     let subscription = null;
     
     const init = async () => {
-      console.log('🚀 Initializing auth...');
-      console.log('📍 Current URL:', window.location.href);
-      console.log('💾 Checking localStorage for session...');
-      
-      // Check if there's already a session token in localStorage
-      const storedSession = localStorage.getItem('prospernest-auth');
-      console.log('📦 Stored session exists:', !!storedSession);
+      console.log('🚀 [Auth] Starting initialization...');
       
       const sb = await initSupabase();
       
-      if (!sb || !isMounted) {
-        console.log('❌ Supabase not initialized or component unmounted');
-        setLoading(false);
+      if (!sb) {
+        console.error('❌ [Auth] Supabase failed to initialize');
+        if (isMounted) setLoading(false);
         return;
       }
       
-      // Set up auth state listener FIRST - this will fire INITIAL_SESSION
-      const { data: { subscription: sub } } = sb.auth.onAuthStateChange((event, session) => {
-        console.log('🔔 Auth event:', event, '| User:', session?.user?.email || 'none');
+      // STEP 1: Check for existing session FIRST (handles refresh)
+      try {
+        console.log('🔍 [Auth] Checking for existing session...');
+        const { data: { session }, error } = await sb.auth.getSession();
         
-        if (!isMounted) return;
-        
-        // Handle all session-restoring events
-        if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          if (session?.user) {
-            console.log('✅ Session restored/created for:', session.user.email);
+        if (error) {
+          console.error('❌ [Auth] getSession error:', error);
+        } else if (session?.user) {
+          console.log('✅ [Auth] Found existing session:', session.user.email);
+          if (isMounted) {
             setUser(session.user);
             setView('dashboard');
             loadSavedData(session.user.id);
-          } else {
-            console.log('⚠️ Event fired but no user in session');
           }
-          setLoading(false);
+        } else {
+          console.log('ℹ️ [Auth] No existing session found');
+        }
+      } catch (err) {
+        console.error('❌ [Auth] Session check failed:', err);
+      }
+      
+      // STEP 2: Set up listener for future auth changes (login/logout)
+      const { data: { subscription: sub } } = sb.auth.onAuthStateChange((event, session) => {
+        console.log('🔔 [Auth] Event:', event, '| User:', session?.user?.email || 'none');
+        
+        if (!isMounted) return;
+        
+        if (event === 'SIGNED_IN') {
+          if (session?.user) {
+            console.log('✅ [Auth] User signed in:', session.user.email);
+            setUser(session.user);
+            setView('dashboard');
+            loadSavedData(session.user.id);
+          }
         } else if (event === 'SIGNED_OUT') {
-          console.log('👋 User signed out');
+          console.log('👋 [Auth] User signed out');
           setUser(null);
           setView('landing');
           setTransactions([]);
           setBills([]);
           setGoals([]);
-          setLoading(false);
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('🔄 [Auth] Token refreshed');
+          if (session?.user) {
+            setUser(session.user);
+          }
         }
       });
       subscription = sub;
       
-      // Fallback: Also directly check session after a short delay
-      // This catches edge cases where INITIAL_SESSION doesn't fire
-      setTimeout(async () => {
-        if (!isMounted) return;
-        
-        try {
-          const { data: { session }, error } = await sb.auth.getSession();
-          console.log('🔍 Fallback session check:', session?.user?.email || 'No session');
-          
-          if (session?.user && isMounted) {
-            setUser(session.user);
-            setView('dashboard');
-            loadSavedData(session.user.id);
-          }
-        } catch (err) {
-          console.error('❌ Fallback session check error:', err);
-        }
-        
-        if (isMounted) {
-          setLoading(false);
-        }
-      }, 500);
+      if (isMounted) {
+        setLoading(false);
+      }
     };
     
     init();
@@ -1151,15 +1142,15 @@ function Dashboard({
   };
 
   const handleSignOut = async () => {
+    console.log('🚪 [Auth] Signing out...');
     try {
       const sb = await initSupabase();
       if (sb) {
-        await sb.auth.signOut({ scope: 'local' });
+        await sb.auth.signOut();
+        console.log('✅ [Auth] Signed out successfully');
       }
-      // Clear any cached auth state
-      localStorage.removeItem('prospernest-auth');
     } catch (err) {
-      console.error('Sign out error:', err);
+      console.error('❌ [Auth] Sign out error:', err);
     }
   };
 
