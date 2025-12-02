@@ -228,12 +228,12 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       onTouchEnd={(e) => { e.preventDefault(); scrollToTop(); }}
       role="button"
       tabIndex={0}
-      style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
+      style={{ display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', userSelect: 'none', flexShrink: 0 }}
     >
       <PennyLogo size={size} />
       <span style={{
         fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-        fontSize: Math.max(size * 0.4, 13), fontWeight: '600', letterSpacing: '-0.02em', color: colors.label,
+        fontSize: Math.max(size * 0.42, 14), fontWeight: '600', letterSpacing: '-0.02em', color: colors.label,
       }}>
         ProsperNest
       </span>
@@ -241,10 +241,10 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         <span style={{
           background: `linear-gradient(135deg, ${colors.orange}, ${colors.red})`,
           color: '#FFF',
-          fontSize: '8px',
+          fontSize: size > 40 ? '10px' : '8px',
           fontWeight: '700',
-          padding: '3px 6px',
-          borderRadius: '4px',
+          padding: size > 40 ? '4px 10px' : '3px 6px',
+          borderRadius: '5px',
           letterSpacing: '0.3px',
           textTransform: 'uppercase',
           flexShrink: 0
@@ -976,11 +976,18 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           .hero-buttons { 
             flex-direction: column !important; 
             width: 100% !important;
+            padding: 0 16px !important;
           }
           .hero-buttons button {
             width: 100% !important;
-            padding: 16px 20px !important;
-            font-size: 16px !important;
+            padding: 14px 20px !important;
+            font-size: 15px !important;
+          }
+          
+          /* Hero logo smaller on mobile */
+          .hero-logo svg {
+            width: 60px !important;
+            height: 60px !important;
           }
           
           /* Tutorial grid */
@@ -1142,27 +1149,28 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         borderBottom: isScrolled ? `0.5px solid ${colors.gray5}` : 'none',
         transition: 'all 0.3s ease', zIndex: 1000
       }}>
-        <Logo size={36} showBeta={true} />
+        <Logo size={44} showBeta={true} />
         
         <div className="desktop-nav" style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
           {[
+            { label: 'Products', id: 'products' },
             { label: 'Features', id: 'features' },
-            { label: 'Pricing', id: 'pricing' },
-            { label: 'About', id: 'about' },
             { label: 'Tutorials', id: 'tutorials' },
+            { label: 'About', id: 'about' },
+            { label: 'Pricing', id: 'pricing' },
             { label: 'Support', id: 'support' }
           ].map(item => (
             <a key={item.id} onClick={() => scrollToSection(item.id)}
-              style={{ color: colors.secondary, textDecoration: 'none', fontSize: '16px', fontWeight: '500', cursor: 'pointer' }}
+              style={{ color: colors.secondary, textDecoration: 'none', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}
               onMouseOver={e => e.target.style.color = colors.label}
               onMouseOut={e => e.target.style.color = colors.secondary}>
               {item.label}
             </a>
           ))}
           <button onClick={() => handleSignIn()}
-            style={{ padding: '10px 18px', background: 'transparent', border: 'none', fontSize: '16px', color: colors.blue, cursor: 'pointer', fontWeight: '500' }}>Sign In</button>
+            style={{ padding: '10px 18px', background: 'transparent', border: 'none', fontSize: '15px', color: colors.blue, cursor: 'pointer', fontWeight: '500' }}>Sign In</button>
           <button onClick={() => handleStartTrial()} className="apple-button"
-            style={{ padding: '12px 24px', background: colors.blue, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '16px', fontWeight: '600' }}>Get Started</button>
+            style={{ padding: '12px 24px', background: colors.blue, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '15px', fontWeight: '600' }}>Get Started</button>
         </div>
 
         <button className="mobile-menu-btn" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1197,7 +1205,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           </div>
           
           <div style={{ flex: 1 }}>
-            {['Features', 'Pricing', 'About', 'Tutorials', 'Support'].map(item => (
+            {['Products', 'Features', 'Tutorials', 'About', 'Pricing', 'Support'].map(item => (
               <a key={item} onClick={() => { setMobileMenuOpen(false); scrollToSection(item.toLowerCase()); }}
                 style={{ 
                   display: 'block', padding: '20px 0', fontSize: '24px', fontWeight: '600',
@@ -1232,28 +1240,28 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       {/* Hero Section */}
       <section style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '120px 40px 80px', background: `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 100%)`, textAlign: 'center'
+        padding: '100px 24px 60px', background: `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 100%)`, textAlign: 'center'
       }}>
         <div className="animate-in" style={{ maxWidth: '1100px', width: '100%' }}>
-          <div style={{ marginBottom: '28px' }}><PennyLogo size={100} animate /></div>
+          <div className="hero-logo" style={{ marginBottom: '20px' }}><PennyLogo size={80} animate /></div>
           <h1 style={{
-            fontSize: 'clamp(42px, 8vw, 72px)', fontWeight: '700', lineHeight: 1.1, marginBottom: '24px',
+            fontSize: 'clamp(32px, 7vw, 72px)', fontWeight: '700', lineHeight: 1.1, marginBottom: '20px',
             background: `linear-gradient(135deg, ${colors.label} 0%, ${colors.secondary} 100%)`,
             WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
           }}>
             Your money.<br/>Your hustle.<br/>
             <span style={{ background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.purple} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>One nest.</span>
           </h1>
-          <p style={{ fontSize: 'clamp(18px, 3vw, 22px)', color: colors.secondary, lineHeight: 1.6, marginBottom: '40px', maxWidth: '650px', margin: '0 auto 40px' }}>
+          <p style={{ fontSize: 'clamp(14px, 3vw, 22px)', color: colors.secondary, lineHeight: 1.5, marginBottom: '32px', maxWidth: '600px', margin: '0 auto 32px', padding: '0 8px' }}>
             The finance app for working families with entrepreneurial spirits. Track personal expenses and side hustle income together.
           </p>
-          <div className="hero-buttons" style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginBottom: '60px', flexWrap: 'wrap' }}>
+          <div className="hero-buttons" style={{ display: 'flex', gap: '12px', justifyContent: 'center', marginBottom: '40px', flexWrap: 'wrap', padding: '0 8px' }}>
             <button onClick={() => handleStartTrial()} className="apple-button"
-              style={{ padding: '20px 44px', background: colors.blue, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '18px', fontWeight: '600' }}>
+              style={{ padding: '16px 36px', background: colors.blue, border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '16px', fontWeight: '600' }}>
               Start Free Trial
             </button>
             <button onClick={() => scrollToSection('features')} className="apple-button"
-              style={{ padding: '20px 44px', background: colors.gray6, border: `1px solid ${colors.gray4}`, borderRadius: '14px', color: colors.label, fontSize: '18px', fontWeight: '500' }}>
+              style={{ padding: '16px 36px', background: colors.gray6, border: `1px solid ${colors.gray4}`, borderRadius: '12px', color: colors.label, fontSize: '16px', fontWeight: '500' }}>
               ▶ See Features
             </button>
           </div>
@@ -1264,38 +1272,38 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           </div>
           
           {/* Mobile Hero Image - Simplified dashboard preview */}
-          <div className="mobile-hero-image" style={{ display: 'none', padding: '20px' }}>
+          <div className="mobile-hero-image" style={{ display: 'none', padding: '0 8px' }}>
             <div style={{
-              background: '#FFF', borderRadius: '24px', padding: '24px',
-              boxShadow: '0 20px 60px rgba(0,0,0,0.15)', maxWidth: '340px', margin: '0 auto'
+              background: '#FFF', borderRadius: '20px', padding: '20px',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.12)', maxWidth: '300px', margin: '0 auto'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '20px' }}>
-                <PennyLogo size={36} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px' }}>
+                <PennyLogo size={32} />
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: '600' }}>Dashboard</div>
-                  <div style={{ fontSize: '12px', color: colors.gray }}>December 2024</div>
+                  <div style={{ fontSize: '13px', fontWeight: '600' }}>Dashboard</div>
+                  <div style={{ fontSize: '11px', color: colors.gray }}>December 2024</div>
                 </div>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ background: colors.green, borderRadius: '12px', padding: '16px', color: '#FFF' }}>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Income</div>
-                  <div style={{ fontSize: '22px', fontWeight: '700' }}>$12,450</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '12px' }}>
+                <div style={{ background: colors.green, borderRadius: '10px', padding: '12px', color: '#FFF' }}>
+                  <div style={{ fontSize: '10px', opacity: 0.9 }}>Income</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700' }}>$12,450</div>
                 </div>
-                <div style={{ background: colors.red, borderRadius: '12px', padding: '16px', color: '#FFF' }}>
-                  <div style={{ fontSize: '11px', opacity: 0.9 }}>Expenses</div>
-                  <div style={{ fontSize: '22px', fontWeight: '700' }}>$4,230</div>
+                <div style={{ background: colors.red, borderRadius: '10px', padding: '12px', color: '#FFF' }}>
+                  <div style={{ fontSize: '10px', opacity: 0.9 }}>Expenses</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700' }}>$4,230</div>
                 </div>
               </div>
-              <div style={{ background: colors.blue, borderRadius: '12px', padding: '16px', color: '#FFF' }}>
-                <div style={{ fontSize: '11px', opacity: 0.9 }}>Net Cash Flow</div>
-                <div style={{ fontSize: '28px', fontWeight: '700' }}>+$8,220</div>
-                <div style={{ fontSize: '12px', opacity: 0.8, marginTop: '4px' }}>66% savings rate 🎯</div>
+              <div style={{ background: colors.blue, borderRadius: '10px', padding: '14px', color: '#FFF' }}>
+                <div style={{ fontSize: '10px', opacity: 0.9 }}>Net Cash Flow</div>
+                <div style={{ fontSize: '24px', fontWeight: '700' }}>+$8,220</div>
+                <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '2px' }}>66% savings rate 🎯</div>
               </div>
-              <div style={{ marginTop: '16px', display: 'flex', gap: '8px' }}>
+              <div style={{ marginTop: '12px', display: 'flex', gap: '6px' }}>
                 {['Dashboard', 'Budget', 'Bills', 'Goals'].map((tab, i) => (
                   <div key={tab} style={{
-                    flex: 1, padding: '10px 4px', borderRadius: '8px', textAlign: 'center',
-                    fontSize: '11px', fontWeight: '500',
+                    flex: 1, padding: '8px 2px', borderRadius: '6px', textAlign: 'center',
+                    fontSize: '9px', fontWeight: '500',
                     background: i === 0 ? colors.blue : colors.gray6,
                     color: i === 0 ? '#FFF' : colors.secondary
                   }}>{tab}</div>
@@ -1351,7 +1359,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Hub Cards with Animation */}
-      <section style={{ padding: '80px 40px', background: colors.gray6, overflow: 'hidden' }}>
+      <section id="products" style={{ padding: '80px 40px', background: colors.gray6, overflow: 'hidden' }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
           <div style={{ textAlign: 'center', marginBottom: '40px' }}>
             <h2 style={{ fontSize: 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '12px' }}>Three hubs. One mission.</h2>
