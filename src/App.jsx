@@ -1419,40 +1419,21 @@ function ThemeToggle({ isDark, onToggle }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        width: '46px',
-        height: '46px',
+        width: '42px',
+        height: '42px',
         background: isDark 
-          ? 'linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)' 
+          ? 'linear-gradient(135deg, #312e81 0%, #4c1d95 100%)' 
           : 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
-        border: 'none',
-        borderRadius: '14px',
+        border: `1px solid ${isDark ? '#4c1d95' : '#fcd34d'}`,
+        borderRadius: '12px',
         cursor: 'pointer',
-        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-        boxShadow: isDark 
-          ? '0 4px 15px rgba(139, 92, 246, 0.3), inset 0 1px 0 rgba(255,255,255,0.1)' 
-          : '0 4px 15px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(255,255,255,0.5)',
-        position: 'relative',
-        overflow: 'hidden'
+        transition: 'all 0.2s ease',
+        position: 'relative'
       }}
     >
-      {/* Animated background circles */}
-      <div style={{
-        position: 'absolute',
-        width: '60px',
-        height: '60px',
-        borderRadius: '50%',
-        background: isDark ? 'rgba(139, 92, 246, 0.2)' : 'rgba(251, 191, 36, 0.3)',
-        top: '-10px',
-        right: '-10px',
-        transition: 'all 0.3s ease'
-      }} />
       <span style={{ 
-        fontSize: '22px', 
-        position: 'relative',
-        zIndex: 1,
-        filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
-        transition: 'transform 0.3s ease',
-        transform: isDark ? 'rotate(-15deg)' : 'rotate(15deg)'
+        fontSize: '20px',
+        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))'
       }}>
         {isDark ? '🌙' : '☀️'}
       </span>
@@ -1483,6 +1464,27 @@ function Dashboard({
   const [showPennyChat, setShowPennyChat] = useState(false);
   const [showIdleModal, setShowIdleModal] = useState(false);
   const [showManageAccountModal, setShowManageAccountModal] = useState(false);
+  
+  // Memoji avatar selection
+  const memojiAvatars = [
+    '👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🧑‍💼', '👨', '👩', '🧑',
+    '👴', '👵', '🧓', '👨‍🦳', '👩‍🦳', '👨‍🦰', '👩‍🦰', '👱‍♂️',
+    '👱‍♀️', '👨‍🦱', '👩‍🦱', '🧔', '🧔‍♀️', '👲', '🧕', '👳‍♂️',
+    '👳‍♀️', '🤵', '🤵‍♀️', '👸', '🤴', '🦸‍♂️', '🦸‍♀️', '🧙‍♂️'
+  ];
+  const [userAvatar, setUserAvatar] = useState(() => {
+    try {
+      return localStorage.getItem('pn_userAvatar') || '👨‍💼';
+    } catch { return '👨‍💼'; }
+  });
+  
+  // Last import date
+  const [lastImportDate, setLastImportDate] = useState(() => {
+    try {
+      return localStorage.getItem('pn_lastImportDate') || null;
+    } catch { return null; }
+  });
+  
   const [chatMessages, setChatMessages] = useState([
     { from: 'penny', text: "Hi! I'm Penny, your financial assistant! 🪙 How can I help you today?" }
   ]);
@@ -1624,7 +1626,7 @@ function Dashboard({
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
-        return <DashboardHome transactions={transactions} goals={goals} bills={bills} theme={theme} />;
+        return <DashboardHome transactions={transactions} goals={goals} bills={bills} theme={theme} lastImportDate={lastImportDate} />;
       case 'sales':
         return <SalesTrackerTab theme={theme} />;
       case 'budget':
@@ -1640,11 +1642,37 @@ function Dashboard({
       case 'reports':
         return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
       case 'settings':
-        return <SettingsTabDS theme={theme} isDarkMode={isDarkMode} onToggleTheme={toggleTheme} />;
+        return <SettingsTabDS 
+          theme={theme} 
+          isDarkMode={isDarkMode} 
+          onToggleTheme={toggleTheme}
+          selectedLanguage={selectedLanguage}
+          onLanguageChange={(lang) => {
+            setSelectedLanguage(lang);
+            localStorage.setItem('pn_language', JSON.stringify(lang));
+          }}
+          userAvatar={userAvatar}
+          onAvatarChange={(avatar) => {
+            setUserAvatar(avatar);
+            localStorage.setItem('pn_userAvatar', avatar);
+          }}
+          memojiAvatars={memojiAvatars}
+          languages={languages}
+        />;
       case 'import':
-        return <ImportTabDS onImport={onImportTransactions} parseCSV={parseCSV} transactionCount={transactions.length} theme={theme} />;
+        return <ImportTabDS 
+          onImport={(data) => {
+            onImportTransactions(data);
+            const now = new Date().toISOString();
+            setLastImportDate(now);
+            localStorage.setItem('pn_lastImportDate', now);
+          }} 
+          parseCSV={parseCSV} 
+          transactionCount={transactions.length} 
+          theme={theme} 
+        />;
       default:
-        return <DashboardHome transactions={transactions} goals={goals} bills={bills} theme={theme} />;
+        return <DashboardHome transactions={transactions} goals={goals} bills={bills} theme={theme} lastImportDate={lastImportDate} />;
     }
   };
 
@@ -1777,7 +1805,7 @@ function Dashboard({
           zIndex: 50
         }}>
           {/* Search and Welcome */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <div style={{ position: 'absolute', left: '14px', color: theme.textMuted }}>
                 <Icons.Search />
@@ -1788,8 +1816,8 @@ function Dashboard({
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 style={{
-                  width: '280px',
-                  height: '42px',
+                  width: '200px',
+                  height: '40px',
                   background: theme.bgMain,
                   border: `1px solid ${theme.border}`,
                   borderRadius: '10px',
@@ -1800,76 +1828,21 @@ function Dashboard({
                 }}
               />
             </div>
-            <div style={{ fontSize: '15px', color: theme.textSecondary, fontWeight: '500' }}>
+            <div style={{ 
+              fontSize: '14px', 
+              color: theme.textSecondary, 
+              fontWeight: '500',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis'
+            }}>
               Welcome back, <span style={{ color: theme.primary, fontWeight: '600' }}>{displayName}</span>! 👋
             </div>
           </div>
 
-          {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Right side - Clean and Simple */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
             
-            {/* Last Imported Indicator */}
-            {transactions.length > 0 && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                padding: '8px 14px',
-                background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : '#ecfdf5'} 0%, ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : '#d1fae5'} 100%)`,
-                borderRadius: '12px',
-                border: `1px solid ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.3)' : '#a7f3d0'}`
-              }}>
-                <div style={{
-                  width: '8px',
-                  height: '8px',
-                  borderRadius: '50%',
-                  background: '#10B981',
-                  boxShadow: '0 0 8px rgba(16, 185, 129, 0.6)',
-                  animation: 'pulse 2s infinite'
-                }} />
-                <div>
-                  <div style={{ fontSize: '10px', color: theme.textMuted, lineHeight: '1' }}>Last synced</div>
-                  <div style={{ fontSize: '12px', fontWeight: '600', color: '#10B981' }}>
-                    {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Calendar Button */}
-            <button
-              onClick={() => setActiveTab('bills')}
-              style={{
-                width: '46px',
-                height: '46px',
-                background: theme.mode === 'dark' 
-                  ? 'linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2))'
-                  : 'linear-gradient(135deg, #eff6ff, #e0e7ff)',
-                border: 'none',
-                borderRadius: '14px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                boxShadow: '0 4px 12px rgba(59, 130, 246, 0.15)',
-                transition: 'all 0.2s ease',
-                position: 'relative'
-              }}
-            >
-              <span style={{ fontSize: '20px' }}>📅</span>
-              <div style={{
-                position: 'absolute',
-                bottom: '6px',
-                left: '50%',
-                transform: 'translateX(-50%)',
-                fontSize: '8px',
-                fontWeight: '700',
-                color: theme.primary
-              }}>
-                {new Date().getDate()}
-              </div>
-            </button>
-
             {/* Theme Toggle */}
             <ThemeToggle isDark={isDarkMode} onToggle={toggleTheme} />
 
@@ -1878,46 +1851,34 @@ function Dashboard({
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 style={{
-                  width: '46px',
-                  height: '46px',
-                  background: showNotifications 
-                    ? 'linear-gradient(135deg, #ef4444, #f97316)'
-                    : theme.mode === 'dark' 
-                      ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.15), rgba(249, 115, 22, 0.15))'
-                      : 'linear-gradient(135deg, #fef2f2, #fff7ed)',
-                  border: 'none',
-                  borderRadius: '14px',
+                  width: '42px',
+                  height: '42px',
+                  background: theme.bgCard,
+                  border: `1px solid ${theme.borderLight}`,
+                  borderRadius: '12px',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  boxShadow: showNotifications 
-                    ? '0 4px 15px rgba(239, 68, 68, 0.4)'
-                    : '0 4px 12px rgba(239, 68, 68, 0.1)',
                   transition: 'all 0.2s ease',
                   position: 'relative'
                 }}
               >
-                <span style={{ 
-                  fontSize: '20px',
-                  filter: showNotifications ? 'brightness(0) invert(1)' : 'none'
-                }}>🔔</span>
+                <span style={{ fontSize: '18px' }}>🔔</span>
                 <span style={{
                   position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  background: 'linear-gradient(135deg, #ef4444, #dc2626)',
+                  top: '-4px',
+                  right: '-4px',
+                  background: '#EF4444',
                   color: 'white',
                   fontSize: '10px',
                   fontWeight: '700',
-                  minWidth: '20px',
-                  height: '20px',
-                  borderRadius: '10px',
+                  minWidth: '18px',
+                  height: '18px',
+                  borderRadius: '9px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
-                  border: `2px solid ${theme.bgWhite}`
+                  justifyContent: 'center'
                 }}>
                   6
                 </span>
@@ -1963,88 +1924,34 @@ function Dashboard({
               )}
             </div>
 
-            {/* Language Selector */}
-            <div style={{ position: 'relative' }}>
-              <button
-                onClick={() => setShowLangDropdown(!showLangDropdown)}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '8px 12px',
-                  background: theme.bgMain,
-                  border: `1px solid ${theme.border}`,
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  color: theme.textPrimary
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>{selectedLanguage.flag}</span>
-                <span>{selectedLanguage.name}</span>
-                <Icons.ChevronDown />
-              </button>
-
-              {showLangDropdown && (
-                <div style={{
-                  position: 'absolute',
-                  top: 'calc(100% + 8px)',
-                  right: 0,
-                  background: theme.dropdownBg,
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                  border: `1px solid ${theme.border}`,
-                  minWidth: '160px',
-                  zIndex: 100
-                }}>
-                  {languages.map(lang => (
-                    <div
-                      key={lang.code}
-                      onClick={() => { setSelectedLanguage(lang); setShowLangDropdown(false); }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px',
-                        padding: '10px 16px',
-                        cursor: 'pointer',
-                        background: selectedLanguage.code === lang.code ? theme.bgMain : 'transparent',
-                        fontSize: '14px',
-                        color: theme.textPrimary
-                      }}
-                    >
-                      <span style={{ fontSize: '18px' }}>{lang.flag}</span>
-                      <span>{lang.name}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Profile */}
+            {/* Profile with Memoji Avatar */}
             <div style={{ position: 'relative' }}>
               <div
                 onClick={() => setShowProfileMenu(!showProfileMenu)}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer' }}
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '8px', 
+                  cursor: 'pointer',
+                  padding: '4px 8px 4px 4px',
+                  background: theme.bgCard,
+                  borderRadius: '25px',
+                  border: `1px solid ${theme.borderLight}`
+                }}
               >
                 <div style={{
-                  width: '42px',
-                  height: '42px',
+                  width: '38px',
+                  height: '38px',
                   borderRadius: '50%',
-                  background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`,
+                  background: `linear-gradient(135deg, ${theme.primary}20, ${theme.secondary}20)`,
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: 'white',
-                  fontWeight: '600',
-                  fontSize: '14px'
+                  fontSize: '24px',
+                  border: `2px solid ${theme.primary}30`
                 }}>
-                  {getInitials()}
+                  {userAvatar || '👨‍💼'}
                 </div>
-                <div>
-                  <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{displayName}</div>
-                  <div style={{ fontSize: '12px', color: theme.textMuted }}>Admin</div>
-                </div>
-                <Icons.ChevronDown />
               </div>
 
               {showProfileMenu && (
@@ -2365,7 +2272,7 @@ function Dashboard({
 // Features: Personal/Side Hustle split, Charts, Budget, Goals, Bills, Free to Spend
 // ============================================================================
 
-function DashboardHome({ transactions, goals, bills = [], theme }) {
+function DashboardHome({ transactions, goals, bills = [], theme, lastImportDate }) {
   const [timeRange, setTimeRange] = useState('month');
   const [activeAccount, setActiveAccount] = useState('all');
 
@@ -2705,7 +2612,26 @@ function DashboardHome({ transactions, goals, bills = [], theme }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '4px', letterSpacing: '-0.5px' }}>Dashboard</h1>
-          <p style={{ fontSize: '14px', color: theme.textMuted }}>{new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <p style={{ fontSize: '14px', color: theme.textMuted, margin: 0 }}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+            {lastImportDate && (
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '6px',
+                padding: '4px 10px',
+                background: '#10B98115',
+                borderRadius: '8px'
+              }}>
+                <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10B981' }} />
+                <span style={{ fontSize: '12px', color: '#10B981', fontWeight: '500' }}>
+                  Last import: {new Date(lastImportDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </span>
+              </div>
+            )}
+          </div>
         </div>
         <div style={{ display: 'flex', gap: '8px', background: theme.bgCard, padding: '4px', borderRadius: '12px', boxShadow: theme.cardShadow }}>
           {[{ id: 'all', label: 'All Accounts', icon: '📊' }, { id: 'personal', label: 'Personal', icon: '👤' }, { id: 'sidehustle', label: 'Side Hustle', icon: '💼' }].map(acc => (
@@ -3439,9 +3365,11 @@ function ImportTabDS({ onImport, parseCSV, transactionCount, theme }) {
 // ============================================================================
 // SETTINGS TAB - DASHSTACK STYLE
 // ============================================================================
-function SettingsTabDS({ theme, isDarkMode, onToggleTheme }) {
+function SettingsTabDS({ theme, isDarkMode, onToggleTheme, selectedLanguage, onLanguageChange, userAvatar, onAvatarChange, memojiAvatars, languages }) {
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [notifications, setNotifications] = useState({
     billReminders: true,
     goalProgress: true,
@@ -3454,6 +3382,8 @@ function SettingsTabDS({ theme, isDarkMode, onToggleTheme }) {
     { icon: '👨‍👩‍👧‍👦', title: 'Family Members', desc: 'Invite family to collaborate', comingSoon: true },
     { icon: '🔔', title: 'Notifications', desc: 'Bill reminders & alerts', action: () => setShowNotificationsModal(true) },
     { icon: '🎨', title: 'Appearance', desc: 'Theme & display options', isAppearance: true },
+    { icon: '🌐', title: 'Language', desc: `Currently: ${selectedLanguage?.name || 'English'}`, action: () => setShowLanguageModal(true) },
+    { icon: '😀', title: 'Profile Avatar', desc: 'Choose your avatar', action: () => setShowAvatarModal(true), isAvatar: true },
     { icon: '🔒', title: 'Security', desc: 'Password & 2FA settings', action: () => setShowPasswordModal(true) },
     { icon: '📤', title: 'Export Data', desc: 'Download your financial data', comingSoon: true }
   ];
@@ -3529,6 +3459,20 @@ function SettingsTabDS({ theme, isDarkMode, onToggleTheme }) {
                     transition: 'left 0.3s ease'
                   }} />
                 </div>
+              </div>
+            ) : item.isAvatar ? (
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '50%', 
+                background: `${theme.primary}20`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '24px',
+                border: `2px solid ${theme.primary}40`
+              }}>
+                {userAvatar || '👨‍💼'}
               </div>
             ) : (
               <span style={{ color: theme.textMuted }}>›</span>
@@ -3615,6 +3559,90 @@ function SettingsTabDS({ theme, isDarkMode, onToggleTheme }) {
                 Update Password
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Language Selection Modal */}
+      {showLanguageModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', width: '400px', maxWidth: '90vw' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, marginBottom: '20px' }}>🌐 Select Language</h3>
+            <div style={{ display: 'grid', gap: '8px', maxHeight: '300px', overflowY: 'auto' }}>
+              {(languages || []).map(lang => (
+                <div
+                  key={lang.code}
+                  onClick={() => {
+                    onLanguageChange && onLanguageChange(lang);
+                    setShowLanguageModal(false);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '14px 16px',
+                    cursor: 'pointer',
+                    background: selectedLanguage?.code === lang.code ? `${theme.primary}15` : theme.bgMain,
+                    border: selectedLanguage?.code === lang.code ? `2px solid ${theme.primary}` : `1px solid ${theme.borderLight}`,
+                    borderRadius: '10px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  <span style={{ fontSize: '24px' }}>{lang.flag}</span>
+                  <span style={{ fontSize: '15px', fontWeight: '500', color: theme.textPrimary }}>{lang.name}</span>
+                  {selectedLanguage?.code === lang.code && (
+                    <span style={{ marginLeft: 'auto', color: theme.primary }}>✓</span>
+                  )}
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowLanguageModal(false)}
+              style={{ width: '100%', padding: '12px', background: theme.bgMain, color: theme.textPrimary, border: `1px solid ${theme.border}`, borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '20px' }}
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Avatar Selection Modal */}
+      {showAvatarModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', width: '500px', maxWidth: '90vw' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, marginBottom: '20px' }}>😀 Choose Your Avatar</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(8, 1fr)', gap: '8px', maxHeight: '300px', overflowY: 'auto', padding: '8px' }}>
+              {(memojiAvatars || []).map((emoji, i) => (
+                <div
+                  key={i}
+                  onClick={() => {
+                    onAvatarChange && onAvatarChange(emoji);
+                    setShowAvatarModal(false);
+                  }}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '28px',
+                    cursor: 'pointer',
+                    background: userAvatar === emoji ? `${theme.primary}20` : theme.bgMain,
+                    border: userAvatar === emoji ? `2px solid ${theme.primary}` : `1px solid ${theme.borderLight}`,
+                    borderRadius: '12px',
+                    transition: 'all 0.2s'
+                  }}
+                >
+                  {emoji}
+                </div>
+              ))}
+            </div>
+            <button 
+              onClick={() => setShowAvatarModal(false)}
+              style={{ width: '100%', padding: '12px', background: theme.bgMain, color: theme.textPrimary, border: `1px solid ${theme.border}`, borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', marginTop: '20px' }}
+            >
+              Close
+            </button>
           </div>
         </div>
       )}
