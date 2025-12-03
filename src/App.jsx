@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 // Component Imports
 import MonthYearSelector from './components/MonthYearSelector';
 import EmptyState from './components/EmptyState';
@@ -19,50 +19,26 @@ import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultDat
 // SITE STATUS INDICATOR COMPONENT - Shows online/offline status
 // ============================================================================
 function SiteStatusIndicator({ showLabel = true, darkMode = true }) {
-  const [status, setStatus] = useState('checking'); // 'online', 'offline', 'checking', 'degraded'
+  const [status, setStatus] = useState('online'); // Default to online since site loaded
   const [showModal, setShowModal] = useState(false);
   
   useEffect(() => {
-    const checkStatus = async () => {
-      try {
-        // Quick connectivity check
-        if (!navigator.onLine) {
-          setStatus('offline');
-          return;
-        }
-        
-        // Check if we can reach our backend
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        
-        const response = await fetch('https://xbmjkigfybberumjqbgw.supabase.co/rest/v1/', {
-          method: 'HEAD',
-          signal: controller.signal,
-        }).catch(() => null);
-        
-        clearTimeout(timeoutId);
-        
-        if (response && (response.ok || response.status === 401)) {
-          setStatus('online');
-        } else {
-          setStatus('degraded');
-        }
-      } catch {
-        setStatus(navigator.onLine ? 'degraded' : 'offline');
-      }
-    };
+    // Simple and reliable: if we're here, the site works
+    // Only track actual browser online/offline events
+    const handleOnline = () => setStatus('online');
+    const handleOffline = () => setStatus('offline');
     
-    checkStatus();
-    const interval = setInterval(checkStatus, 30000); // Check every 30 seconds
+    // Check initial state
+    if (!navigator.onLine) {
+      setStatus('offline');
+    }
     
-    // Listen for online/offline events
-    window.addEventListener('online', () => checkStatus());
-    window.addEventListener('offline', () => setStatus('offline'));
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
     
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('online', checkStatus);
-      window.removeEventListener('offline', () => setStatus('offline'));
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
   
@@ -96,14 +72,13 @@ function SiteStatusIndicator({ showLabel = true, darkMode = true }) {
         <span style={{ 
           color: config.color, 
           fontSize: '10px',
-          animation: status === 'online' ? 'none' : 'statusPulse 2s infinite',
           lineHeight: 1
         }}>
           {config.dot}
         </span>
         {showLabel && (
           <span style={{ 
-            color: darkMode ? config.color : config.color, 
+            color: config.color, 
             fontSize: '12px', 
             fontWeight: '500' 
           }}>
@@ -116,14 +91,6 @@ function SiteStatusIndicator({ showLabel = true, darkMode = true }) {
       {showModal && (
         <SiteStatusModal status={status} onClose={() => setShowModal(false)} />
       )}
-      
-      {/* Animation styles */}
-      <style>{`
-        @keyframes statusPulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.4; }
-        }
-      `}</style>
     </>
   );
 }
@@ -633,6 +600,216 @@ const languages = [
   { code: 'pt', name: 'Português', flag: '🇧🇷' },
   { code: 'ko', name: '한국어', flag: '🇰🇷' },
 ];
+
+// ============================================================================
+// USER ROLES & PERMISSIONS - Industry Standard RBAC
+// ============================================================================
+const USER_ROLES = {
+  OWNER: 'owner',           // You (kennedymichael54@gmail.com) - Full access + sees demo data
+  ADMIN: 'admin',           // Admin users - Full access, can manage users
+  TESTER: 'tester',         // Tester users - Read-only, watermarked, limited features
+  FAMILY: 'family',         // Family plan users - Full access to all features
+  PRO: 'pro',               // Pro plan users - Most features
+  STARTER: 'starter',       // Starter/Free users - Basic features
+};
+
+// Special account emails for role assignment
+const SPECIAL_ACCOUNTS = {
+  'kennedymichael54@gmail.com': USER_ROLES.OWNER,
+  'admin@prospernest.app': USER_ROLES.ADMIN,
+  'tester@prospernest.app': USER_ROLES.TESTER,
+};
+
+// Feature permissions by role
+const ROLE_PERMISSIONS = {
+  [USER_ROLES.OWNER]: {
+    canViewAllTabs: true,
+    canEditData: true,
+    canDeleteData: true,
+    canExport: true,
+    canImport: true,
+    canManageUsers: true,
+    canViewAdminPanel: true,
+    canViewAnalytics: true,
+    canAccessRetirement: true,
+    canAccessSalesTracker: true,
+    canAccessReports: true,
+    canModifySettings: true,
+    showDemoData: true,
+    watermark: false,
+    maxTransactions: Infinity,
+    maxGoals: Infinity,
+    maxBills: Infinity,
+  },
+  [USER_ROLES.ADMIN]: {
+    canViewAllTabs: true,
+    canEditData: true,
+    canDeleteData: true,
+    canExport: true,
+    canImport: true,
+    canManageUsers: true,
+    canViewAdminPanel: true,
+    canViewAnalytics: true,
+    canAccessRetirement: true,
+    canAccessSalesTracker: true,
+    canAccessReports: true,
+    canModifySettings: true,
+    showDemoData: false,
+    watermark: false,
+    maxTransactions: Infinity,
+    maxGoals: Infinity,
+    maxBills: Infinity,
+  },
+  [USER_ROLES.TESTER]: {
+    canViewAllTabs: true,
+    canEditData: false,        // Read-only
+    canDeleteData: false,      // No delete
+    canExport: false,          // No export
+    canImport: false,          // No import
+    canManageUsers: false,
+    canViewAdminPanel: false,
+    canViewAnalytics: true,    // Can view but not modify
+    canAccessRetirement: true,
+    canAccessSalesTracker: true,
+    canAccessReports: true,
+    canModifySettings: false,  // Cannot change settings
+    showDemoData: false,
+    watermark: true,           // Shows "TEST MODE" watermark
+    maxTransactions: 50,       // Limited sample data
+    maxGoals: 5,
+    maxBills: 10,
+  },
+  [USER_ROLES.FAMILY]: {
+    canViewAllTabs: true,
+    canEditData: true,
+    canDeleteData: true,
+    canExport: true,
+    canImport: true,
+    canManageUsers: false,
+    canViewAdminPanel: false,
+    canViewAnalytics: true,
+    canAccessRetirement: true,
+    canAccessSalesTracker: true,
+    canAccessReports: true,
+    canModifySettings: true,
+    showDemoData: false,
+    watermark: false,
+    maxTransactions: Infinity,
+    maxGoals: Infinity,
+    maxBills: Infinity,
+  },
+  [USER_ROLES.PRO]: {
+    canViewAllTabs: true,
+    canEditData: true,
+    canDeleteData: true,
+    canExport: true,
+    canImport: true,
+    canManageUsers: false,
+    canViewAdminPanel: false,
+    canViewAnalytics: true,
+    canAccessRetirement: true,
+    canAccessSalesTracker: false,  // Sales tracker is Family only
+    canAccessReports: true,
+    canModifySettings: true,
+    showDemoData: false,
+    watermark: false,
+    maxTransactions: 5000,
+    maxGoals: 20,
+    maxBills: 50,
+  },
+  [USER_ROLES.STARTER]: {
+    canViewAllTabs: false,
+    canEditData: true,
+    canDeleteData: true,
+    canExport: false,          // No export on free
+    canImport: true,
+    canManageUsers: false,
+    canViewAdminPanel: false,
+    canViewAnalytics: false,   // Limited analytics
+    canAccessRetirement: false, // Retirement is Pro+
+    canAccessSalesTracker: false,
+    canAccessReports: false,   // Reports is Pro+
+    canModifySettings: true,
+    showDemoData: false,
+    watermark: false,
+    maxTransactions: 500,
+    maxGoals: 5,
+    maxBills: 10,
+  },
+};
+
+// Get user role from email
+const getUserRole = (email, subscription = null) => {
+  if (!email) return USER_ROLES.STARTER;
+  
+  // Check special accounts first
+  const specialRole = SPECIAL_ACCOUNTS[email.toLowerCase()];
+  if (specialRole) return specialRole;
+  
+  // Otherwise, base role on subscription
+  if (subscription) {
+    const planType = subscription.plan_type?.toLowerCase() || '';
+    if (planType.includes('family')) return USER_ROLES.FAMILY;
+    if (planType.includes('pro')) return USER_ROLES.PRO;
+  }
+  
+  return USER_ROLES.STARTER;
+};
+
+// Get permissions for a role
+const getRolePermissions = (role) => {
+  return ROLE_PERMISSIONS[role] || ROLE_PERMISSIONS[USER_ROLES.STARTER];
+};
+
+// Check if user has specific permission
+const hasPermission = (userRole, permission) => {
+  const permissions = getRolePermissions(userRole);
+  return permissions[permission] || false;
+};
+
+// Tester Watermark Component
+const TesterWatermark = () => (
+  <div style={{
+    position: 'fixed',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%) rotate(-45deg)',
+    fontSize: '120px',
+    fontWeight: '900',
+    color: 'rgba(239, 68, 68, 0.08)',
+    pointerEvents: 'none',
+    zIndex: 9999,
+    whiteSpace: 'nowrap',
+    userSelect: 'none'
+  }}>
+    TEST MODE
+  </div>
+);
+
+// Read-Only Banner for Testers
+const ReadOnlyBanner = ({ theme }) => (
+  <div style={{
+    position: 'fixed',
+    bottom: '20px',
+    left: '50%',
+    transform: 'translateX(-50%)',
+    background: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+    color: 'white',
+    padding: '10px 24px',
+    borderRadius: '30px',
+    fontSize: '13px',
+    fontWeight: '600',
+    boxShadow: '0 4px 20px rgba(245, 158, 11, 0.4)',
+    zIndex: 9998,
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px'
+  }}>
+    <span>👁️</span>
+    <span>TEST MODE - Read-Only Access</span>
+  </div>
+);
+
 // Currency formatter
 const formatCurrency = (amount) => {
   return new Intl.NumberFormat('en-US', {
@@ -1314,6 +1491,7 @@ function App() {
   const [bills, setBills] = useState([]);
   const [goals, setGoals] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [subscription, setSubscription] = useState(null); // Track subscription for role calculation
   const [profile, setProfile] = useState({
     firstName: '',
     lastName: '',
@@ -1334,6 +1512,16 @@ function App() {
       return localStorage.getItem('pn_lastImportDate') || null; // New users have no import date
     } catch { return null; }
   });
+  
+  // Compute user role based on email and subscription
+  const userRole = useMemo(() => {
+    return getUserRole(user?.email, subscription);
+  }, [user?.email, subscription]);
+  
+  // Get permissions for current user
+  const permissions = useMemo(() => {
+    return getRolePermissions(userRole);
+  }, [userRole]);
 
   // Load user data - tries DB first, falls back to localStorage
   // ENHANCED: Better error handling, retry logic, and data recovery
@@ -1786,25 +1974,33 @@ function App() {
 
   if (view === 'auth') return <AuthPage setView={setView} />;
   if (view === 'dashboard') return (
-    <Dashboard 
-      user={user} 
-      setView={setView} 
-      transactions={transactions}
-      bills={bills}
-      goals={goals}
-      tasks={tasks}
-      profile={profile}
-      userPreferences={userPreferences}
-      lastImportDate={lastImportDate}
-      onSetLastImportDate={setLastImportDate}
-      onImportTransactions={handleImportTransactions}
-      onUpdateBills={handleUpdateBills}
-      onUpdateGoals={handleUpdateGoals}
-      onUpdateTasks={handleUpdateTasks}
-      onUpdateProfile={handleUpdateProfile}
-      onUpdatePreferences={handleUpdatePreferences}
-      parseCSV={parseCSV}
-    />
+    <>
+      {/* Tester Mode Watermark & Banner */}
+      {userRole === USER_ROLES.TESTER && <TesterWatermark />}
+      {userRole === USER_ROLES.TESTER && <ReadOnlyBanner theme={lightTheme} />}
+      
+      <Dashboard 
+        user={user} 
+        setView={setView} 
+        transactions={transactions}
+        bills={bills}
+        goals={goals}
+        tasks={tasks}
+        profile={profile}
+        userPreferences={userPreferences}
+        lastImportDate={lastImportDate}
+        onSetLastImportDate={setLastImportDate}
+        onImportTransactions={handleImportTransactions}
+        onUpdateBills={handleUpdateBills}
+        onUpdateGoals={handleUpdateGoals}
+        onUpdateTasks={handleUpdateTasks}
+        onUpdateProfile={handleUpdateProfile}
+        onUpdatePreferences={handleUpdatePreferences}
+        parseCSV={parseCSV}
+        userRole={userRole}
+        permissions={permissions}
+      />
+    </>
   );
   return <ProsperNestLandingV4 onNavigate={setView} />;
 }
@@ -2777,7 +2973,9 @@ function Dashboard({
   onUpdateTasks,
   onUpdateProfile,
   onUpdatePreferences,
-  parseCSV
+  parseCSV,
+  userRole = USER_ROLES.STARTER,
+  permissions = ROLE_PERMISSIONS[USER_ROLES.STARTER]
 }) {
   const [activeTab, setActiveTab] = useState('home');
   const [previousTab, setPreviousTab] = useState('home');
@@ -3544,6 +3742,43 @@ function Dashboard({
                     textTransform: 'uppercase',
                     letterSpacing: '0.5px'
                   }}>Beta</span>
+                  {/* Role Badge for Admin/Tester */}
+                  {userRole === USER_ROLES.ADMIN && (
+                    <span style={{ 
+                      background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', 
+                      padding: '2px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '9px', 
+                      fontWeight: '700', 
+                      color: 'white',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>Admin</span>
+                  )}
+                  {userRole === USER_ROLES.TESTER && (
+                    <span style={{ 
+                      background: 'linear-gradient(135deg, #EF4444, #DC2626)', 
+                      padding: '2px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '9px', 
+                      fontWeight: '700', 
+                      color: 'white',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>Tester</span>
+                  )}
+                  {userRole === USER_ROLES.OWNER && (
+                    <span style={{ 
+                      background: 'linear-gradient(135deg, #10B981, #059669)', 
+                      padding: '2px 8px', 
+                      borderRadius: '6px', 
+                      fontSize: '9px', 
+                      fontWeight: '700', 
+                      color: 'white',
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.5px'
+                    }}>Owner</span>
+                  )}
                   <SiteStatusIndicator showLabel={false} darkMode={true} />
                 </div>
               </div>
