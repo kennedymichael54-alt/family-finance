@@ -15,98 +15,129 @@ import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
 // ============================================================================
 // PROSPERNEST - DASHSTACK UI DESIGN
 // ============================================================================
-// Theme colors - Light Mode (DashStack inspired)
+// Theme colors - Light Mode (Modern Fintech - Warm & Premium)
 const lightTheme = {
   mode: 'light',
-  primary: '#4F46E5',
-  primaryLight: '#818CF8',
-  primaryDark: '#3730A3',
-  secondary: '#EC4899',
+  primary: '#6366F1', // Softer indigo
+  primaryLight: '#A5B4FC',
+  primaryDark: '#4F46E5',
+  secondary: '#F472B6',
   success: '#10B981',
   warning: '#F59E0B',
   danger: '#EF4444',
-  info: '#3B82F6',
+  info: '#0EA5E9',
   
-  bgMain: '#F5F6FA',
+  // Warm, soft backgrounds
+  bgMain: '#F8FAFC', // Soft cool gray
   bgWhite: '#FFFFFF',
   bgCard: '#FFFFFF',
+  bgWarm: '#FFFBF5', // Warm cream for accents
   
-  textPrimary: '#1F2937',
-  textSecondary: '#6B7280',
-  textMuted: '#9CA3AF',
+  textPrimary: '#1E293B', // Slate 800
+  textSecondary: '#64748B', // Slate 500
+  textMuted: '#94A3B8', // Slate 400
   
-  border: '#E5E7EB',
-  borderLight: '#F3F4F6',
+  border: '#E2E8F0', // Slate 200
+  borderLight: '#F1F5F9', // Slate 100
   
-  sidebarBg: '#FFFFFF',
-  sidebarActive: '#4F46E5',
-  sidebarText: '#6B7280',
+  // Premium sidebar styling
+  sidebarBg: 'linear-gradient(180deg, #FFFFFF 0%, #F8FAFC 50%, #F1F5F9 100%)',
+  sidebarActive: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+  sidebarText: '#64748B',
   sidebarActiveText: '#FFFFFF',
+  sidebarGlow: 'rgba(99, 102, 241, 0.15)',
   
-  inputBg: '#FFFFFF',
-  cardShadow: '0 1px 3px rgba(0,0,0,0.05)',
+  // Header styling
+  headerBg: 'linear-gradient(90deg, #FFFFFF 0%, #FAFBFF 50%, #FFFFFF 100%)',
+  headerBorder: 'rgba(99, 102, 241, 0.08)',
+  
+  inputBg: '#F8FAFC',
+  cardShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)',
+  cardShadowHover: '0 4px 16px rgba(99, 102, 241, 0.12), 0 8px 32px rgba(0,0,0,0.06)',
   dropdownBg: '#FFFFFF',
   
-  // Section Gradients - Light Mode (subtle, professional)
+  // Accent gradients for cards/elements
+  accentGradient1: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)', // Purple
+  accentGradient2: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', // Green
+  accentGradient3: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', // Blue
+  accentGradient4: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)', // Amber
+  
+  // Section Gradients - Light Mode (warm, subtle, premium)
   gradients: {
-    dashboard: 'linear-gradient(135deg, #E0E7FF 0%, #F5F6FA 30%, #FDF2F8 70%, #F5F6FA 100%)',
-    sales: 'linear-gradient(135deg, #FEF3C7 0%, #F5F6FA 40%, #ECFDF5 100%)',
-    budget: 'linear-gradient(135deg, #DBEAFE 0%, #F5F6FA 50%, #EDE9FE 100%)',
-    transactions: 'linear-gradient(135deg, #F0FDF4 0%, #F5F6FA 40%, #F0F9FF 100%)',
-    bills: 'linear-gradient(135deg, #FEE2E2 0%, #F5F6FA 50%, #FEF3C7 100%)',
-    goals: 'linear-gradient(135deg, #EDE9FE 0%, #F5F6FA 40%, #FCE7F3 100%)',
-    tasks: 'linear-gradient(135deg, #CFFAFE 0%, #F5F6FA 50%, #E0E7FF 100%)',
-    retirement: 'linear-gradient(135deg, #D1FAE5 0%, #F5F6FA 50%, #DBEAFE 100%)',
-    reports: 'linear-gradient(135deg, #FEF3C7 0%, #F5F6FA 40%, #EDE9FE 100%)',
-    settings: 'linear-gradient(135deg, #F3F4F6 0%, #F5F6FA 50%, #E5E7EB 100%)',
-    import: 'linear-gradient(135deg, #DBEAFE 0%, #F5F6FA 50%, #D1FAE5 100%)'
+    dashboard: 'linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 30%, #FDF4FF 60%, #F8FAFC 100%)',
+    sales: 'linear-gradient(135deg, #FFFBEB 0%, #F8FAFC 40%, #ECFDF5 100%)',
+    budget: 'linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #F5F3FF 100%)',
+    transactions: 'linear-gradient(135deg, #F0FDF4 0%, #F8FAFC 40%, #EFF6FF 100%)',
+    bills: 'linear-gradient(135deg, #FFF7ED 0%, #F8FAFC 50%, #FFFBEB 100%)',
+    goals: 'linear-gradient(135deg, #F5F3FF 0%, #F8FAFC 40%, #FDF4FF 100%)',
+    tasks: 'linear-gradient(135deg, #ECFEFF 0%, #F8FAFC 50%, #EEF2FF 100%)',
+    retirement: 'linear-gradient(135deg, #ECFDF5 0%, #F8FAFC 50%, #EFF6FF 100%)',
+    reports: 'linear-gradient(135deg, #FFFBEB 0%, #F8FAFC 40%, #F5F3FF 100%)',
+    settings: 'linear-gradient(135deg, #F8FAFC 0%, #F1F5F9 50%, #F8FAFC 100%)',
+    import: 'linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #ECFDF5 100%)'
   }
 };
-// Theme colors - Dark Mode (Original purple theme)
+
+// Theme colors - Dark Mode (Modern Fintech - Rich Navy)
 const darkTheme = {
   mode: 'dark',
-  primary: '#8B5CF6',
-  primaryLight: '#A78BFA',
-  primaryDark: '#6D28D9',
-  secondary: '#EC4899',
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  info: '#3B82F6',
+  primary: '#818CF8', // Lighter indigo for dark mode
+  primaryLight: '#A5B4FC',
+  primaryDark: '#6366F1',
+  secondary: '#F472B6',
+  success: '#34D399',
+  warning: '#FBBF24',
+  danger: '#F87171',
+  info: '#38BDF8',
   
-  bgMain: '#0c0a1d',
-  bgWhite: '#1a1230',
-  bgCard: '#1e1b38',
+  // Rich navy backgrounds
+  bgMain: '#0F172A', // Slate 900
+  bgWhite: '#1E293B', // Slate 800
+  bgCard: '#1E293B',
+  bgWarm: '#1E293B',
   
-  textPrimary: '#FFFFFF',
-  textSecondary: '#A0AEC0',
-  textMuted: '#718096',
+  textPrimary: '#F1F5F9', // Slate 100
+  textSecondary: '#94A3B8', // Slate 400
+  textMuted: '#64748B', // Slate 500
   
-  border: 'rgba(139, 92, 246, 0.2)',
-  borderLight: 'rgba(255,255,255,0.1)',
+  border: 'rgba(148, 163, 184, 0.1)', // Slate with opacity
+  borderLight: 'rgba(148, 163, 184, 0.05)',
   
-  sidebarBg: '#1a1230',
-  sidebarActive: '#8B5CF6',
-  sidebarText: 'rgba(255,255,255,0.6)',
+  // Premium sidebar styling - rich gradient
+  sidebarBg: 'linear-gradient(180deg, #1E293B 0%, #0F172A 50%, #0F172A 100%)',
+  sidebarActive: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+  sidebarText: '#94A3B8',
   sidebarActiveText: '#FFFFFF',
+  sidebarGlow: 'rgba(129, 140, 248, 0.2)',
   
-  inputBg: 'rgba(139, 92, 246, 0.1)',
-  cardShadow: '0 4px 20px rgba(0,0,0,0.3)',
-  dropdownBg: '#1e1b38',
+  // Header styling
+  headerBg: 'linear-gradient(90deg, #1E293B 0%, #1E293B 100%)',
+  headerBorder: 'rgba(148, 163, 184, 0.1)',
   
-  // Section Gradients - Dark Mode (rich, vibrant with color pops)
+  inputBg: 'rgba(148, 163, 184, 0.05)',
+  cardShadow: '0 4px 20px rgba(0,0,0,0.25)',
+  cardShadowHover: '0 8px 32px rgba(0,0,0,0.35)',
+  dropdownBg: '#1E293B',
+  
+  // Accent gradients
+  accentGradient1: 'linear-gradient(135deg, #818CF8 0%, #A78BFA 100%)',
+  accentGradient2: 'linear-gradient(135deg, #34D399 0%, #10B981 100%)',
+  accentGradient3: 'linear-gradient(135deg, #38BDF8 0%, #0EA5E9 100%)',
+  accentGradient4: 'linear-gradient(135deg, #FBBF24 0%, #F59E0B 100%)',
+  
+  // Section Gradients - Dark Mode (rich, subtle color pops)
   gradients: {
-    dashboard: 'linear-gradient(135deg, #1a1033 0%, #0c0a1d 30%, #1a0a20 70%, #0c0a1d 100%)',
-    sales: 'linear-gradient(135deg, #1a1a0a 0%, #0c0a1d 40%, #0a1a15 100%)',
-    budget: 'linear-gradient(135deg, #0a1530 0%, #0c0a1d 50%, #1a0a30 100%)',
-    transactions: 'linear-gradient(135deg, #0a1a0f 0%, #0c0a1d 40%, #0a1520 100%)',
-    bills: 'linear-gradient(135deg, #1a0a0a 0%, #0c0a1d 50%, #1a1a0a 100%)',
-    goals: 'linear-gradient(135deg, #1a0a30 0%, #0c0a1d 40%, #200a1a 100%)',
-    tasks: 'linear-gradient(135deg, #0a1a1a 0%, #0c0a1d 50%, #0a0a30 100%)',
-    retirement: 'linear-gradient(135deg, #0a1a10 0%, #0c0a1d 50%, #0a1530 100%)',
-    reports: 'linear-gradient(135deg, #1a1508 0%, #0c0a1d 40%, #1a0a30 100%)',
-    settings: 'linear-gradient(135deg, #12101f 0%, #0c0a1d 50%, #100a15 100%)',
-    import: 'linear-gradient(135deg, #0a1530 0%, #0c0a1d 50%, #0a1a10 100%)'
+    dashboard: 'linear-gradient(135deg, #0F172A 0%, #1E1B4B 30%, #1E293B 70%, #0F172A 100%)',
+    sales: 'linear-gradient(135deg, #1C1917 0%, #0F172A 40%, #14532D 100%)',
+    budget: 'linear-gradient(135deg, #1E3A5F 0%, #0F172A 50%, #2E1065 100%)',
+    transactions: 'linear-gradient(135deg, #14532D 0%, #0F172A 40%, #1E3A5F 100%)',
+    bills: 'linear-gradient(135deg, #7C2D12 0%, #0F172A 50%, #1C1917 100%)',
+    goals: 'linear-gradient(135deg, #2E1065 0%, #0F172A 40%, #831843 100%)',
+    tasks: 'linear-gradient(135deg, #164E63 0%, #0F172A 50%, #1E1B4B 100%)',
+    retirement: 'linear-gradient(135deg, #14532D 0%, #0F172A 50%, #1E3A5F 100%)',
+    reports: 'linear-gradient(135deg, #1C1917 0%, #0F172A 40%, #2E1065 100%)',
+    settings: 'linear-gradient(135deg, #1E293B 0%, #0F172A 50%, #1E293B 100%)',
+    import: 'linear-gradient(135deg, #1E3A5F 0%, #0F172A 50%, #14532D 100%)'
   }
 };
 // Default theme (will be controlled by state)
@@ -3042,62 +3073,122 @@ function Dashboard({
         /* Hub Card Hover Effects */
         .hub-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+          box-shadow: 0 8px 24px rgba(99, 102, 241, 0.15) !important;
         }
         
         /* Sub-item hover effects */
         .hub-card ~ div > div:hover {
-          background: rgba(0,0,0,0.03);
+          background: rgba(99, 102, 241, 0.04);
+        }
+        
+        /* Smooth sidebar scroll */
+        .sidebar-nav::-webkit-scrollbar {
+          width: 4px;
+        }
+        .sidebar-nav::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .sidebar-nav::-webkit-scrollbar-thumb {
+          background: rgba(99, 102, 241, 0.2);
+          border-radius: 4px;
         }
       `}</style>
 
-      {/* Sidebar */}
+      {/* Sidebar - Premium Gradient */}
       <aside 
         className={`dashboard-sidebar ${mobileMenuOpen ? 'open' : ''}`}
         style={{
         width: '260px',
         background: theme.sidebarBg,
-        borderRight: `1px solid ${theme.border}`,
+        borderRight: `1px solid ${theme.headerBorder || theme.border}`,
         display: 'flex',
         flexDirection: 'column',
         position: 'fixed',
         height: '100vh',
-        zIndex: 100
+        zIndex: 100,
+        boxShadow: theme.mode === 'light' 
+          ? '4px 0 24px rgba(99, 102, 241, 0.04)' 
+          : '4px 0 24px rgba(0, 0, 0, 0.3)'
       }}>
-        {/* Logo */}
+        {/* Logo - Premium styling */}
         <div 
           onClick={() => setActiveTab('home')}
-          style={{ padding: '20px 24px', borderBottom: `1px solid ${theme.borderLight}`, cursor: 'pointer' }}
+          style={{ 
+            padding: '24px', 
+            borderBottom: `1px solid ${theme.mode === 'light' ? 'rgba(99, 102, 241, 0.08)' : theme.borderLight}`, 
+            cursor: 'pointer',
+            background: theme.mode === 'light' 
+              ? 'linear-gradient(180deg, #FFFFFF 0%, rgba(99, 102, 241, 0.02) 100%)'
+              : 'transparent'
+          }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <PennyLogo size={36} />
-            <span style={{ fontWeight: '700', fontSize: '18px', color: theme.textPrimary }}>
-              Prosper<span style={{ color: theme.primary }}>Nest</span>
-            </span>
-            <span style={{ 
-              background: '#F97316', 
-              padding: '2px 6px', 
-              borderRadius: '4px', 
-              fontSize: '9px', 
-              fontWeight: '600', 
-              color: 'white',
-              textTransform: 'uppercase'
-            }}>Beta</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '42px',
+              height: '42px',
+              borderRadius: '12px',
+              background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)'
+            }}>
+              <PennyLogo size={28} />
+            </div>
+            <div>
+              <span style={{ fontWeight: '700', fontSize: '18px', color: theme.textPrimary, letterSpacing: '-0.3px' }}>
+                Prosper<span style={{ 
+                  background: 'linear-gradient(135deg, #6366F1, #8B5CF6)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent'
+                }}>Nest</span>
+              </span>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                marginTop: '2px'
+              }}>
+                <span style={{ 
+                  background: 'linear-gradient(135deg, #F59E0B, #D97706)', 
+                  padding: '2px 8px', 
+                  borderRadius: '6px', 
+                  fontSize: '9px', 
+                  fontWeight: '700', 
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  boxShadow: '0 2px 6px rgba(245, 158, 11, 0.3)'
+                }}>Beta</span>
+              </div>
+            </div>
           </div>
         </div>
 
         {/* Navigation - Hub Based */}
-        <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
+        <nav className="sidebar-nav" style={{ 
+          flex: 1, 
+          padding: '20px 14px', 
+          overflowY: 'auto',
+          background: theme.mode === 'light' 
+            ? 'linear-gradient(180deg, rgba(99, 102, 241, 0.01) 0%, transparent 30%, transparent 100%)'
+            : 'transparent'
+        }}>
           {/* Trial/Subscription Status Banner - Modern Style */}
           {subscriptionAccess.hasAccess && subscriptionAccess.reason === 'trial' && (
             <div style={{
-              background: 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%)',
+              background: theme.mode === 'light'
+                ? 'linear-gradient(135deg, #FEF3C7 0%, #FDE68A 50%, #FCD34D 100%)'
+                : 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.15) 100%)',
               borderRadius: '16px',
               padding: '14px',
               marginBottom: '20px',
-              boxShadow: '0 4px 16px rgba(245, 158, 11, 0.25)',
+              boxShadow: theme.mode === 'light' 
+                ? '0 4px 16px rgba(245, 158, 11, 0.25)'
+                : '0 4px 16px rgba(0, 0, 0, 0.2)',
               position: 'relative',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              border: theme.mode === 'dark' ? '1px solid rgba(251, 191, 36, 0.2)' : 'none'
             }}>
               {/* Decorative shine effect */}
               <div style={{
@@ -3115,7 +3206,7 @@ function Dashboard({
                   width: '28px',
                   height: '28px',
                   borderRadius: '8px',
-                  background: 'rgba(245, 158, 11, 0.3)',
+                  background: theme.mode === 'light' ? 'rgba(245, 158, 11, 0.3)' : 'rgba(251, 191, 36, 0.3)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -3422,7 +3513,7 @@ function Dashboard({
                 borderRadius: '8px',
                 background: activeTab === item.id 
                   ? 'rgba(255,255,255,0.2)' 
-                  : theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                  : theme.mode === 'dark' ? 'rgba(255,255,255,0.05)' : 'rgba(99, 102, 241, 0.04)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -3434,23 +3525,43 @@ function Dashboard({
           ))}
         </nav>
 
-        {/* Logout Button */}
-        <div style={{ padding: '16px', borderTop: `1px solid ${theme.borderLight}` }}>
+        {/* Logout Button - Premium */}
+        <div style={{ 
+          padding: '16px', 
+          borderTop: `1px solid ${theme.mode === 'light' ? 'rgba(99, 102, 241, 0.08)' : theme.borderLight}`,
+          background: theme.mode === 'light' 
+            ? 'linear-gradient(180deg, transparent 0%, rgba(99, 102, 241, 0.02) 100%)'
+            : 'transparent'
+        }}>
           <div
             onClick={handleSignOut}
+            className="logout-btn"
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '12px',
               padding: '12px 16px',
-              borderRadius: '10px',
+              borderRadius: '12px',
               cursor: 'pointer',
               color: theme.danger,
               fontSize: '14px',
-              fontWeight: '500'
+              fontWeight: '600',
+              background: theme.mode === 'light' ? 'rgba(239, 68, 68, 0.06)' : 'rgba(239, 68, 68, 0.1)',
+              border: `1px solid ${theme.mode === 'light' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.2)'}`,
+              transition: 'all 0.2s ease'
             }}
           >
-            <Icons.SignOut />
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
+              background: 'rgba(239, 68, 68, 0.1)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Icons.SignOut />
+            </div>
             <span>Logout</span>
           </div>
         </div>
@@ -3458,23 +3569,34 @@ function Dashboard({
 
       {/* Main Content */}
       <main className="dashboard-main" style={{ flex: 1, marginLeft: '260px', display: 'flex', flexDirection: 'column' }}>
-        {/* Top Header */}
+        {/* Top Header - Premium Styling */}
         <header className="header-bar" style={{
-          height: '70px',
-          background: theme.bgWhite,
-          borderBottom: `1px solid ${theme.border}`,
+          height: '72px',
+          background: theme.headerBg || theme.bgWhite,
+          borderBottom: `1px solid ${theme.headerBorder || theme.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 24px',
+          padding: '0 28px',
           position: 'sticky',
           top: 0,
-          zIndex: 50
+          zIndex: 50,
+          backdropFilter: 'blur(12px)',
+          boxShadow: theme.mode === 'light' 
+            ? '0 1px 3px rgba(99, 102, 241, 0.04)' 
+            : '0 1px 3px rgba(0, 0, 0, 0.2)'
         }}>
-          {/* Search Bar - With Results Dropdown */}
+          {/* Search Bar - Premium Style */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
             <div className="dropdown-container" style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <div style={{ position: 'absolute', left: '16px', color: theme.textMuted, zIndex: 2 }}>
+              <div style={{ 
+                position: 'absolute', 
+                left: '16px', 
+                color: theme.textMuted, 
+                zIndex: 2,
+                display: 'flex',
+                alignItems: 'center'
+              }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <circle cx="11" cy="11" r="8"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -3491,16 +3613,21 @@ function Dashboard({
                   setShowProfileMenu(false); // Close profile menu
                 }}
                 style={{
-                  width: '320px',
-                  height: '44px',
-                  background: theme.bgCard,
-                  border: `1px solid ${theme.borderLight}`,
-                  borderRadius: '12px',
+                  width: '340px',
+                  height: '46px',
+                  background: theme.mode === 'light' 
+                    ? 'linear-gradient(135deg, #F8FAFC 0%, #FFFFFF 100%)'
+                    : theme.inputBg,
+                  border: `1px solid ${theme.mode === 'light' ? 'rgba(99, 102, 241, 0.1)' : theme.borderLight}`,
+                  borderRadius: '14px',
                   padding: '0 16px 0 48px',
                   fontSize: '14px',
                   outline: 'none',
                   color: theme.textPrimary,
-                  boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
+                  boxShadow: theme.mode === 'light' 
+                    ? 'inset 0 1px 2px rgba(0,0,0,0.02), 0 1px 2px rgba(99, 102, 241, 0.04)'
+                    : 'none',
+                  transition: 'all 0.2s ease'
                 }}
               />
               {searchQuery && (
@@ -3508,17 +3635,19 @@ function Dashboard({
                   onClick={() => { setSearchQuery(''); setShowSearchResults(false); }}
                   style={{
                     position: 'absolute',
-                    right: '12px',
-                    background: 'none',
+                    right: '14px',
+                    background: theme.mode === 'light' ? 'rgba(99, 102, 241, 0.08)' : 'rgba(255,255,255,0.1)',
                     border: 'none',
                     cursor: 'pointer',
                     color: theme.textMuted,
-                    padding: '4px',
+                    padding: '6px',
+                    borderRadius: '8px',
                     display: 'flex',
-                    alignItems: 'center'
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease'
                   }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18"/>
                     <line x1="6" y1="6" x2="18" y2="18"/>
                   </svg>
@@ -3531,13 +3660,15 @@ function Dashboard({
                   position: 'absolute',
                   top: 'calc(100% + 8px)',
                   left: 0,
-                  width: '400px',
+                  width: '420px',
                   maxHeight: '450px',
                   overflowY: 'auto',
                   background: theme.dropdownBg,
-                  borderRadius: '12px',
-                  boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-                  border: `1px solid ${theme.border}`,
+                  borderRadius: '16px',
+                  boxShadow: theme.mode === 'light' 
+                    ? '0 10px 40px rgba(99, 102, 241, 0.15), 0 4px 12px rgba(0,0,0,0.06)'
+                    : '0 10px 40px rgba(0,0,0,0.4)',
+                  border: `1px solid ${theme.mode === 'light' ? 'rgba(99, 102, 241, 0.1)' : theme.border}`,
                   zIndex: 200
                 }}>
                   {(() => {
