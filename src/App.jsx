@@ -1723,6 +1723,381 @@ function ThemeToggle({ isDark, onToggle }) {
     </div>
   );
 }
+
+// ============================================================================
+// LAST IMPORT INDICATOR - Reusable component for all tabs
+// ============================================================================
+function LastImportIndicator({ lastImportDate }) {
+  if (!lastImportDate) return null;
+  
+  return (
+    <div style={{ 
+      display: 'inline-flex', 
+      alignItems: 'center', 
+      gap: '6px', 
+      padding: '4px 10px', 
+      background: '#10B98115', 
+      borderRadius: '8px',
+      marginLeft: '12px'
+    }}>
+      <div style={{ 
+        width: '6px', 
+        height: '6px', 
+        borderRadius: '50%', 
+        background: '#10B981' 
+      }} />
+      <span style={{ 
+        fontSize: '12px', 
+        color: '#10B981', 
+        fontWeight: '500' 
+      }}>
+        Last import: {new Date(lastImportDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+      </span>
+    </div>
+  );
+}
+
+// ============================================================================
+// CHANGE PASSWORD MODAL
+// ============================================================================
+function ChangePasswordModal({ theme, onClose }) {
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
+
+  // Password strength calculation
+  const getPasswordStrength = (password) => {
+    if (!password) return { score: 0, label: '', color: '#E5E7EB' };
+    
+    let score = 0;
+    const checks = {
+      length: password.length >= 8,
+      lowercase: /[a-z]/.test(password),
+      uppercase: /[A-Z]/.test(password),
+      numbers: /[0-9]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+      longLength: password.length >= 12
+    };
+    
+    if (checks.length) score++;
+    if (checks.lowercase) score++;
+    if (checks.uppercase) score++;
+    if (checks.numbers) score++;
+    if (checks.special) score++;
+    if (checks.longLength) score++;
+
+    if (score <= 2) return { score: 1, label: 'Weak', color: '#EF4444', checks };
+    if (score <= 3) return { score: 2, label: 'Fair', color: '#F59E0B', checks };
+    if (score <= 4) return { score: 3, label: 'Good', color: '#3B82F6', checks };
+    return { score: 4, label: 'Strong', color: '#10B981', checks };
+  };
+
+  const passwordStrength = getPasswordStrength(newPassword);
+
+  const handleSubmit = async () => {
+    setError('');
+    
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      setError('Please fill in all fields');
+      return;
+    }
+    
+    if (newPassword !== confirmPassword) {
+      setError('New passwords do not match');
+      return;
+    }
+    
+    if (passwordStrength.score < 2) {
+      setError('Please choose a stronger password');
+      return;
+    }
+
+    setLoading(true);
+    
+    try {
+      const sb = await initSupabase();
+      if (!sb) throw new Error('Connection error');
+      
+      const { error: updateError } = await sb.auth.updateUser({
+        password: newPassword
+      });
+      
+      if (updateError) throw updateError;
+      
+      setSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 2000);
+    } catch (err) {
+      setError(err.message || 'Failed to update password');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ 
+      position: 'fixed', 
+      inset: 0, 
+      background: 'rgba(0,0,0,0.5)', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center', 
+      zIndex: 2000 
+    }}>
+      <div style={{ 
+        background: theme.bgCard, 
+        borderRadius: '20px', 
+        padding: '32px', 
+        width: '440px', 
+        maxWidth: '90vw',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: '700', color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span>🔒</span> Change Password
+          </h2>
+          <button 
+            onClick={onClose} 
+            style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: theme.textMuted }}
+          >
+            ×
+          </button>
+        </div>
+        
+        {success ? (
+          <div style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ fontSize: '48px', marginBottom: '16px' }}>✅</div>
+            <h3 style={{ fontSize: '18px', fontWeight: '600', color: theme.textPrimary, marginBottom: '8px' }}>
+              Password Updated!
+            </h3>
+            <p style={{ color: theme.textMuted, fontSize: '14px' }}>
+              Your password has been changed successfully.
+            </p>
+          </div>
+        ) : (
+          <>
+            {error && (
+              <div style={{ 
+                padding: '12px 16px', 
+                background: '#FEE2E2', 
+                borderRadius: '10px', 
+                marginBottom: '20px',
+                color: '#DC2626',
+                fontSize: '14px'
+              }}>
+                {error}
+              </div>
+            )}
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '8px' }}>
+                Current Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="Enter current password"
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px 40px 12px 16px', 
+                    background: theme.inputBg, 
+                    border: `1px solid ${theme.border}`, 
+                    borderRadius: '10px', 
+                    color: theme.textPrimary, 
+                    fontSize: '15px',
+                    boxSizing: 'border-box'
+                  }} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme.textMuted,
+                    fontSize: '18px'
+                  }}
+                >
+                  {showCurrentPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '8px' }}>
+                New Password
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input 
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password"
+                  style={{ 
+                    width: '100%', 
+                    padding: '12px 40px 12px 16px', 
+                    background: theme.inputBg, 
+                    border: `1px solid ${theme.border}`, 
+                    borderRadius: '10px', 
+                    color: theme.textPrimary, 
+                    fontSize: '15px',
+                    boxSizing: 'border-box'
+                  }} 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme.textMuted,
+                    fontSize: '18px'
+                  }}
+                >
+                  {showNewPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
+              
+              {/* Password Strength Indicator */}
+              {newPassword && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
+                    {[1, 2, 3, 4].map((level) => (
+                      <div
+                        key={level}
+                        style={{
+                          flex: 1,
+                          height: '4px',
+                          borderRadius: '2px',
+                          background: level <= passwordStrength.score ? passwordStrength.color : '#E5E7EB',
+                          transition: 'background 0.3s'
+                        }}
+                      />
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '13px', fontWeight: '600', color: passwordStrength.color }}>
+                      {passwordStrength.label}
+                    </span>
+                    <span style={{ fontSize: '12px', color: theme.textMuted }}>
+                      {passwordStrength.score < 3 ? 'Add uppercase, numbers, or symbols' : 'Great password!'}
+                    </span>
+                  </div>
+                  
+                  {/* Password requirements checklist */}
+                  <div style={{ marginTop: '12px', padding: '12px', background: theme.bgMain, borderRadius: '8px' }}>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>Password must have:</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+                      {[
+                        { check: newPassword.length >= 8, label: '8+ characters' },
+                        { check: /[A-Z]/.test(newPassword), label: 'Uppercase letter' },
+                        { check: /[a-z]/.test(newPassword), label: 'Lowercase letter' },
+                        { check: /[0-9]/.test(newPassword), label: 'Number' },
+                        { check: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword), label: 'Special character' },
+                      ].map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12px' }}>
+                          <span style={{ color: item.check ? '#10B981' : '#9CA3AF' }}>
+                            {item.check ? '✓' : '○'}
+                          </span>
+                          <span style={{ color: item.check ? theme.textPrimary : theme.textMuted }}>
+                            {item.label}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '8px' }}>
+                Confirm New Password
+              </label>
+              <input 
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Confirm new password"
+                style={{ 
+                  width: '100%', 
+                  padding: '12px 16px', 
+                  background: theme.inputBg, 
+                  border: `1px solid ${confirmPassword && confirmPassword !== newPassword ? '#EF4444' : theme.border}`, 
+                  borderRadius: '10px', 
+                  color: theme.textPrimary, 
+                  fontSize: '15px',
+                  boxSizing: 'border-box'
+                }} 
+              />
+              {confirmPassword && confirmPassword !== newPassword && (
+                <div style={{ fontSize: '12px', color: '#EF4444', marginTop: '6px' }}>
+                  Passwords do not match
+                </div>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={onClose}
+                style={{ 
+                  flex: 1, 
+                  padding: '14px', 
+                  background: 'transparent', 
+                  border: `1px solid ${theme.border}`, 
+                  borderRadius: '10px', 
+                  color: theme.textSecondary, 
+                  fontSize: '15px', 
+                  fontWeight: '600', 
+                  cursor: 'pointer' 
+                }}
+              >
+                Cancel
+              </button>
+              <button 
+                onClick={handleSubmit}
+                disabled={loading}
+                style={{ 
+                  flex: 1, 
+                  padding: '14px', 
+                  background: theme.primary, 
+                  border: 'none', 
+                  borderRadius: '10px', 
+                  color: 'white', 
+                  fontSize: '15px', 
+                  fontWeight: '600', 
+                  cursor: loading ? 'wait' : 'pointer',
+                  opacity: loading ? 0.7 : 1
+                }}
+              >
+                {loading ? 'Updating...' : 'Update Password'}
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // DASHBOARD - DASHSTACK STYLE (Light Theme)
 // ============================================================================
@@ -1746,9 +2121,11 @@ function Dashboard({
   parseCSV
 }) {
   const [activeTab, setActiveTab] = useState('home');
+  const [previousTab, setPreviousTab] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
     // Initialize from userPreferences if available
     const langCode = userPreferences?.language || 'en';
@@ -1936,21 +2313,21 @@ function Dashboard({
       case 'home':
         return <DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} />;
       case 'sales':
-        return <SalesTrackerTab theme={theme} />;
+        return <SalesTrackerTab theme={theme} lastImportDate={lastImportDate} />;
       case 'budget':
-        return <BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
+        return <BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} />;
       case 'transactions':
-        return <TransactionsTabDS transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
+        return <TransactionsTabDS transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} />;
       case 'bills':
-        return <BillsCalendarView theme={theme} />;
+        return <BillsCalendarView theme={theme} lastImportDate={lastImportDate} />;
       case 'goals':
-        return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} theme={theme} />;
+        return <GoalsTimelineWithCelebration goals={goals} onUpdateGoals={onUpdateGoals} theme={theme} lastImportDate={lastImportDate} />;
       case 'tasks':
-        return <TasksTab tasks={tasks || []} onUpdateTasks={onUpdateTasks} theme={theme} />;
+        return <TasksTab tasks={tasks || []} onUpdateTasks={onUpdateTasks} theme={theme} lastImportDate={lastImportDate} />;
       case 'retirement':
-        return <RetirementTab theme={theme} />;
+        return <RetirementTab theme={theme} lastImportDate={lastImportDate} />;
       case 'reports':
-        return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} />;
+        return <ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} />;
       case 'settings':
         return <SettingsTabDS 
           theme={theme} 
@@ -1969,6 +2346,7 @@ function Dashboard({
           }}
           memojiAvatars={memojiAvatars}
           languages={languages}
+          lastImportDate={lastImportDate}
         />;
       case 'import':
         return <ImportTabDS 
@@ -2498,7 +2876,7 @@ function Dashboard({
                     <span>Manage Account</span>
                   </div>
                   <div
-                    onClick={() => { setActiveTab('settings'); setShowProfileMenu(false); }}
+                    onClick={() => { setShowChangePasswordModal(true); setShowProfileMenu(false); }}
                     style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -2554,18 +2932,29 @@ function Dashboard({
               
               {/* Settings Gear Icon (Image 6) */}
               <button
-                onClick={() => setActiveTab('settings')}
+                onClick={() => {
+                  if (activeTab === 'settings') {
+                    // Go back to previous tab
+                    setActiveTab(previousTab);
+                  } else {
+                    // Save current tab and go to settings
+                    setPreviousTab(activeTab);
+                    setActiveTab('settings');
+                  }
+                }}
                 style={{
-                  background: 'transparent',
+                  background: activeTab === 'settings' ? `${theme.primary}15` : 'transparent',
                   border: 'none',
                   cursor: 'pointer',
                   padding: '8px',
+                  borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
-                  justifyContent: 'center'
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
                 }}
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'settings' ? theme.primary : theme.textMuted} strokeWidth="2" strokeLinecap="round">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
                 </svg>
@@ -2877,6 +3266,14 @@ function Dashboard({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Change Password Modal */}
+      {showChangePasswordModal && (
+        <ChangePasswordModal 
+          theme={theme} 
+          onClose={() => setShowChangePasswordModal(false)} 
+        />
       )}
     </div>
     </>
@@ -3864,7 +4261,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
 // ============================================================================
 // TASKS TAB - Task Management (Image 6 inspired)
 // ============================================================================
-function TasksTab({ tasks, onUpdateTasks, theme }) {
+function TasksTab({ tasks, onUpdateTasks, theme, lastImportDate }) {
   const [filter, setFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '', priority: 'medium', category: 'Personal' });
@@ -3913,7 +4310,12 @@ function TasksTab({ tasks, onUpdateTasks, theme }) {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '4px' }}>Tasks</h1>
-          <p style={{ fontSize: '14px', color: theme.textMuted }}>Manage your tasks and stay productive</p>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <p style={{ fontSize: '14px', color: theme.textMuted, margin: 0 }}>
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+            </p>
+            <LastImportIndicator lastImportDate={lastImportDate} />
+          </div>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
@@ -4252,7 +4654,7 @@ function TasksTab({ tasks, onUpdateTasks, theme }) {
 // ============================================================================
 // TRANSACTIONS TAB - DASHSTACK TABLE STYLE
 // ============================================================================
-function TransactionsTabDS({ transactions, onNavigateToImport, theme }) {
+function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImportDate }) {
   const [filter, setFilter] = useState({ date: '', type: '', status: '' });
 
   const getStatusBadge = (status) => {
@@ -4271,7 +4673,15 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme }) {
 
   return (
     <div>
-      <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Transactions</h1>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '4px' }}>Transactions</h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <p style={{ fontSize: '14px', color: theme.textMuted, margin: 0 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+          <LastImportIndicator lastImportDate={lastImportDate} />
+        </div>
+      </div>
 
       {/* Filter Bar */}
       <div style={{ background: theme.bgCard, borderRadius: '12px', padding: '16px 20px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
@@ -4754,7 +5164,7 @@ function ImportTabDS({ onImport, parseCSV, transactionCount, theme }) {
 // ============================================================================
 // SETTINGS TAB - DASHSTACK STYLE
 // ============================================================================
-function SettingsTabDS({ theme, isDarkMode, onToggleTheme, selectedLanguage, onLanguageChange, userAvatar, onAvatarChange, memojiAvatars, languages }) {
+function SettingsTabDS({ theme, isDarkMode, onToggleTheme, selectedLanguage, onLanguageChange, userAvatar, onAvatarChange, memojiAvatars, languages, lastImportDate }) {
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
@@ -4779,7 +5189,15 @@ function SettingsTabDS({ theme, isDarkMode, onToggleTheme, selectedLanguage, onL
 
   return (
     <div>
-      <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Settings</h1>
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '24px', fontWeight: '700', color: theme.textPrimary, marginBottom: '4px' }}>Settings</h1>
+        <div style={{ display: 'flex', alignItems: 'center' }}>
+          <p style={{ fontSize: '14px', color: theme.textMuted, margin: 0 }}>
+            {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </p>
+          <LastImportIndicator lastImportDate={lastImportDate} />
+        </div>
+      </div>
 
       <div style={{ display: 'grid', gap: '16px', maxWidth: '600px' }}>
         {settingsItems.map((item, i) => (
