@@ -2045,48 +2045,292 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         </div>
       </section>
 
-      {/* Hub Cards */}
-      <section id="products" style={{ padding: isMobile ? '50px 16px' : '80px 40px', background: colors.gray6, overflow: 'hidden' }}>
-        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? '28px' : '40px' }}>
-            <h2 style={{ fontSize: isMobile ? 'clamp(22px, 7vw, 32px)' : 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '12px' }}>Three hubs. One mission.</h2>
-            <p style={{ fontSize: isMobile ? 'clamp(13px, 4vw, 16px)' : 'clamp(14px, 3vw, 19px)', color: colors.secondary }}>Household, business, and real estate—all covered.</p>
+      {/* Hub Cards - Flagship Products */}
+      <section id="products" style={{ 
+        padding: isMobile ? '60px 16px' : '100px 40px', 
+        background: `linear-gradient(180deg, ${colors.gray6} 0%, #FFFFFF 50%, ${colors.gray6} 100%)`,
+        overflow: 'hidden',
+        position: 'relative'
+      }}>
+        {/* Background decorative elements */}
+        <div style={{
+          position: 'absolute',
+          top: '10%',
+          left: '-5%',
+          width: '300px',
+          height: '300px',
+          background: 'radial-gradient(circle, rgba(16,185,129,0.08) 0%, transparent 70%)',
+          borderRadius: '50%',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '10%',
+          right: '-5%',
+          width: '350px',
+          height: '350px',
+          background: 'radial-gradient(circle, rgba(124,58,237,0.08) 0%, transparent 70%)',
+          borderRadius: '50%',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', position: 'relative', zIndex: 1 }}>
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '40px' : '60px' }}>
+            <div style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, #10B981 0%, #3B82F6 50%, #7C3AED 100%)',
+              padding: '6px 16px',
+              borderRadius: '20px',
+              marginBottom: '16px'
+            }}>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: '#FFF', letterSpacing: '1px', textTransform: 'uppercase' }}>
+                🚀 Our Products
+              </span>
+            </div>
+            <h2 style={{ 
+              fontSize: isMobile ? 'clamp(26px, 8vw, 36px)' : 'clamp(32px, 6vw, 56px)', 
+              fontWeight: '800', 
+              marginBottom: '16px',
+              background: `linear-gradient(135deg, ${colors.label} 0%, ${colors.secondary} 100%)`,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent'
+            }}>
+              Three Hubs. One Mission.
+            </h2>
+            <p style={{ 
+              fontSize: isMobile ? 'clamp(14px, 4vw, 16px)' : 'clamp(16px, 2.5vw, 20px)', 
+              color: colors.secondary,
+              maxWidth: '600px',
+              margin: '0 auto'
+            }}>
+              Whether you're managing a household, running a side hustle, or building a real estate empire—we've got you covered.
+            </p>
           </div>
           
-          <div className="hub-grid" style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
+          <div className="hub-grid" style={{ display: 'flex', gap: isMobile ? '20px' : '28px', flexWrap: 'wrap', justifyContent: 'center', width: '100%' }}>
             {[
-              { icon: '🏠', title: 'HomeBudget Hub', desc: 'Master household finances with smart budgeting tools designed for families.', color: colors.green, badge: 'Most Popular', available: true },
-              { icon: '💼', title: 'BizBudget Hub', desc: 'Track side hustle and 1099 income with dedicated business tools.', color: colors.blue, badge: 'Coming Soon', available: false },
-              { icon: '🏢', title: 'REBudget Hub', desc: 'Manage real estate investments and rental income all in one place.', color: colors.purple, badge: 'Coming Soon', available: false }
+              { 
+                icon: '🏠',
+                title: 'HomeBudget Hub', 
+                subtitle: 'Personal & Family Finance',
+                desc: 'Master your household finances with intelligent budgeting tools designed for modern families.',
+                features: ['Smart Budget Tracking', 'Bill Reminders', 'Savings Goals', 'Family Sharing'],
+                gradient: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                lightGradient: 'linear-gradient(135deg, rgba(16,185,129,0.15) 0%, rgba(5,150,105,0.08) 100%)',
+                color: '#10B981',
+                badge: 'Most Popular',
+                badgeColor: 'linear-gradient(135deg, #F59E0B 0%, #D97706 100%)',
+                available: true 
+              },
+              { 
+                icon: '💼',
+                title: 'BizBudget Hub', 
+                subtitle: 'Side Hustle & 1099 Income',
+                desc: 'Separate business from personal. Track 1099 income, expenses, and maximize your deductions.',
+                features: ['Income Tracking', 'Expense Categories', 'Tax Deductions', 'Profit Reports'],
+                gradient: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)',
+                lightGradient: 'linear-gradient(135deg, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.08) 100%)',
+                color: '#3B82F6',
+                badge: 'Coming Soon',
+                badgeColor: 'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)',
+                available: false 
+              },
+              { 
+                icon: '🏢',
+                title: 'REBudget Hub', 
+                subtitle: 'Real Estate & Rentals',
+                desc: 'Manage properties, track rental income, and monitor your real estate portfolio growth.',
+                features: ['Property Management', 'Rental Income', 'Expense Tracking', 'ROI Analysis'],
+                gradient: 'linear-gradient(135deg, #7C3AED 0%, #6D28D9 100%)',
+                lightGradient: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(109,40,217,0.08) 100%)',
+                color: '#7C3AED',
+                badge: 'Coming Soon',
+                badgeColor: 'linear-gradient(135deg, #6B7280 0%, #4B5563 100%)',
+                available: false 
+              }
             ].map((hub, i) => (
-              <div key={i} className={`hover-lift hub-card ${activeHubIndex === i ? 'hub-glow' : ''}`} style={{
-                background: colors.background, borderRadius: '20px', padding: isMobile ? '20px' : 'clamp(20px, 4vw, 36px)',
-                flex: '1 1 280px', maxWidth: isMobile ? '100%' : '420px', position: 'relative', width: '100%',
-                boxShadow: activeHubIndex === i ? `0 8px 40px ${hub.color}40` : '0 4px 20px rgba(0,0,0,0.06)',
-                border: activeHubIndex === i || hub.available ? `2px solid ${hub.color}` : `1px solid ${colors.gray5}`,
-                opacity: hub.available ? 1 : 0.85, transition: 'all 0.5s ease', overflow: 'visible'
+              <div key={i} className="hover-lift hub-card" style={{
+                background: '#FFFFFF',
+                borderRadius: '24px',
+                padding: isMobile ? '24px' : '32px',
+                flex: '1 1 300px',
+                maxWidth: isMobile ? '100%' : '380px',
+                position: 'relative',
+                width: '100%',
+                boxShadow: hub.available 
+                  ? `0 20px 60px ${hub.color}25, 0 8px 24px rgba(0,0,0,0.08)` 
+                  : '0 8px 32px rgba(0,0,0,0.08)',
+                border: hub.available ? `2px solid ${hub.color}40` : '1px solid rgba(0,0,0,0.06)',
+                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                overflow: 'visible'
               }}>
-                {hub.badge && (
-                  <div style={{
-                    position: 'absolute', top: '-12px', left: '50%', transform: 'translateX(-50%)',
-                    background: hub.available ? colors.orange : colors.gray,
-                    padding: '5px 14px', borderRadius: '12px', fontSize: '11px', fontWeight: '600', color: '#FFF', whiteSpace: 'nowrap', zIndex: 5
-                  }}>{hub.badge}</div>
-                )}
+                {/* Badge */}
                 <div style={{
-                  width: isMobile ? '44px' : '52px', height: isMobile ? '44px' : '52px', borderRadius: '14px', background: `${hub.color}15`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '22px' : '26px', marginBottom: '16px'
-                }}>{hub.icon}</div>
-                <h3 style={{ fontSize: isMobile ? 'clamp(16px, 5vw, 20px)' : 'clamp(18px, 3vw, 24px)', fontWeight: '600', marginBottom: '10px' }}>{hub.title}</h3>
-                <p style={{ fontSize: isMobile ? 'clamp(12px, 4vw, 14px)' : 'clamp(13px, 2vw, 16px)', color: colors.secondary, lineHeight: 1.5 }}>{hub.desc}</p>
+                  position: 'absolute',
+                  top: '-14px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: hub.badgeColor,
+                  padding: '8px 20px',
+                  borderRadius: '20px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  color: '#FFF',
+                  whiteSpace: 'nowrap',
+                  zIndex: 5,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                  letterSpacing: '0.5px'
+                }}>
+                  {hub.badge}
+                </div>
+                
+                {/* Icon Container */}
+                <div style={{
+                  width: isMobile ? '70px' : '80px',
+                  height: isMobile ? '70px' : '80px',
+                  borderRadius: '20px',
+                  background: hub.lightGradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: '20px',
+                  position: 'relative',
+                  boxShadow: `0 8px 24px ${hub.color}20`
+                }}>
+                  {/* Gradient ring */}
+                  <div style={{
+                    position: 'absolute',
+                    inset: '-3px',
+                    borderRadius: '23px',
+                    background: hub.gradient,
+                    opacity: 0.3,
+                    zIndex: 0
+                  }} />
+                  <span style={{ 
+                    fontSize: isMobile ? '32px' : '38px',
+                    position: 'relative',
+                    zIndex: 1,
+                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                  }}>
+                    {hub.icon}
+                  </span>
+                </div>
+                
+                {/* Content */}
+                <div style={{ 
+                  fontSize: '12px', 
+                  fontWeight: '600', 
+                  color: hub.color,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  marginBottom: '6px'
+                }}>
+                  {hub.subtitle}
+                </div>
+                <h3 style={{ 
+                  fontSize: isMobile ? 'clamp(20px, 6vw, 24px)' : 'clamp(22px, 3vw, 28px)', 
+                  fontWeight: '700', 
+                  marginBottom: '12px',
+                  color: colors.label
+                }}>
+                  {hub.title}
+                </h3>
+                <p style={{ 
+                  fontSize: isMobile ? '14px' : '15px', 
+                  color: colors.secondary, 
+                  lineHeight: 1.6,
+                  marginBottom: '20px'
+                }}>
+                  {hub.desc}
+                </p>
+                
+                {/* Features List */}
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr', 
+                  gap: '10px',
+                  marginBottom: hub.available ? '20px' : '0'
+                }}>
+                  {hub.features.map((feature, fi) => (
+                    <div key={fi} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      fontSize: '13px',
+                      color: colors.secondary
+                    }}>
+                      <div style={{
+                        width: '18px',
+                        height: '18px',
+                        borderRadius: '50%',
+                        background: hub.lightGradient,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0
+                      }}>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke={hub.color} strokeWidth="3" strokeLinecap="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </div>
+                      <span style={{ fontWeight: '500' }}>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* CTA Button for available hub */}
+                {hub.available && (
+                  <button 
+                    onClick={() => handleStartTrial()}
+                    style={{
+                      width: '100%',
+                      padding: '14px 24px',
+                      background: hub.gradient,
+                      border: 'none',
+                      borderRadius: '12px',
+                      color: '#FFF',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      boxShadow: `0 8px 20px ${hub.color}30`,
+                      transition: 'all 0.3s ease'
+                    }}
+                  >
+                    Get Started Free
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                  </button>
+                )}
               </div>
             ))}
           </div>
           
-          <div style={{ textAlign: 'center', marginTop: isMobile ? '28px' : '40px' }}>
+          {/* Bottom CTA */}
+          <div style={{ textAlign: 'center', marginTop: isMobile ? '40px' : '60px' }}>
+            <p style={{ 
+              fontSize: isMobile ? '14px' : '16px', 
+              color: colors.secondary, 
+              marginBottom: '20px' 
+            }}>
+              Start with HomeBudget Hub free. Upgrade anytime as your empire grows.
+            </p>
             <button onClick={() => scrollToSection('features')} className="apple-button"
-              style={{ padding: isMobile ? '14px 24px' : '16px 32px', background: colors.green, border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '15px', fontWeight: '600' }}>
-              Explore all features
+              style={{ 
+                padding: isMobile ? '14px 28px' : '16px 36px', 
+                background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', 
+                border: 'none', 
+                borderRadius: '14px', 
+                color: '#FFF', 
+                fontSize: '16px', 
+                fontWeight: '600',
+                boxShadow: '0 8px 24px rgba(16,185,129,0.3)'
+              }}>
+              Explore All Features →
             </button>
           </div>
         </div>
