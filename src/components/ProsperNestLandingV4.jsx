@@ -1975,7 +1975,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { label: 'Pricing', id: 'pricing' },
               { label: 'Support', id: 'support' }
             ].map(item => (
-              <a key={item.id} onClick={() => item.id === 'home' ? scrollToTop() : scrollToSection(item.id)}
+              <a key={item.id} onClick={() => scrollToSection(item.id)}
                 style={{ color: colors.secondary, textDecoration: 'none', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.2s' }}
                 onMouseOver={e => e.target.style.color = colors.label}
                 onMouseOut={e => e.target.style.color = colors.secondary}>
@@ -3544,7 +3544,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isDarkMode ? 'rgba(167, 139, 250, 0.1)' : '#F5F3FF', borderRadius: '12px' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B5CF6' }}>${billingCycle === 'annual' ? '8.49' : '9.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B5CF6' }}>${billingCycle === 'annual' ? '11.04' : '12.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
                     <div style={{ fontSize: '12px', color: colors.secondary }}>or bundle with HomeBudget</div>
                   </div>
                   <button style={{
@@ -3601,7 +3601,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isDarkMode ? 'rgba(129, 140, 248, 0.1)' : '#EEF2FF', borderRadius: '12px' }}>
                   <div>
-                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#6366F1' }}>${billingCycle === 'annual' ? '8.49' : '9.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#6366F1' }}>${billingCycle === 'annual' ? '11.04' : '12.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
                     <div style={{ fontSize: '12px', color: colors.secondary }}>or bundle with HomeBudget</div>
                   </div>
                   <button style={{
@@ -3715,7 +3715,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                       color: '#FFF',
                       lineHeight: 1
                     }}>
-                      $16.99
+                      $19.99
                     </div>
                     <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>/month</div>
                     <div style={{ 
@@ -3768,7 +3768,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                       color: '#FFF',
                       lineHeight: 1
                     }}>
-                      $20.99
+                      $24.99
                     </div>
                     <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', marginBottom: '12px' }}>/month</div>
                     <div style={{ 
