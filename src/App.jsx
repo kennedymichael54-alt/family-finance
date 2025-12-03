@@ -659,10 +659,35 @@ const saveGoalsToDB = async (userId, goals) => {
   }
 };
 
-// Save user profile to Supabase
-const saveProfileToDB = async (userId, profile) => {
+// Save user profile to Supabase - WITH PROTECTION AGAINST EMPTY OVERWRITES
+const saveProfileToDB = async (userId, profile, forceUpdate = false) => {
   const sb = await initSupabase();
   if (!sb) return;
+  
+  // PROTECTION: Check if incoming profile is essentially empty
+  const isProfileEmpty = !profile.firstName && !profile.lastName && !profile.phone && !profile.dateOfBirth && !profile.gender;
+  
+  if (isProfileEmpty && !forceUpdate) {
+    console.log('⚠️ [DB] Skipping save - profile is empty, checking if DB has existing data...');
+    
+    // Check if there's existing data in DB that would be overwritten
+    try {
+      const { data: existingProfile } = await sb
+        .from('user_profiles')
+        .select('first_name, last_name')
+        .eq('user_id', userId)
+        .single();
+      
+      if (existingProfile && (existingProfile.first_name || existingProfile.last_name)) {
+        console.log('🛡️ [DB] PROTECTED: Existing profile found, NOT overwriting with empty data');
+        console.log('   Existing:', existingProfile.first_name, existingProfile.last_name);
+        return; // DO NOT overwrite existing data with empty profile
+      }
+    } catch (e) {
+      // No existing profile, safe to create new one
+      console.log('ℹ️ [DB] No existing profile, proceeding with save');
+    }
+  }
   
   console.log('💾 [DB] Saving profile...', profile);
   
@@ -810,26 +835,59 @@ function App() {
   });
 
   // Load user data - tries DB first, falls back to localStorage
+  // ENHANCED: Better error handling and retry logic to prevent data loss
   const loadUserData = async (userId, userEmail) => {
     console.log('📥 [Data] Loading user data for:', userId);
     
-    // Try loading from database first
-    const dbData = await loadUserDataFromDB(userId);
+    // Try loading from database first - with retry logic
+    let dbData = null;
+    let retryCount = 0;
+    const maxRetries = 3;
+    
+    while (!dbData && retryCount < maxRetries) {
+      dbData = await loadUserDataFromDB(userId);
+      if (!dbData) {
+        retryCount++;
+        console.log(`⚠️ [Data] DB load attempt ${retryCount}/${maxRetries} failed, retrying...`);
+        await new Promise(r => setTimeout(r, 500 * retryCount)); // Exponential backoff
+      }
+    }
     
     if (dbData) {
       console.log('✅ [Data] Loaded from database');
       
-      // Load profile
+      // Load profile - ONLY if database has actual data
       if (dbData.profile) {
         const loadedProfile = dbToAppProfile(dbData.profile);
+        
         // Use user email if profile email is empty
         if (!loadedProfile.email && userEmail) {
           loadedProfile.email = userEmail;
         }
-        setProfile(loadedProfile);
-        // Also save to localStorage for immediate access
-        localStorage.setItem(`pn_profile_${userId}`, JSON.stringify(loadedProfile));
-        console.log('✅ [Data] Profile loaded from DB:', loadedProfile.firstName, loadedProfile.lastName);
+        
+        // PROTECTION: Only update state if DB profile has actual data
+        const hasRealData = loadedProfile.firstName || loadedProfile.lastName || loadedProfile.phone || loadedProfile.dateOfBirth;
+        
+        if (hasRealData) {
+          setProfile(loadedProfile);
+          // Also save to localStorage for immediate access
+          localStorage.setItem(`pn_profile_${userId}`, JSON.stringify(loadedProfile));
+          console.log('✅ [Data] Profile loaded from DB:', loadedProfile.firstName, loadedProfile.lastName);
+        } else {
+          // Profile exists but is empty - just set email
+          console.log('ℹ️ [Data] DB profile exists but is empty, preserving current state');
+          setProfile(prev => ({ 
+            ...prev, 
+            email: loadedProfile.email || userEmail || prev.email 
+          }));
+        }
+      } else {
+        // No profile in DB at all - just set email from auth
+        console.log('ℹ️ [Data] No profile in DB, setting email from auth');
+        setProfile(prev => ({ 
+          ...prev, 
+          email: userEmail || prev.email 
+        }));
       }
       
       // Load transactions, bills, goals
@@ -882,7 +940,16 @@ function App() {
       const savedTasks = localStorage.getItem('pn_tasks');
       const savedImportDate = localStorage.getItem(`pn_lastImport_${userId}`);
 
-      if (savedProfile) setProfile(JSON.parse(savedProfile));
+      // PROTECTION: Only load localStorage profile if it has actual data
+      if (savedProfile) {
+        const parsedProfile = JSON.parse(savedProfile);
+        const hasRealData = parsedProfile.firstName || parsedProfile.lastName || parsedProfile.phone;
+        if (hasRealData) {
+          setProfile(parsedProfile);
+          console.log('✅ [Data] Profile loaded from localStorage:', parsedProfile.firstName);
+        }
+      }
+      
       if (savedTransactions) setTransactions(JSON.parse(savedTransactions));
       if (savedBills) setBills(JSON.parse(savedBills));
       if (savedGoals) setGoals(JSON.parse(savedGoals));
@@ -896,7 +963,9 @@ function App() {
   };
 
   // Save profile with sync to database
-  const handleUpdateProfile = async (newProfile) => {
+  // forceUpdate=true when user explicitly clicks Save in Manage Account
+  const handleUpdateProfile = async (newProfile, forceUpdate = true) => {
+    console.log('💾 [Profile] Saving profile update, forceUpdate:', forceUpdate);
     setProfile(newProfile);
     
     // Save to localStorage
@@ -904,9 +973,9 @@ function App() {
       localStorage.setItem(`pn_profile_${user.id}`, JSON.stringify(newProfile));
     }
     
-    // Sync to database
+    // Sync to database (forceUpdate=true means user explicitly saved)
     if (user?.id) {
-      await saveProfileToDB(user.id, newProfile);
+      await saveProfileToDB(user.id, newProfile, forceUpdate);
     }
   };
 
