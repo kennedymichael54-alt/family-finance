@@ -2343,36 +2343,687 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         position: 'relative', overflow: 'hidden'
       }}>
         <div style={{ maxWidth: '1400px', margin: '0 auto', position: 'relative', zIndex: 1, width: '100%' }}>
-          <div style={{ textAlign: 'center', marginBottom: isMobile ? '28px' : '40px' }}>
-            <h2 style={{ fontSize: isMobile ? 'clamp(22px, 7vw, 32px)' : 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>All your accounts in one place</h2>
-            <p style={{ fontSize: isMobile ? 'clamp(13px, 4vw, 16px)' : 'clamp(14px, 3vw, 19px)', color: colors.secondary, maxWidth: '600px', margin: '0 auto', padding: '0 8px' }}>
-              Dashboard, Sales Tracker, Budget, Transactions, Bills, Goals, Retirement, Reports—everything unified.
+          <div style={{ textAlign: 'center', marginBottom: isMobile ? '40px' : '70px' }}>
+            <h2 style={{ fontSize: isMobile ? 'clamp(22px, 7vw, 32px)' : 'clamp(24px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>
+              Everything you need to build wealth
+            </h2>
+            <p style={{ fontSize: isMobile ? 'clamp(13px, 4vw, 16px)' : 'clamp(14px, 3vw, 19px)', color: colors.secondary, maxWidth: '650px', margin: '0 auto', padding: '0 8px' }}>
+              Three powerful hubs. One financial command center. From budgeting your first paycheck to analyzing your tenth rental property.
             </p>
           </div>
 
-          <div className="feature-row" style={{ display: 'flex', gap: isMobile ? '24px' : '40px', alignItems: 'center', marginBottom: '60px', flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: '250px', width: '100%' }}>
-              <div style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
-                <div style={{ width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: '14px', background: `${colors.orange}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '24px' : '28px' }}>📱</div>
-                <div style={{ width: isMobile ? '48px' : '56px', height: isMobile ? '48px' : '56px', borderRadius: '14px', background: `${colors.blue}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: isMobile ? '24px' : '28px' }}>💼</div>
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* HOMEBUDGET HUB SECTION */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <div style={{ marginBottom: isMobile ? '60px' : '100px' }}>
+            {/* Hub Header */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px', 
+              marginBottom: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '28px', boxShadow: '0 8px 24px rgba(236, 72, 153, 0.3)'
+              }}>🏠</div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#EC4899', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Family Finance + Side Hustle
+                </div>
+                <h3 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: colors.label }}>
+                  HomeBudget Hub
+                </h3>
               </div>
-              <h3 style={{ fontSize: isMobile ? 'clamp(18px, 6vw, 26px)' : 'clamp(20px, 4vw, 36px)', fontWeight: '600', marginBottom: '12px' }}>Personal & Side Hustle</h3>
-              <p style={{ fontSize: isMobile ? 'clamp(13px, 4vw, 15px)' : 'clamp(14px, 2.5vw, 18px)', color: colors.secondary, lineHeight: 1.6, marginBottom: '20px' }}>
-                See your W2 income and 1099 earnings side by side. Track commissions, monitor profit margins, and never miss a bill payment.
-              </p>
-              <ul style={{ listStyle: 'none', padding: 0 }}>
-                {['Dashboard with real-time overview', 'Sales Tracker for side hustle income', 'Budget planning and monitoring', 'Bill reminders so you never miss a payment'].map((f, i) => (
-                  <li key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', marginBottom: '10px', fontSize: isMobile ? 'clamp(12px, 4vw, 14px)' : 'clamp(13px, 2vw, 16px)', color: colors.secondary }}>
-                    <span style={{ color: colors.green, fontSize: '14px', flexShrink: 0, marginTop: '2px' }}>✓</span><span>{f}</span>
-                  </li>
-                ))}
-              </ul>
+              <div style={{
+                marginLeft: 'auto',
+                background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                color: '#FFF', padding: '8px 16px', borderRadius: '20px',
+                fontSize: '12px', fontWeight: '700'
+              }}>
+                AVAILABLE NOW
+              </div>
             </div>
-            {!isMobile && (
-              <div className="feature-mockups-wrapper" style={{ flex: 1, minWidth: '280px' }}>
-                <FeatureMockups />
+            <p style={{ 
+              fontSize: isMobile ? '15px' : '18px', 
+              color: colors.secondary, 
+              marginBottom: '32px', 
+              maxWidth: '700px',
+              lineHeight: 1.6
+            }}>
+              Your path to financial freedom starts here. Budget smarter, build your side hustle, and break free from the 9-5. FIRE isn't a dream—it's a plan.
+            </p>
+
+            {/* HomeBudget Mockup Cards Grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '24px'
+            }}>
+              
+              {/* Financial Overview Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)', 
+                border: '1px solid rgba(236, 72, 153, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EC489915', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📊</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Financial Overview</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '14px', padding: '16px', color: '#FFF' }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Monthly Income</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>$8,450</div>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)', borderRadius: '14px', padding: '16px', color: '#FFF' }}>
+                    <div style={{ fontSize: '12px', opacity: 0.9 }}>Expenses</div>
+                    <div style={{ fontSize: '24px', fontWeight: '700' }}>$5,200</div>
+                  </div>
+                </div>
+                <div style={{ background: colors.gray6, borderRadius: '12px', padding: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                    <span style={{ fontSize: '13px', color: colors.secondary }}>Net Savings</span>
+                    <span style={{ fontSize: '15px', fontWeight: '700', color: '#10B981' }}>+$3,250</span>
+                  </div>
+                  <div style={{ background: '#E5E7EB', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                    <div style={{ width: '62%', height: '100%', background: 'linear-gradient(90deg, #10B981, #34D399)', borderRadius: '8px' }} />
+                  </div>
+                  <div style={{ fontSize: '11px', color: colors.gray, marginTop: '6px' }}>62% savings rate this month 🔥</div>
+                </div>
               </div>
-            )}
+
+              {/* Budget Tracker Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(236, 72, 153, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EC489915', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💰</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Budget Tracker</span>
+                </div>
+                {[
+                  { cat: 'Housing', spent: 1800, budget: 2000, color: '#3B82F6' },
+                  { cat: 'Groceries', spent: 420, budget: 500, color: '#10B981' },
+                  { cat: 'Entertainment', spent: 180, budget: 150, color: '#EF4444' },
+                  { cat: 'Transportation', spent: 280, budget: 400, color: '#8B5CF6' },
+                ].map((item, i) => (
+                  <div key={i} style={{ marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '500' }}>{item.cat}</span>
+                      <span style={{ fontSize: '13px', color: item.spent > item.budget ? '#EF4444' : colors.secondary }}>
+                        ${item.spent} / ${item.budget}
+                      </span>
+                    </div>
+                    <div style={{ background: '#E5E7EB', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ 
+                        width: `${Math.min((item.spent / item.budget) * 100, 100)}%`, 
+                        height: '100%', 
+                        background: item.spent > item.budget ? '#EF4444' : item.color,
+                        borderRadius: '6px' 
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Savings Goals Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(236, 72, 153, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EC489915', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🎯</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Savings Goals</span>
+                </div>
+                {[
+                  { goal: 'Emergency Fund', current: 8500, target: 15000, icon: '🛡️' },
+                  { goal: 'Vacation Fund', current: 2200, target: 5000, icon: '✈️' },
+                  { goal: 'New Car', current: 12000, target: 25000, icon: '🚗' },
+                ].map((item, i) => (
+                  <div key={i} style={{ 
+                    background: colors.gray6, borderRadius: '14px', padding: '14px', 
+                    marginBottom: i < 2 ? '12px' : 0
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '13px', fontWeight: '600' }}>{item.goal}</div>
+                        <div style={{ fontSize: '11px', color: colors.gray }}>${item.current.toLocaleString()} of ${item.target.toLocaleString()}</div>
+                      </div>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#EC4899' }}>
+                        {Math.round((item.current / item.target) * 100)}%
+                      </span>
+                    </div>
+                    <div style={{ background: '#E5E7EB', borderRadius: '6px', height: '6px', overflow: 'hidden' }}>
+                      <div style={{ width: `${(item.current / item.target) * 100}%`, height: '100%', background: 'linear-gradient(90deg, #EC4899, #F472B6)', borderRadius: '6px' }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bill Reminders Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(236, 72, 153, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EC489915', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📅</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Upcoming Bills</span>
+                  <span style={{ marginLeft: 'auto', background: '#FEF3C7', color: '#D97706', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '600' }}>3 due soon</span>
+                </div>
+                {[
+                  { name: 'Rent', date: 'Dec 1', amount: 1500, status: 'paid' },
+                  { name: 'Car Insurance', date: 'Dec 10', amount: 185, status: 'upcoming' },
+                  { name: 'Electric', date: 'Dec 15', amount: 120, status: 'upcoming' },
+                  { name: 'Internet', date: 'Dec 20', amount: 80, status: 'upcoming' },
+                ].map((bill, i) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 0', borderBottom: i < 3 ? `1px solid ${colors.gray5}` : 'none'
+                  }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500' }}>{bill.name}</div>
+                      <div style={{ fontSize: '12px', color: colors.gray }}>{bill.date}</div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '600' }}>${bill.amount}</div>
+                      <div style={{
+                        fontSize: '10px', padding: '4px 10px', borderRadius: '8px',
+                        background: bill.status === 'paid' ? '#D1FAE5' : '#FEF3C7',
+                        color: bill.status === 'paid' ? '#059669' : '#D97706',
+                        fontWeight: '600', textTransform: 'uppercase'
+                      }}>{bill.status}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Side Hustle Sales Tracker Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(236, 72, 153, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#EC489915', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💼</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Side Hustle Tracker</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #3B82F6 0%, #2563EB 100%)', borderRadius: '14px', padding: '14px', color: '#FFF' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.9 }}>This Month</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700' }}>$6,250</div>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>↑ 23% vs last month</div>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '14px', padding: '14px', color: '#FFF' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.9 }}>Active Deals</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700' }}>8</div>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>$18,400 pipeline</div>
+                  </div>
+                </div>
+                <div style={{ fontSize: '12px', color: colors.gray, marginBottom: '10px', fontWeight: '600' }}>Recent Sales</div>
+                {[
+                  { client: 'Smith Property', amount: 2400, status: 'Closed' },
+                  { client: 'Johnson Deal', amount: 1800, status: 'Closed' },
+                  { client: 'Williams Contract', amount: 3200, status: 'Pending' },
+                ].map((sale, i) => (
+                  <div key={i} style={{ 
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '10px 0', borderBottom: i < 2 ? `1px solid ${colors.gray5}` : 'none'
+                  }}>
+                    <span style={{ fontSize: '13px', fontWeight: '500' }}>{sale.client}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>${sale.amount.toLocaleString()}</span>
+                      <span style={{ 
+                        fontSize: '10px', padding: '3px 8px', borderRadius: '6px',
+                        background: sale.status === 'Closed' ? '#D1FAE5' : '#DBEAFE',
+                        color: sale.status === 'Closed' ? '#059669' : '#2563EB',
+                        fontWeight: '600'
+                      }}>{sale.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* FIRE Retirement Card */}
+              <div className="hover-lift" style={{
+                background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', 
+                borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(30, 27, 75, 0.3)',
+                color: '#FFF'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🔥</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>FIRE Calculator</span>
+                </div>
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '4px' }}>Years to Financial Freedom</div>
+                  <div style={{ fontSize: '48px', fontWeight: '700', color: '#FBBF24' }}>8.3</div>
+                  <div style={{ fontSize: '13px', opacity: 0.8 }}>at current savings rate</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>FIRE Number</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700' }}>$1.2M</div>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.8 }}>Current</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700' }}>$291K</div>
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.2)', borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                  <div style={{ width: '24.3%', height: '100%', background: 'linear-gradient(90deg, #FBBF24, #F59E0B)', borderRadius: '8px' }} />
+                </div>
+                <div style={{ fontSize: '11px', opacity: 0.8, marginTop: '8px', textAlign: 'center' }}>
+                  Side hustle adds $6,250/mo → saves you <strong style={{ color: '#34D399' }}>4 years</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* BIZBUDGET HUB SECTION */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <div style={{ marginBottom: isMobile ? '60px' : '100px' }}>
+            {/* Hub Header */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px', 
+              marginBottom: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '28px', boxShadow: '0 8px 24px rgba(167, 139, 250, 0.3)'
+              }}>💼</div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#A78BFA', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Small Business Command Center
+                </div>
+                <h3 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: colors.label }}>
+                  BizBudget Hub
+                </h3>
+              </div>
+              <div style={{
+                marginLeft: 'auto',
+                background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
+                color: '#FFF', padding: '8px 16px', borderRadius: '20px',
+                fontSize: '12px', fontWeight: '700'
+              }}>
+                COMING SOON
+              </div>
+            </div>
+            <p style={{ 
+              fontSize: isMobile ? '15px' : '18px', 
+              color: colors.secondary, 
+              marginBottom: '32px', 
+              maxWidth: '700px',
+              lineHeight: 1.6
+            }}>
+              You made the leap—now scale it. Revenue planning, contractor management, self-employment taxes, and real-time KPIs built for full-time entrepreneurs.
+            </p>
+
+            {/* BizBudget Mockup Cards Grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '24px',
+              opacity: 0.85
+            }}>
+              
+              {/* Business Dashboard Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)', 
+                border: '1px solid rgba(167, 139, 250, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#A78BFA15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📈</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Business Dashboard</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ background: '#10B98115', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Revenue</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#10B981' }}>$47.2K</div>
+                  </div>
+                  <div style={{ background: '#EF444415', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Expenses</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#EF4444' }}>$18.9K</div>
+                  </div>
+                  <div style={{ background: '#8B5CF615', borderRadius: '12px', padding: '14px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Profit</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#8B5CF6' }}>$28.3K</div>
+                  </div>
+                </div>
+                <div style={{ background: colors.gray6, borderRadius: '12px', padding: '14px' }}>
+                  <div style={{ fontSize: '12px', color: colors.gray, marginBottom: '8px' }}>Monthly Trend</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', gap: '6px', height: '50px' }}>
+                    {[35, 42, 38, 55, 48, 62, 58].map((h, i) => (
+                      <div key={i} style={{ 
+                        flex: 1, height: `${h}px`, 
+                        background: i === 6 ? 'linear-gradient(180deg, #A78BFA, #8B5CF6)' : '#E5E7EB',
+                        borderRadius: '4px'
+                      }} />
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* 1099 Contractor Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(167, 139, 250, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#A78BFA15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>👥</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>1099 Contractors</span>
+                  <span style={{ marginLeft: 'auto', background: '#A78BFA15', color: '#8B5CF6', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '600' }}>4 Active</span>
+                </div>
+                {[
+                  { name: 'Sarah Chen', role: 'Designer', ytd: 12400, status: 'Active' },
+                  { name: 'Mike Johnson', role: 'Developer', ytd: 28500, status: 'Active' },
+                  { name: 'Lisa Park', role: 'Marketing', ytd: 8200, status: 'Active' },
+                ].map((contractor, i) => (
+                  <div key={i} style={{
+                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                    padding: '12px 0', borderBottom: i < 2 ? `1px solid ${colors.gray5}` : 'none'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: '#A78BFA30', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: '600', color: '#8B5CF6' }}>
+                        {contractor.name.split(' ').map(n => n[0]).join('')}
+                      </div>
+                      <div>
+                        <div style={{ fontSize: '13px', fontWeight: '500' }}>{contractor.name}</div>
+                        <div style={{ fontSize: '11px', color: colors.gray }}>{contractor.role}</div>
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                      <div style={{ fontSize: '13px', fontWeight: '600' }}>${contractor.ytd.toLocaleString()}</div>
+                      <div style={{ fontSize: '10px', color: colors.gray }}>YTD Paid</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Self-Employment Tax Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(167, 139, 250, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#A78BFA15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🧮</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Tax Estimator</span>
+                </div>
+                <div style={{ background: '#FEF3C7', borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', color: '#92400E', marginBottom: '4px' }}>Q4 Estimated Payment Due</div>
+                  <div style={{ fontSize: '28px', fontWeight: '700', color: '#D97706' }}>$4,850</div>
+                  <div style={{ fontSize: '11px', color: '#92400E' }}>Due Jan 15, 2025</div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  <div style={{ background: colors.gray6, borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>SE Tax (15.3%)</div>
+                    <div style={{ fontSize: '15px', fontWeight: '600' }}>$7,240</div>
+                  </div>
+                  <div style={{ background: colors.gray6, borderRadius: '10px', padding: '12px' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Income Tax</div>
+                    <div style={{ fontSize: '15px', fontWeight: '600' }}>$12,160</div>
+                  </div>
+                </div>
+                <div style={{ marginTop: '14px', padding: '12px', background: '#D1FAE5', borderRadius: '10px' }}>
+                  <div style={{ fontSize: '11px', color: '#059669', fontWeight: '600' }}>💡 Tax Tip</div>
+                  <div style={{ fontSize: '12px', color: '#065F46' }}>Max out your SEP-IRA to save $8,200 in taxes</div>
+                </div>
+              </div>
+
+              {/* Business KPIs Card */}
+              <div className="hover-lift" style={{
+                background: 'linear-gradient(135deg, #312E81 0%, #4C1D95 100%)', 
+                borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(49, 46, 129, 0.3)',
+                color: '#FFF'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📊</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Business KPIs</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  {[
+                    { label: 'Profit Margin', value: '60%', trend: '↑ 8%', good: true },
+                    { label: 'MRR', value: '$12.4K', trend: '↑ 15%', good: true },
+                    { label: 'CAC', value: '$42', trend: '↓ 12%', good: true },
+                    { label: 'Churn Rate', value: '2.1%', trend: '↓ 0.5%', good: true },
+                  ].map((kpi, i) => (
+                    <div key={i} style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px' }}>
+                      <div style={{ fontSize: '11px', opacity: 0.8 }}>{kpi.label}</div>
+                      <div style={{ fontSize: '20px', fontWeight: '700' }}>{kpi.value}</div>
+                      <div style={{ fontSize: '11px', color: kpi.good ? '#34D399' : '#F87171' }}>{kpi.trend}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          {/* REBUDGET HUB SECTION */}
+          {/* ═══════════════════════════════════════════════════════════════ */}
+          <div>
+            {/* Hub Header */}
+            <div style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '16px', 
+              marginBottom: '12px',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{
+                width: '56px', height: '56px', borderRadius: '16px',
+                background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '28px', boxShadow: '0 8px 24px rgba(129, 140, 248, 0.3)'
+              }}>🏢</div>
+              <div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#818CF8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                  Real Estate Investor Toolkit
+                </div>
+                <h3 style={{ fontSize: isMobile ? '24px' : '32px', fontWeight: '700', color: colors.label }}>
+                  REBudget Hub
+                </h3>
+              </div>
+              <div style={{
+                marginLeft: 'auto',
+                background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+                color: '#FFF', padding: '8px 16px', borderRadius: '20px',
+                fontSize: '12px', fontWeight: '700'
+              }}>
+                COMING SOON
+              </div>
+            </div>
+            <p style={{ 
+              fontSize: isMobile ? '15px' : '18px', 
+              color: colors.secondary, 
+              marginBottom: '32px', 
+              maxWidth: '700px',
+              lineHeight: 1.6
+            }}>
+              Build wealth that works while you sleep. Analyze deals in seconds, track cash flow, and keep your books CPA-ready—all from one dashboard.
+            </p>
+
+            {/* REBudget Mockup Cards Grid */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '24px',
+              opacity: 0.85
+            }}>
+              
+              {/* Deal Analyzer Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)', 
+                border: '1px solid rgba(129, 140, 248, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#818CF815', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🔍</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Deal Analyzer</span>
+                </div>
+                <div style={{ background: colors.gray6, borderRadius: '14px', padding: '16px', marginBottom: '16px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: '600', marginBottom: '8px' }}>123 Oak Street, Atlanta GA</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+                    <div><span style={{ color: colors.gray }}>Purchase:</span> $285,000</div>
+                    <div><span style={{ color: colors.gray }}>Rent:</span> $2,200/mo</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '10px' }}>
+                  <div style={{ background: '#10B98115', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Cap Rate</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#10B981' }}>7.2%</div>
+                  </div>
+                  <div style={{ background: '#3B82F615', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Cash-on-Cash</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#3B82F6' }}>12.4%</div>
+                  </div>
+                  <div style={{ background: '#8B5CF615', borderRadius: '12px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>ROI</div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: '#8B5CF6' }}>18.6%</div>
+                  </div>
+                </div>
+                <div style={{ marginTop: '16px', padding: '12px', background: '#D1FAE5', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{ fontSize: '18px' }}>✅</span>
+                  <div style={{ fontSize: '13px', color: '#065F46', fontWeight: '600' }}>This deal meets your criteria!</div>
+                </div>
+              </div>
+
+              {/* Property Cash Flow Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(129, 140, 248, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#818CF815', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>💵</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Property Cash Flow</span>
+                </div>
+                {[
+                  { property: '123 Oak St', rent: 2200, expenses: 850, cashflow: 1350 },
+                  { property: '456 Pine Ave', rent: 1800, expenses: 720, cashflow: 1080 },
+                  { property: '789 Maple Dr', rent: 2400, expenses: 980, cashflow: 1420 },
+                ].map((prop, i) => (
+                  <div key={i} style={{
+                    background: colors.gray6, borderRadius: '12px', padding: '14px',
+                    marginBottom: i < 2 ? '10px' : 0
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', fontWeight: '600' }}>{prop.property}</span>
+                      <span style={{ fontSize: '14px', fontWeight: '700', color: '#10B981' }}>+${prop.cashflow}</span>
+                    </div>
+                    <div style={{ display: 'flex', gap: '16px', fontSize: '11px', color: colors.gray }}>
+                      <span>Rent: ${prop.rent}</span>
+                      <span>Expenses: ${prop.expenses}</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: '16px', padding: '14px', background: 'linear-gradient(135deg, #818CF815 0%, #6366F115 100%)', borderRadius: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', color: colors.gray }}>Total Monthly Cash Flow</div>
+                  <div style={{ fontSize: '24px', fontWeight: '700', color: '#6366F1' }}>$3,850</div>
+                </div>
+              </div>
+
+              {/* Portfolio Overview Card */}
+              <div className="hover-lift" style={{
+                background: '#FFF', borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(129, 140, 248, 0.15)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: '#818CF815', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>🏘️</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>Portfolio Overview</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+                  <div style={{ background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)', borderRadius: '14px', padding: '16px', color: '#FFF' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.9 }}>Total Value</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700' }}>$1.2M</div>
+                  </div>
+                  <div style={{ background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)', borderRadius: '14px', padding: '16px', color: '#FFF' }}>
+                    <div style={{ fontSize: '11px', opacity: 0.9 }}>Total Equity</div>
+                    <div style={{ fontSize: '22px', fontWeight: '700' }}>$485K</div>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <div style={{ background: colors.gray6, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#6366F1' }}>3</div>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Properties</div>
+                  </div>
+                  <div style={{ background: colors.gray6, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#10B981' }}>96%</div>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Occupancy</div>
+                  </div>
+                  <div style={{ background: colors.gray6, borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: '700', color: '#F59E0B' }}>6.8%</div>
+                    <div style={{ fontSize: '10px', color: colors.gray }}>Avg Cap Rate</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Expense Tracking Card */}
+              <div className="hover-lift" style={{
+                background: 'linear-gradient(135deg, #1E3A5F 0%, #1E293B 100%)', 
+                borderRadius: '24px', padding: '28px',
+                boxShadow: '0 15px 40px rgba(30, 58, 95, 0.3)',
+                color: '#FFF'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
+                  <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📋</div>
+                  <span style={{ fontSize: '16px', fontWeight: '600' }}>CPA-Ready Reports</span>
+                </div>
+                <div style={{ marginBottom: '16px' }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '8px' }}>2024 Tax Summary</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                    <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px' }}>
+                      <div style={{ fontSize: '10px', opacity: 0.8 }}>Rental Income</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600' }}>$76,800</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '10px', padding: '12px' }}>
+                      <div style={{ fontSize: '10px', opacity: 0.8 }}>Deductible Expenses</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600' }}>$32,400</div>
+                    </div>
+                  </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '12px', padding: '14px' }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '10px' }}>Expense Categories</div>
+                  {[
+                    { cat: 'Mortgage Interest', amount: 14200 },
+                    { cat: 'Property Management', amount: 7200 },
+                    { cat: 'Repairs & Maintenance', amount: 5800 },
+                    { cat: 'Insurance', amount: 3600 },
+                  ].map((exp, i) => (
+                    <div key={i} style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px', fontSize: '12px' }}>
+                      <span style={{ opacity: 0.9 }}>{exp.cat}</span>
+                      <span style={{ fontWeight: '600' }}>${exp.amount.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+                <button style={{
+                  width: '100%', marginTop: '16px', padding: '12px',
+                  background: 'rgba(255,255,255,0.2)', border: 'none',
+                  borderRadius: '10px', color: '#FFF', fontSize: '13px',
+                  fontWeight: '600', cursor: 'pointer'
+                }}>
+                  📥 Export for CPA
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
