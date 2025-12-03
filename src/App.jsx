@@ -3979,7 +3979,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <BudgetBarChart data={monthlyData} budgets={budgets} theme={theme} height={280} />
         </div>
 
-        {/* Spending Breakdown - Modern Pebble/Triangle Style */}
+        {/* Spending Breakdown - Overlapping Pebble/Triangle Style (like Sales Summary) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Spending</h3>
@@ -4000,62 +4000,70 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 </div>
               ))}
             </div>
-            {/* Right side - Rounded Triangle/Pebble shapes (highest to lowest, left to right) */}
+            {/* Right side - Overlapping Pebble Shapes */}
             <div style={{ 
               display: 'flex', 
               flexDirection: 'column',
               alignItems: 'center',
               justifyContent: 'center',
-              gap: '20px',
               padding: '10px'
             }}>
-              {/* Stacked pebble shapes - sorted by percentage descending */}
-              <div style={{ position: 'relative', width: '180px', height: '160px' }}>
+              {/* Overlapping pebble cluster */}
+              <div style={{ position: 'relative', width: '200px', height: '180px' }}>
                 {(() => {
-                  // Sort cards by percentage descending for visual display
+                  // Sort cards by percentage descending
                   const sortedByPercent = [...spendingCards].sort((a, b) => b.percent - a.percent);
-                  const pebbleColors = ['#6366F1', '#9CA3AF', '#3B82F6', '#D1D5DB'];
+                  // Colors matching the reference: Indigo, Gray, Blue, Light Gray
+                  const pebbleColors = ['#6366F1', '#6B7280', '#3B82F6', '#D1D5DB'];
+                  // Positions for overlapping effect (like the reference image)
                   const positions = [
-                    { left: '10px', top: '60px', rotate: '-15deg', zIndex: 4, size: 80 },
-                    { left: '60px', top: '10px', rotate: '10deg', zIndex: 3, size: 75 },
-                    { left: '100px', top: '50px', rotate: '25deg', zIndex: 2, size: 70 },
-                    { left: '50px', top: '90px', rotate: '-5deg', zIndex: 1, size: 65 }
+                    { left: 20, top: 50, size: 90, zIndex: 4 },   // Largest - front left
+                    { left: 90, top: 10, size: 75, zIndex: 3 },   // Second - back right
+                    { left: 110, top: 70, size: 70, zIndex: 2 },  // Third - front right
+                    { left: 60, top: 100, size: 60, zIndex: 1 }   // Smallest - bottom middle
                   ];
                   
                   return sortedByPercent.map((item, i) => {
                     const pos = positions[i] || positions[0];
                     const color = pebbleColors[i] || pebbleColors[0];
+                    
                     return (
                       <div 
                         key={i}
                         style={{
                           position: 'absolute',
-                          left: pos.left,
-                          top: pos.top,
-                          transform: `rotate(${pos.rotate})`,
-                          zIndex: pos.zIndex
+                          left: `${pos.left}px`,
+                          top: `${pos.top}px`,
+                          zIndex: pos.zIndex,
+                          width: `${pos.size}px`,
+                          height: `${pos.size}px`
                         }}
                       >
                         <svg width={pos.size} height={pos.size} viewBox="0 0 100 100">
                           <defs>
-                            <linearGradient id={`pebbleGrad${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
-                              <stop offset="0%" stopColor={color} stopOpacity="1" />
-                              <stop offset="100%" stopColor={color} stopOpacity="0.8" />
+                            <linearGradient id={`pebbleGradient${i}`} x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor={color} />
+                              <stop offset="100%" stopColor={color} stopOpacity="0.85" />
                             </linearGradient>
                           </defs>
-                          {/* Rounded triangle / pebble shape */}
+                          {/* Rounded triangle / pebble shape - organic look */}
                           <path 
-                            d="M50 10 C75 10, 90 35, 85 60 C80 85, 55 95, 35 85 C15 75, 10 50, 20 30 C30 10, 50 10, 50 10 Z"
-                            fill={`url(#pebbleGrad${i})`}
+                            d="M50 5 
+                               C70 5, 90 20, 92 45 
+                               C94 70, 75 92, 50 92 
+                               C25 92, 8 70, 10 45 
+                               C12 20, 30 5, 50 5 Z"
+                            fill={`url(#pebbleGradient${i})`}
+                            style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,0.1))' }}
                           />
-                          {/* Percentage text */}
+                          {/* Percentage text centered */}
                           <text 
                             x="50" 
                             y="55" 
                             textAnchor="middle" 
                             fill="white" 
-                            fontSize="18" 
-                            fontWeight="700"
+                            fontSize={pos.size > 70 ? "18" : "14"} 
+                            fontWeight="600"
                           >
                             {Math.round(item.percent)}%
                           </text>
@@ -4066,29 +4074,41 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 })()}
               </div>
               
-              {/* Legend below the shapes */}
+              {/* Legend below - 2x2 grid */}
               <div style={{ 
                 display: 'grid', 
                 gridTemplateColumns: '1fr 1fr', 
-                gap: '8px 16px',
-                fontSize: '12px',
-                marginTop: '10px'
+                gap: '8px 24px',
+                marginTop: '16px',
+                width: '100%'
               }}>
                 {(() => {
                   const sortedByPercent = [...spendingCards].sort((a, b) => b.percent - a.percent);
-                  const pebbleColors = ['#6366F1', '#9CA3AF', '#3B82F6', '#D1D5DB'];
+                  const pebbleColors = ['#6366F1', '#6B7280', '#3B82F6', '#D1D5DB'];
                   return sortedByPercent.map((item, i) => (
                     <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div style={{ 
                         width: '10px', 
                         height: '10px', 
                         borderRadius: '50%', 
-                        background: pebbleColors[i] 
+                        background: pebbleColors[i],
+                        flexShrink: 0
                       }} />
-                      <span style={{ color: theme.textSecondary }}>
-                        {item.category.length > 10 ? item.category.slice(0, 10) + '...' : item.category}
+                      <span style={{ 
+                        color: theme.textSecondary, 
+                        fontSize: '13px',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                        maxWidth: '80px'
+                      }}>
+                        {item.category}
                       </span>
-                      <span style={{ color: theme.textMuted, marginLeft: 'auto' }}>
+                      <span style={{ 
+                        color: theme.textMuted, 
+                        fontSize: '13px',
+                        marginLeft: 'auto'
+                      }}>
                         {Math.round(item.percent)}%
                       </span>
                     </div>
