@@ -211,6 +211,37 @@ const Icons = {
       <polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
     </svg>
   ),
+  ChevronRight: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </svg>
+  ),
+  Lock: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  ),
+  // Hub Icons
+  HomeBudgetHub: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+    </svg>
+  ),
+  BizBudgetHub: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+    </svg>
+  ),
+  REBudgetHub: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/>
+    </svg>
+  ),
+  Crown: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M2 8L6 19H18L22 8L17 12L12 5L7 12L2 8Z"/>
+    </svg>
+  ),
 };
 // ============================================================================
 // PENNY LOGO COMPONENT
@@ -791,6 +822,102 @@ const dbToAppGoal = (g) => ({
   status: g.status,
   accountType: g.account_type
 });
+
+// ============================================================================
+// SUBSCRIPTION MANAGEMENT
+// ============================================================================
+
+// Load user subscription from Supabase
+const loadSubscriptionFromDB = async (userId) => {
+  const sb = await initSupabase();
+  if (!sb) return null;
+  
+  console.log('📥 [Subscription] Loading subscription for:', userId);
+  
+  try {
+    const { data, error } = await sb
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error) {
+      // If no subscription found, create one with trial
+      if (error.code === 'PGRST116') {
+        console.log('📝 [Subscription] No subscription found, creating trial...');
+        return await createTrialSubscription(userId);
+      }
+      console.error('❌ [Subscription] Load error:', error);
+      return null;
+    }
+    
+    console.log('✅ [Subscription] Loaded:', data.plan_type, data.subscription_status);
+    return data;
+  } catch (e) {
+    console.error('❌ [Subscription] Load error:', e);
+    return null;
+  }
+};
+
+// Create trial subscription for new user
+const createTrialSubscription = async (userId) => {
+  const sb = await initSupabase();
+  if (!sb) return null;
+  
+  const trialEndsAt = new Date();
+  trialEndsAt.setDate(trialEndsAt.getDate() + 14); // 14-day trial
+  
+  const subscription = {
+    user_id: userId,
+    plan_type: 'free_trial',
+    subscription_status: 'trialing',
+    trial_started_at: new Date().toISOString(),
+    trial_ends_at: trialEndsAt.toISOString()
+  };
+  
+  try {
+    const { data, error } = await sb
+      .from('subscriptions')
+      .insert(subscription)
+      .select()
+      .single();
+    
+    if (error) throw error;
+    console.log('✅ [Subscription] Trial created, ends:', trialEndsAt);
+    return data;
+  } catch (e) {
+    console.error('❌ [Subscription] Create trial error:', e);
+    return subscription; // Return the object anyway for UI
+  }
+};
+
+// Check if user has valid access
+const checkSubscriptionAccess = (subscription) => {
+  if (!subscription) return { hasAccess: false, reason: 'no_subscription' };
+  
+  const now = new Date();
+  
+  // Check if in valid trial period
+  if (subscription.subscription_status === 'trialing') {
+    const trialEnds = new Date(subscription.trial_ends_at);
+    if (now < trialEnds) {
+      const daysLeft = Math.ceil((trialEnds - now) / (1000 * 60 * 60 * 24));
+      return { hasAccess: true, reason: 'trial', daysLeft, trialEnds };
+    } else {
+      return { hasAccess: false, reason: 'trial_expired', trialEnds };
+    }
+  }
+  
+  // Check if has active paid subscription
+  if (subscription.subscription_status === 'active') {
+    if (!subscription.subscription_ends_at || new Date(subscription.subscription_ends_at) > now) {
+      return { hasAccess: true, reason: 'paid', planType: subscription.plan_type };
+    }
+  }
+  
+  return { hasAccess: false, reason: subscription.subscription_status };
+};
+
 // CSV Parser
 const parseCSV = (csvText) => {
   const lines = csvText.split('\n');
@@ -2301,6 +2428,12 @@ function Dashboard({
   const [showIdleModal, setShowIdleModal] = useState(false);
   const [showManageAccountModal, setShowManageAccountModal] = useState(false);
   
+  // Subscription & Hub State
+  const [subscription, setSubscription] = useState(null);
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [expandedHubs, setExpandedHubs] = useState({ homebudget: true }); // HomeBudget expanded by default
+  
   // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -2316,6 +2449,38 @@ function Dashboard({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+  
+  // Load subscription on mount
+  useEffect(() => {
+    const loadSubscription = async () => {
+      if (user?.id) {
+        setSubscriptionLoading(true);
+        const sub = await loadSubscriptionFromDB(user.id);
+        setSubscription(sub);
+        setSubscriptionLoading(false);
+        
+        // Check if trial expired and show upgrade modal
+        if (sub) {
+          const access = checkSubscriptionAccess(sub);
+          if (!access.hasAccess && access.reason === 'trial_expired') {
+            setShowUpgradeModal(true);
+          }
+        }
+      }
+    };
+    loadSubscription();
+  }, [user?.id]);
+  
+  // Get subscription access status
+  const subscriptionAccess = subscription ? checkSubscriptionAccess(subscription) : { hasAccess: false, reason: 'loading' };
+  
+  // Toggle hub expansion
+  const toggleHub = (hubId) => {
+    setExpandedHubs(prev => ({
+      ...prev,
+      [hubId]: !prev[hubId]
+    }));
+  };
   
   // Local state for editing profile (initialized from props when modal opens)
   const [editProfile, setEditProfile] = useState({
@@ -2507,16 +2672,45 @@ function Dashboard({
   };
 
   // Navigation items
-  const navItems = [
-    { id: 'home', label: 'Dashboard', icon: Icons.Dashboard },
-    { id: 'sales', label: 'Sales Tracker', icon: Icons.Sales },
-    { id: 'budget', label: 'Budget', icon: Icons.Budget },
-    { id: 'transactions', label: 'Transactions', icon: Icons.Transactions },
-    { id: 'bills', label: 'Bills', icon: Icons.Calendar },
-    { id: 'goals', label: 'Goals', icon: Icons.Goals },
-    { id: 'tasks', label: 'Tasks', icon: Icons.Tasks },
-    { id: 'retirement', label: 'Retirement', icon: Icons.Retirement },
-    { id: 'reports', label: 'Reports', icon: Icons.Reports },
+  // Hub-based navigation structure
+  const hubs = [
+    {
+      id: 'homebudget',
+      label: 'HomeBudget Hub',
+      subtitle: 'Personal & Family Finance',
+      icon: Icons.HomeBudgetHub,
+      color: '#10B981', // Green
+      status: 'active', // 'active', 'coming_soon', 'locked'
+      items: [
+        { id: 'home', label: 'Dashboard', icon: Icons.Dashboard },
+        { id: 'sales', label: 'Sales Tracker', icon: Icons.Sales },
+        { id: 'budget', label: 'Budget', icon: Icons.Budget },
+        { id: 'transactions', label: 'Transactions', icon: Icons.Transactions },
+        { id: 'bills', label: 'Bills', icon: Icons.Calendar },
+        { id: 'goals', label: 'Goals', icon: Icons.Goals },
+        { id: 'tasks', label: 'Tasks', icon: Icons.Tasks },
+        { id: 'retirement', label: 'Retirement', icon: Icons.Retirement },
+        { id: 'reports', label: 'Reports', icon: Icons.Reports },
+      ]
+    },
+    {
+      id: 'bizbudget',
+      label: 'BizBudget Hub',
+      subtitle: 'Side Hustle & 1099 Income',
+      icon: Icons.BizBudgetHub,
+      color: '#8B5CF6', // Purple
+      status: 'coming_soon',
+      items: []
+    },
+    {
+      id: 'rebudget',
+      label: 'REBudget Hub',
+      subtitle: 'Real Estate & Rentals',
+      icon: Icons.REBudgetHub,
+      color: '#3B82F6', // Blue
+      status: 'coming_soon',
+      items: []
+    }
   ];
 
   const bottomNavItems = [
@@ -2881,31 +3075,173 @@ function Dashboard({
           </div>
         </div>
 
-        {/* Navigation */}
+        {/* Navigation - Hub Based */}
         <nav style={{ flex: 1, padding: '16px 12px', overflowY: 'auto' }}>
-          {navItems.map(item => (
-            <div
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '10px',
-                cursor: 'pointer',
-                color: activeTab === item.id ? 'white' : theme.sidebarText,
-                background: activeTab === item.id ? theme.sidebarActive : 'transparent',
-                transition: 'all 0.2s ease',
-                marginBottom: '4px',
-                fontSize: '14px',
-                fontWeight: activeTab === item.id ? '600' : '500'
-              }}
-            >
-              <item.icon />
-              <span>{item.label}</span>
+          {/* Trial/Subscription Status Banner */}
+          {subscriptionAccess.hasAccess && subscriptionAccess.reason === 'trial' && (
+            <div style={{
+              background: `linear-gradient(135deg, ${theme.warning}15, ${theme.warning}08)`,
+              border: `1px solid ${theme.warning}30`,
+              borderRadius: '10px',
+              padding: '12px',
+              marginBottom: '16px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                <span style={{ fontSize: '14px' }}>⏱️</span>
+                <span style={{ fontSize: '12px', fontWeight: '600', color: theme.warning }}>
+                  Trial: {subscriptionAccess.daysLeft} days left
+                </span>
+              </div>
+              <button
+                onClick={() => setShowUpgradeModal(true)}
+                style={{
+                  width: '100%',
+                  padding: '8px',
+                  background: theme.warning,
+                  border: 'none',
+                  borderRadius: '6px',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Upgrade Now
+              </button>
             </div>
-          ))}
+          )}
+
+          <div style={{ padding: '0 16px 8px', color: theme.textMuted, fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            Hubs
+          </div>
+
+          {/* Hubs Navigation */}
+          {hubs.map(hub => {
+            const isExpanded = expandedHubs[hub.id];
+            const isActive = hub.items.some(item => item.id === activeTab);
+            const isLocked = hub.status === 'coming_soon' || (!subscriptionAccess.hasAccess && hub.status === 'active');
+            const isComingSoon = hub.status === 'coming_soon';
+
+            return (
+              <div key={hub.id} style={{ marginBottom: '8px' }}>
+                {/* Hub Header */}
+                <div
+                  onClick={() => {
+                    if (isComingSoon) return;
+                    if (isLocked && !subscriptionAccess.hasAccess) {
+                      setShowUpgradeModal(true);
+                      return;
+                    }
+                    toggleHub(hub.id);
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '10px 12px',
+                    borderRadius: '10px',
+                    cursor: isComingSoon ? 'default' : 'pointer',
+                    background: isActive ? `${hub.color}15` : 'transparent',
+                    border: isActive ? `1px solid ${hub.color}30` : '1px solid transparent',
+                    transition: 'all 0.2s ease',
+                    opacity: isLocked ? 0.6 : 1
+                  }}
+                >
+                  {/* Hub Icon with Color Ring */}
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '8px',
+                    background: `${hub.color}15`,
+                    border: `2px solid ${hub.color}40`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: hub.color
+                  }}>
+                    <hub.icon />
+                  </div>
+                  
+                  {/* Hub Label */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ 
+                      fontSize: '13px', 
+                      fontWeight: '600', 
+                      color: isActive ? hub.color : theme.textPrimary,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                    }}>
+                      {hub.label}
+                      {isComingSoon && (
+                        <span style={{
+                          background: theme.textMuted,
+                          color: 'white',
+                          fontSize: '9px',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          fontWeight: '600'
+                        }}>
+                          SOON
+                        </span>
+                      )}
+                      {isLocked && !isComingSoon && (
+                        <Icons.Lock />
+                      )}
+                    </div>
+                    <div style={{ fontSize: '10px', color: theme.textMuted, marginTop: '1px' }}>
+                      {hub.subtitle}
+                    </div>
+                  </div>
+                  
+                  {/* Expand/Collapse Chevron */}
+                  {!isComingSoon && hub.items.length > 0 && (
+                    <div style={{
+                      transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.2s ease',
+                      color: theme.textMuted
+                    }}>
+                      <Icons.ChevronRight />
+                    </div>
+                  )}
+                </div>
+
+                {/* Hub Sub-items */}
+                {isExpanded && !isComingSoon && !isLocked && hub.items.length > 0 && (
+                  <div style={{ 
+                    marginLeft: '20px', 
+                    marginTop: '4px',
+                    borderLeft: `2px solid ${hub.color}20`,
+                    paddingLeft: '12px'
+                  }}>
+                    {hub.items.map(item => (
+                      <div
+                        key={item.id}
+                        onClick={() => setActiveTab(item.id)}
+                        style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '10px',
+                          padding: '10px 12px',
+                          borderRadius: '8px',
+                          cursor: 'pointer',
+                          color: activeTab === item.id ? 'white' : theme.sidebarText,
+                          background: activeTab === item.id ? theme.sidebarActive : 'transparent',
+                          transition: 'all 0.2s ease',
+                          marginBottom: '2px',
+                          fontSize: '13px',
+                          fontWeight: activeTab === item.id ? '600' : '500'
+                        }}
+                      >
+                        <item.icon />
+                        <span>{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           <div style={{ padding: '16px 16px 8px', color: theme.textMuted, fontSize: '11px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
             Settings
@@ -3696,6 +4032,182 @@ function Dashboard({
                 Chat with Penny
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Upgrade Modal */}
+      {showUpgradeModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2000 }}>
+          <div style={{ 
+            background: theme.bgCard, 
+            borderRadius: '24px', 
+            padding: '40px', 
+            textAlign: 'center', 
+            maxWidth: '480px',
+            width: '90%',
+            boxShadow: '0 25px 80px rgba(0,0,0,0.4)',
+            border: `1px solid ${theme.border}`
+          }}>
+            {/* Crown Icon */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '50%',
+              background: 'linear-gradient(135deg, #F59E0B, #D97706)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 24px',
+              boxShadow: '0 8px 32px rgba(245, 158, 11, 0.3)'
+            }}>
+              <Icons.Crown />
+              <span style={{ fontSize: '40px' }}>👑</span>
+            </div>
+
+            <h2 style={{ 
+              fontSize: '26px', 
+              fontWeight: '700', 
+              color: theme.textPrimary, 
+              marginBottom: '12px' 
+            }}>
+              {subscriptionAccess.reason === 'trial_expired' ? 'Your Trial Has Ended' : 'Upgrade to Pro'}
+            </h2>
+            
+            <p style={{ 
+              color: theme.textSecondary, 
+              fontSize: '15px', 
+              lineHeight: 1.6, 
+              marginBottom: '32px',
+              maxWidth: '360px',
+              margin: '0 auto 32px'
+            }}>
+              {subscriptionAccess.reason === 'trial_expired' 
+                ? "Your 14-day free trial has ended. Upgrade now to continue managing your finances with ProsperNest."
+                : "Unlock the full power of ProsperNest to manage your finances, track goals, and build wealth."
+              }
+            </p>
+
+            {/* Pricing Cards */}
+            <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+              {/* Starter Plan */}
+              <div style={{
+                flex: 1,
+                padding: '20px',
+                borderRadius: '16px',
+                border: `2px solid ${theme.border}`,
+                background: theme.bgMain,
+                textAlign: 'left'
+              }}>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: theme.textMuted, marginBottom: '4px' }}>STARTER</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '12px' }}>
+                  $9<span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>/mo</span>
+                </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', color: theme.textSecondary }}>
+                  <li style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> HomeBudget Hub
+                  </li>
+                  <li style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Unlimited transactions
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Reports & Analytics
+                  </li>
+                </ul>
+              </div>
+
+              {/* Family Plan */}
+              <div style={{
+                flex: 1,
+                padding: '20px',
+                borderRadius: '16px',
+                border: `2px solid #10B981`,
+                background: '#10B98108',
+                textAlign: 'left',
+                position: 'relative'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: '-10px',
+                  left: '50%',
+                  transform: 'translateX(-50%)',
+                  background: '#10B981',
+                  color: 'white',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  padding: '4px 12px',
+                  borderRadius: '12px'
+                }}>
+                  POPULAR
+                </div>
+                <div style={{ fontSize: '13px', fontWeight: '600', color: '#10B981', marginBottom: '4px' }}>FAMILY</div>
+                <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary, marginBottom: '12px' }}>
+                  $14<span style={{ fontSize: '14px', fontWeight: '500', color: theme.textMuted }}>/mo</span>
+                </div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: 0, fontSize: '13px', color: theme.textSecondary }}>
+                  <li style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Everything in Starter
+                  </li>
+                  <li style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Up to 5 family members
+                  </li>
+                  <li style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ color: '#10B981' }}>✓</span> Priority support
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '12px' }}>
+              {subscriptionAccess.reason !== 'trial_expired' && (
+                <button 
+                  onClick={() => setShowUpgradeModal(false)}
+                  style={{ 
+                    flex: 1, 
+                    padding: '14px 24px', 
+                    background: 'transparent', 
+                    border: `1px solid ${theme.border}`, 
+                    borderRadius: '12px', 
+                    color: theme.textSecondary, 
+                    fontSize: '15px', 
+                    fontWeight: '600', 
+                    cursor: 'pointer' 
+                  }}
+                >
+                  Maybe Later
+                </button>
+              )}
+              <button 
+                onClick={() => {
+                  // TODO: Integrate with Stripe checkout
+                  alert('Payment integration coming soon! For now, please contact support@prospernest.io');
+                }}
+                style={{ 
+                  flex: 2, 
+                  padding: '14px 24px', 
+                  background: 'linear-gradient(135deg, #10B981, #059669)', 
+                  border: 'none', 
+                  borderRadius: '12px', 
+                  color: 'white', 
+                  fontSize: '15px', 
+                  fontWeight: '600', 
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)'
+                }}
+              >
+                Upgrade Now
+              </button>
+            </div>
+
+            {/* Fine Print */}
+            <p style={{ 
+              fontSize: '11px', 
+              color: theme.textMuted, 
+              marginTop: '16px' 
+            }}>
+              Cancel anytime. No hidden fees.
+            </p>
           </div>
         </div>
       )}
