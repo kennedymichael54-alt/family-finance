@@ -2112,9 +2112,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { 
                 icon: '🏠',
                 title: 'HomeBudget Hub', 
-                subtitle: 'Personal & Family Finance',
-                desc: 'Master your household finances with intelligent budgeting tools designed for modern families.',
-                features: ['Smart Budget Tracking', 'Bill Reminders', 'Savings Goals', 'Family Sharing'],
+                subtitle: 'Family Finance + Side Hustle',
+                desc: 'Budget smarter, retire earlier. Track family expenses, crush savings goals, and manage your side hustle income—all in one place.',
+                features: ['Family Budgeting', 'Side Hustle Sales Tracker', 'Bill Planning', 'Tax Estimation'],
                 gradient: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
                 lightGradient: 'linear-gradient(135deg, rgba(236,72,153,0.15) 0%, rgba(219,39,119,0.08) 100%)',
                 color: '#EC4899',
@@ -2125,9 +2125,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { 
                 icon: '💼',
                 title: 'BizBudget Hub', 
-                subtitle: 'Side Hustle & 1099 Income',
-                desc: 'Separate business from personal. Track 1099 income, expenses, and maximize your deductions.',
-                features: ['Income Tracking', 'Expense Categories', 'Tax Deductions', 'Profit Reports'],
+                subtitle: 'Small Business Command Center',
+                desc: 'Built for full-time entrepreneurs. Plan revenue, track 1099s, estimate self-employment taxes, and hit your ROI targets with real-time KPIs.',
+                features: ['Revenue & Expense Planning', '1099 Contractor Management', 'Self-Employment Tax Tools', 'Business KPI Dashboard'],
                 gradient: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
                 lightGradient: 'linear-gradient(135deg, rgba(167,139,250,0.15) 0%, rgba(139,92,246,0.08) 100%)',
                 color: '#A78BFA',
@@ -2138,9 +2138,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { 
                 icon: '🏢',
                 title: 'REBudget Hub', 
-                subtitle: 'Real Estate & Rentals',
-                desc: 'Manage properties, track rental income, and monitor your real estate portfolio growth.',
-                features: ['Property Management', 'Rental Income', 'Expense Tracking', 'ROI Analysis'],
+                subtitle: 'Real Estate Investor Toolkit',
+                desc: 'Analyze deals in seconds. Calculate cap rates, track cash flow, log properties, and keep your books CPA-ready—all from one dashboard.',
+                features: ['Deal Analyzer (Cap Rate/ROI)', 'Property Cash Flow Tracking', 'Expense & Fee Logging', 'Portfolio Performance'],
                 gradient: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
                 lightGradient: 'linear-gradient(135deg, rgba(129,140,248,0.15) 0%, rgba(99,102,241,0.08) 100%)',
                 color: '#818CF8',
@@ -2317,7 +2317,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               color: colors.secondary, 
               marginBottom: '20px' 
             }}>
-              Start with HomeBudget Hub free. Upgrade anytime as your empire grows.
+              Start with HomeBudget Hub free. Scale up as your empire grows.
             </p>
             <button onClick={() => scrollToSection('features')} className="apple-button"
               style={{ 
