@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 
 const BudgetTab = ({ transactions = [], onNavigateToImport, theme, lastImportDate }) => {
+  const isDark = theme?.mode === 'dark';
   const [sortBy, setSortBy] = useState('highest');
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -265,28 +266,61 @@ const BudgetTab = ({ transactions = [], onNavigateToImport, theme, lastImportDat
         )}
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards with Gradients */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '24px' }}>
-        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '16px' }}>💰</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted }}>Total Budget</span>
+        {/* Total Budget Card - Cyan */}
+        <div style={{
+          background: isDark ? 'linear-gradient(135deg, #164E63 0%, #0E4A5C 100%)' : 'linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0, 188, 212, 0.15)',
+          border: `1px solid ${isDark ? 'rgba(0, 188, 212, 0.3)' : 'rgba(0, 188, 212, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '20px' }}>💰</span>
+            <span style={{ fontSize: '13px', color: isDark ? '#67E8F9' : '#00838F', fontWeight: '500' }}>Total Budget</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(totalBudget)}</div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: isDark ? '#E0F7FA' : '#006064' }}>{formatCurrency(totalBudget)}</div>
         </div>
-        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '16px' }}>💳</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted }}>Total Spent</span>
+        
+        {/* Total Spent Card - Orange */}
+        <div style={{
+          background: isDark ? 'linear-gradient(135deg, #7C2D12 0%, #6B2A0F 100%)' : 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)',
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(255, 152, 0, 0.15)',
+          border: `1px solid ${isDark ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '20px' }}>💳</span>
+            <span style={{ fontSize: '13px', color: isDark ? '#FDBA74' : '#E65100', fontWeight: '500' }}>Total Spent</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(totalSpent)}</div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: isDark ? '#FFF3E0' : '#BF360C' }}>{formatCurrency(totalSpent)}</div>
         </div>
-        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span style={{ fontSize: '16px' }}>📊</span>
-            <span style={{ fontSize: '14px', color: theme.textMuted }}>Remaining</span>
+        
+        {/* Remaining Card - Green or Red based on positive/negative */}
+        <div style={{
+          background: totalBudget - totalSpent >= 0 
+            ? (isDark ? 'linear-gradient(135deg, #14532D 0%, #115E2B 100%)' : 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)')
+            : (isDark ? 'linear-gradient(135deg, #7F1D1D 0%, #6B1A1A 100%)' : 'linear-gradient(135deg, #FFEBEE 0%, #FFCDD2 100%)'),
+          borderRadius: '20px',
+          padding: '20px',
+          boxShadow: totalBudget - totalSpent >= 0 
+            ? '0 4px 20px rgba(76, 175, 80, 0.15)' 
+            : '0 4px 20px rgba(239, 68, 68, 0.15)',
+          border: `1px solid ${totalBudget - totalSpent >= 0 
+            ? (isDark ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)')
+            : (isDark ? 'rgba(239, 68, 68, 0.3)' : 'rgba(239, 68, 68, 0.2)')}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+            <span style={{ fontSize: '20px' }}>📊</span>
+            <span style={{ fontSize: '13px', color: totalBudget - totalSpent >= 0 
+              ? (isDark ? '#86EFAC' : '#2E7D32') 
+              : (isDark ? '#FCA5A5' : '#C62828'), fontWeight: '500' }}>Remaining</span>
           </div>
-          <div style={{ fontSize: '28px', fontWeight: '700', color: totalBudget - totalSpent >= 0 ? '#10B981' : '#EF4444' }}>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: totalBudget - totalSpent >= 0 
+            ? (isDark ? '#E8F5E9' : '#1B5E20') 
+            : (isDark ? '#FFEBEE' : '#B71C1C') }}>
             {formatCurrency(totalBudget - totalSpent)}
           </div>
         </div>
