@@ -1255,7 +1255,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               }} />
               
               <div style={{ position: 'relative', zIndex: 1 }}>
-                <PennyLogo size={52} />
+                <div style={{ animation: 'float 3s ease-in-out infinite' }}>
+                  <PennyLogo size={52} />
+                </div>
                 <h2 style={{ 
                   color: '#FFF', 
                   fontSize: '22px', 
@@ -1925,6 +1927,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes glow { 0%, 100% { box-shadow: 0 0 20px rgba(52, 199, 89, 0.3); } 50% { box-shadow: 0 0 40px rgba(52, 199, 89, 0.6); } }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
         .animate-in { animation: fadeIn 0.6s ease-out forwards; }
         .hover-lift { transition: transform 0.3s ease, box-shadow 0.3s ease; }
         .hover-lift:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(0,0,0,0.12); }
@@ -3435,7 +3438,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       {/* About / FIRE Section */}
       <section id="about" style={{ padding: isMobile ? '50px 16px' : '100px 40px', background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.purple} 100%)`, color: '#FFF' }}>
         <div style={{ maxWidth: '1100px', margin: '0 auto', textAlign: 'center' }}>
-          <div style={{ fontSize: isMobile ? '60px' : '80px', marginBottom: '24px' }}>🔥</div>
+          <div style={{ fontSize: isMobile ? '60px' : '80px', marginBottom: '24px', animation: 'float 3s ease-in-out infinite' }}>🔥</div>
           <h2 style={{ fontSize: isMobile ? 'clamp(28px, 8vw, 40px)' : 'clamp(36px, 5vw, 52px)', fontWeight: '700', marginBottom: '20px' }}>Your path to FIRE</h2>
           <p style={{ fontSize: isMobile ? '16px' : '20px', opacity: 0.9, marginBottom: '50px', maxWidth: '700px', margin: '0 auto 40px', lineHeight: 1.7, padding: '0 8px' }}>
             Financial Independence, Retire Early isn't just a dream. See exactly when you'll hit your number.
