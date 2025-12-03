@@ -55,34 +55,18 @@ const formatCurrencyDetailed = (amount) => {
   }).format(amount);
 };
 
-// Fallback sample data (used if no retirementData prop)
+// Empty fallback data for new users (no personal data exposed)
 const fallbackData = {
-  asOfDate: "2025-11-28",
+  asOfDate: new Date().toISOString().split('T')[0],
   summary: {
-    totalValue: 277626.46,
-    ytdReturn: 22.28,
-    oneYearReturn: 21.64,
-    threeYearReturn: 17.22,
-    fiveYearReturn: 13.22
+    totalValue: 0,
+    ytdReturn: 0,
+    oneYearReturn: 0,
+    threeYearReturn: 0,
+    fiveYearReturn: 0
   },
-  accounts: [
-    { id: "kennedy-ai-focus", name: "Kennedy AI Focus IRA", type: "advisory", value: 83476.20, ytdReturn: 19.25, owner: "Kennedy" },
-    { id: "kennedy-capital-strength", name: "Kennedy Capital Strength IRA", type: "advisory", value: 147346.14, ytdReturn: 18.21, owner: "Kennedy" },
-    { id: "michael-roth", name: "Michael Roth IRA", type: "roth", value: 27697.82, ytdReturn: 16.55, owner: "Michael" },
-    { id: "jessica-roth", name: "Jessica Roth IRA", type: "roth", value: 11016.40, ytdReturn: 23.95, owner: "Jessica" },
-    { id: "rory-roth", name: "Rory Roth IRA", type: "roth", value: 8089.90, ytdReturn: 21.35, owner: "Rory" },
-    { id: "michael-vul", name: "Michael VUL", type: "insurance", value: 6753.76, owner: "Michael" },
-    { id: "jessica-vul", name: "Jessica VUL", type: "insurance", value: 3355.36, owner: "Jessica" },
-    { id: "rory-vul", name: "Rory VUL", type: "insurance", value: 1866.67, owner: "Rory" }
-  ],
-  monthlyProgress: [
-    { month: "November 2025", startingBalance: 290173.00, netContributions: 3056.46, changeInValue: -3627.21, endingBalance: 289602.25 },
-    { month: "October 2025", startingBalance: 279248.76, netContributions: 3204.74, changeInValue: 7719.51, endingBalance: 290173.00 },
-    { month: "September 2025", startingBalance: 257460.69, netContributions: 3231.45, changeInValue: 18556.64, endingBalance: 279248.76 },
-    { month: "August 2025", startingBalance: 248498.68, netContributions: 3056.44, changeInValue: 5905.55, endingBalance: 257460.69 },
-    { month: "July 2025", startingBalance: 240480.14, netContributions: 3381.43, changeInValue: 4637.13, endingBalance: 248498.68 },
-    { month: "June 2025", startingBalance: 159850.94, netContributions: 72961.77, changeInValue: 7667.44, endingBalance: 240480.14 }
-  ]
+  accounts: [],
+  monthlyProgress: []
 };
 
 export default function RetirementTab({ theme: propTheme, retirementData }) {
