@@ -272,7 +272,48 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
     }
   };
 
-  const colors = {
+  // Dark mode state
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('pn_dark_mode');
+      return saved === 'true';
+    }
+    return false;
+  });
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const newValue = !prev;
+      localStorage.setItem('pn_dark_mode', newValue.toString());
+      return newValue;
+    });
+  };
+
+  const colors = isDarkMode ? {
+    // Dark mode colors
+    blue: '#3B82F6',
+    green: '#10B981',
+    orange: '#F59E0B',
+    purple: '#8B5CF6',
+    red: '#EF4444',
+    yellow: '#FBBF24',
+    teal: '#14B8A6',
+    pink: '#EC4899',
+    gray: '#9CA3AF',
+    gray2: '#6B7280',
+    gray3: '#4B5563',
+    gray4: '#374151',
+    gray5: '#1F2937',
+    gray6: '#111827',
+    background: '#0F172A',
+    label: '#F9FAFB',
+    secondary: '#D1D5DB',
+    cardBg: '#1E293B',
+    navBg: 'rgba(15, 23, 42, 0.95)',
+    borderLight: 'rgba(255, 255, 255, 0.1)'
+  } : {
+    // Light mode colors
     blue: '#007AFF',
     green: '#34C759',
     orange: '#FF9500',
@@ -280,6 +321,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
     red: '#FF3B30',
     yellow: '#FFCC00',
     teal: '#30B0C7',
+    pink: '#EC4899',
     gray: '#8E8E93',
     gray2: '#AEAEB2',
     gray3: '#C7C7CC',
@@ -289,6 +331,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
     background: '#FFFFFF',
     label: '#000000',
     secondary: '#3C3C43',
+    cardBg: '#FFFFFF',
+    navBg: 'rgba(255, 255, 255, 0.95)',
+    borderLight: 'rgba(0, 0, 0, 0.06)'
   };
 
   useEffect(() => {
@@ -478,24 +523,42 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         WebkitTapHighlightColor: 'transparent'
       }}
     >
-      <PennyLogo size={size} />
+      {/* Logo icon with pink gradient background - matches app */}
+      <div style={{
+        width: size,
+        height: size,
+        borderRadius: '12px',
+        background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxShadow: '0 4px 12px rgba(236, 72, 153, 0.35)',
+        flexShrink: 0
+      }}>
+        <PennyLogo size={size * 0.7} />
+      </div>
       {showText && (
         <span style={{
           fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", system-ui, sans-serif',
-          fontSize: Math.max(size * 0.42, 14), fontWeight: '600', letterSpacing: '-0.02em', color: colors.label,
+          fontSize: Math.max(size * 0.45, 16), 
+          fontWeight: '700', 
+          letterSpacing: '-0.02em', 
+          color: colors.label,
         }}>
-          ProsperNest
+          Prosper<span style={{ color: '#EC4899' }}>Nest</span>
         </span>
       )}
       {showBeta && showText && (
         <span style={{
-          background: `linear-gradient(135deg, ${colors.orange}, ${colors.red})`,
+          background: isDarkMode 
+            ? 'linear-gradient(135deg, #EC4899, #DB2777)' 
+            : 'linear-gradient(135deg, #F59E0B, #D97706)',
           color: '#FFF',
           fontSize: size > 40 ? '10px' : '8px',
           fontWeight: '700',
           padding: size > 40 ? '4px 10px' : '3px 6px',
-          borderRadius: '5px',
-          letterSpacing: '0.3px',
+          borderRadius: '6px',
+          letterSpacing: '0.5px',
           textTransform: 'uppercase',
           flexShrink: 0
         }}>Beta</span>
@@ -1889,15 +1952,15 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         position: 'fixed', top: 0, left: 0, right: 0, 
         padding: isTabletOrMobile ? '12px 20px' : '16px 40px',
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        background: isScrolled ? 'rgba(255,255,255,0.95)' : 'transparent',
+        background: isScrolled ? colors.navBg : 'transparent',
         backdropFilter: isScrolled ? 'saturate(180%) blur(20px)' : 'none',
-        borderBottom: isScrolled ? `0.5px solid ${colors.gray5}` : 'none',
+        borderBottom: isScrolled ? `0.5px solid ${colors.borderLight}` : 'none',
         transition: 'all 0.3s ease', zIndex: 1000
       }}>
         <Logo size={isTabletOrMobile ? 40 : 44} showBeta={!isTabletOrMobile} showText={!isTabletOrMobile} />
         
         {!isTabletOrMobile && (
-          <div className="desktop-nav" style={{ display: 'flex', gap: '36px', alignItems: 'center' }}>
+          <div className="desktop-nav" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
             {[
               { label: 'Products', id: 'products' },
               { label: 'Features', id: 'features' },
@@ -1907,16 +1970,61 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { label: 'Support', id: 'support' }
             ].map(item => (
               <a key={item.id} onClick={() => scrollToSection(item.id)}
-                style={{ color: colors.secondary, textDecoration: 'none', fontSize: '15px', fontWeight: '500', cursor: 'pointer' }}
+                style={{ color: colors.secondary, textDecoration: 'none', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.2s' }}
                 onMouseOver={e => e.target.style.color = colors.label}
                 onMouseOut={e => e.target.style.color = colors.secondary}>
                 {item.label}
               </a>
             ))}
+            
+            {/* Dark Mode Toggle */}
+            <button 
+              onClick={toggleDarkMode}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '12px',
+                border: `1px solid ${colors.borderLight}`,
+                background: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : colors.gray6,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '18px',
+                transition: 'all 0.2s ease'
+              }}
+              title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
+            
             <button onClick={() => handleSignIn()}
-              style={{ padding: '10px 18px', background: 'transparent', border: 'none', fontSize: '15px', color: colors.blue, cursor: 'pointer', fontWeight: '500' }}>Sign In</button>
+              style={{ padding: '10px 18px', background: 'transparent', border: 'none', fontSize: '14px', color: colors.blue, cursor: 'pointer', fontWeight: '600' }}>Sign In</button>
             <button onClick={() => handleStartTrial()} className="apple-button"
-              style={{ padding: '12px 24px', background: colors.blue, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '15px', fontWeight: '600' }}>Get Started</button>
+              style={{ padding: '12px 24px', background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)', border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '14px', fontWeight: '600', boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)' }}>Get Started</button>
+          </div>
+        )}
+        
+        {/* Mobile: Dark mode toggle + menu */}
+        {isTabletOrMobile && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button 
+              onClick={toggleDarkMode}
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '10px',
+                border: `1px solid ${colors.borderLight}`,
+                background: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : colors.gray6,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '16px'
+              }}
+            >
+              {isDarkMode ? '☀️' : '🌙'}
+            </button>
           </div>
         )}
       </nav>
@@ -3089,22 +3197,26 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
       {/* Pricing Section */}
       <section id="pricing" style={{ padding: isMobile ? '50px 16px' : '100px 40px', background: colors.gray6, overflow: 'visible' }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto', width: '100%', overflow: 'visible' }}>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', width: '100%', overflow: 'visible' }}>
           <div style={{ textAlign: 'center', marginBottom: isMobile ? '32px' : '50px' }}>
-            <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(28px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px' }}>Simple, transparent pricing</h2>
-            <p style={{ fontSize: isMobile ? 'clamp(14px, 4vw, 16px)' : 'clamp(15px, 3vw, 19px)', color: colors.secondary, marginBottom: '28px' }}>Start free. Upgrade when you're ready.</p>
+            <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(28px, 5vw, 52px)', fontWeight: '700', marginBottom: '16px', color: colors.label }}>
+              Simple, transparent pricing
+            </h2>
+            <p style={{ fontSize: isMobile ? 'clamp(14px, 4vw, 16px)' : 'clamp(15px, 3vw, 19px)', color: colors.secondary, marginBottom: '28px' }}>
+              Start free. Scale as your empire grows. Mix & match hubs.
+            </p>
             
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0', background: colors.background, padding: '4px', borderRadius: '12px', boxShadow: '0 4px 15px rgba(0,0,0,0.08)' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0', background: colors.cardBg, padding: '4px', borderRadius: '12px', boxShadow: isDarkMode ? '0 4px 15px rgba(0,0,0,0.3)' : '0 4px 15px rgba(0,0,0,0.08)' }}>
               <button onClick={() => setBillingCycle('monthly')} className="apple-button"
                 style={{
                   padding: '12px 20px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '500',
-                  background: billingCycle === 'monthly' ? colors.blue : 'transparent',
+                  background: billingCycle === 'monthly' ? '#EC4899' : 'transparent',
                   color: billingCycle === 'monthly' ? '#FFF' : colors.secondary
                 }}>Monthly</button>
               <button onClick={() => setBillingCycle('annual')} className="apple-button"
                 style={{
                   padding: '12px 20px', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '500',
-                  background: billingCycle === 'annual' ? colors.blue : 'transparent',
+                  background: billingCycle === 'annual' ? '#EC4899' : 'transparent',
                   color: billingCycle === 'annual' ? '#FFF' : colors.secondary
                 }}>
                 Annual <span style={{ background: colors.green, color: '#FFF', padding: '3px 8px', borderRadius: '8px', fontSize: '10px', marginLeft: '6px' }}>15% OFF</span>
@@ -3112,62 +3224,311 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             </div>
           </div>
           
-          <div className="pricing-grid" style={{ 
-            display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', width: '100%',
-            overflow: 'visible', paddingTop: '20px'
-          }}>
-            {[
-              { name: 'Starter', price: 0, desc: 'For getting started', features: ['Personal budgeting', '1 account', 'Basic reports', 'Mobile app'], cta: 'Get Started Free', highlighted: false, plan: 'starter', color: colors.purple, showTrial: true },
-              { name: 'Pro', price: getPricing('pro'), desc: 'For couples building wealth', features: ['Everything in Starter', '2 accounts (couples)', 'Side hustle tracking', 'FIRE calculator', 'Advanced analytics', 'Priority support'], cta: 'Start Free 14 Day Trial', highlighted: true, plan: 'pro', color: colors.blue, showTrial: false },
-              { name: 'Family', price: getPricing('family'), desc: 'For the whole household', features: ['Everything in Pro', 'Up to 5 members', 'Shared goals', 'Investment tracking', 'RE portfolio tools'], cta: 'Start Free 14 Day Trial', highlighted: false, plan: 'family', color: colors.pink, showTrial: false }
-            ].map((plan, i) => (
-              <div key={i} className="hover-lift pricing-card" style={{
-                background: plan.highlighted ? colors.blue : '#FFFFFF',
-                color: plan.highlighted ? '#FFF' : colors.label,
-                borderRadius: '20px', 
-                padding: isMobile ? '24px' : 'clamp(24px, 4vw, 40px)', 
+          {/* HomeBudget Hub Section */}
+          <div style={{ marginBottom: '48px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px', justifyContent: 'center' }}>
+              <div style={{
+                width: '40px', height: '40px', borderRadius: '12px',
+                background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px'
+              }}>🏠</div>
+              <h3 style={{ fontSize: '24px', fontWeight: '700', color: colors.label }}>HomeBudget Hub</h3>
+              <span style={{ background: '#D1FAE5', color: '#059669', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>AVAILABLE NOW</span>
+            </div>
+            
+            <div className="pricing-grid" style={{ 
+              display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap', width: '100%',
+              overflow: 'visible', paddingTop: '20px'
+            }}>
+              {/* Starter - Free */}
+              <div className="hover-lift pricing-card" style={{
+                background: colors.cardBg,
+                color: colors.label,
+                borderRadius: '24px', 
+                padding: isMobile ? '24px' : '32px', 
                 flex: '1 1 280px', 
-                maxWidth: isMobile ? '100%' : '380px',
-                minWidth: isMobile ? 'auto' : '280px',
-                boxShadow: plan.highlighted ? `0 20px 40px ${colors.blue}40` : '0 4px 20px rgba(0,0,0,0.1)',
-                transform: plan.highlighted && !isMobile ? 'scale(1.02)' : 'none', 
+                maxWidth: isMobile ? '100%' : '340px',
+                boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.08)',
                 position: 'relative',
-                border: plan.highlighted ? 'none' : `1px solid ${colors.gray5}`,
-                borderTop: !plan.highlighted ? `4px solid ${plan.color}` : 'none',
-                overflow: 'visible'
+                border: `1px solid ${colors.borderLight}`,
+                borderTop: '4px solid #EC4899'
               }}>
-                {plan.highlighted && (
-                  <div style={{ 
-                    position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', 
-                    background: colors.orange, padding: '6px 16px', borderRadius: '12px', 
-                    fontSize: '12px', fontWeight: '600', color: '#FFF', whiteSpace: 'nowrap', zIndex: 10,
-                    boxShadow: '0 2px 8px rgba(255, 149, 0, 0.3)'
-                  }}>Most Popular</div>
-                )}
-                <div style={{ fontSize: isMobile ? '18px' : 'clamp(18px, 3vw, 22px)', fontWeight: '600', marginBottom: '8px', marginTop: plan.highlighted ? '8px' : '0' }}>{plan.name}</div>
-                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: isMobile ? 'clamp(32px, 10vw, 44px)' : 'clamp(36px, 6vw, 52px)', fontWeight: '700' }}>{plan.price === 0 ? 'Free' : `$${plan.price.toFixed(2)}`}</span>
-                  {plan.price > 0 && <span style={{ fontSize: isMobile ? '14px' : 'clamp(14px, 2vw, 18px)', opacity: 0.8 }}>/mo</span>}
-                  {plan.showTrial && (
-                    <span style={{ background: `${colors.green}20`, color: colors.green, padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '600' }}>🎁 14-day trial</span>
-                  )}
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#EC4899', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>STARTER</div>
+                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: colors.label }}>Get Your Feet Wet</div>
+                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '44px', fontWeight: '700', color: colors.label }}>Free</span>
+                  <span style={{ background: '#FEF3C7', color: '#D97706', padding: '4px 10px', borderRadius: '8px', fontSize: '11px', fontWeight: '600' }}>14-day trial</span>
                 </div>
-                <div style={{ fontSize: isMobile ? '13px' : 'clamp(13px, 2vw, 15px)', opacity: 0.8, marginBottom: '24px' }}>{plan.desc}</div>
+                <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '24px' }}>Perfect for exploring your finances</div>
                 <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0' }}>
-                  {plan.features.map((f, j) => (
-                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: isMobile ? '13px' : 'clamp(13px, 2vw, 15px)' }}>
-                      <span style={{ color: plan.highlighted ? '#FFF' : colors.green, fontSize: '14px', flexShrink: 0 }}>✓</span><span>{f}</span>
+                  {[
+                    '1 User',
+                    'Dashboard overview',
+                    'Basic budget tracking',
+                    'Limited transactions (50/mo)',
+                    'Bill reminders (3 bills)',
+                    'Mobile app access'
+                  ].map((f, j) => (
+                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '14px', color: colors.secondary }}>
+                      <span style={{ color: '#EC4899', fontSize: '14px', flexShrink: 0 }}>✓</span><span>{f}</span>
                     </li>
                   ))}
                 </ul>
-                <button onClick={() => handleStartTrial(plan.plan)} className="apple-button"
+                <button onClick={() => handleStartTrial('starter')} className="apple-button"
                   style={{
                     width: '100%', padding: '16px', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600',
-                    background: plan.highlighted ? '#FFF' : colors.blue,
-                    color: plan.highlighted ? colors.blue : '#FFF', minHeight: '44px'
-                  }}>{plan.cta}</button>
+                    background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                    color: '#FFF'
+                  }}>Start Free Trial</button>
               </div>
-            ))}
+
+              {/* Pro - Full Access */}
+              <div className="hover-lift pricing-card" style={{
+                background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                color: '#FFF',
+                borderRadius: '24px', 
+                padding: isMobile ? '24px' : '32px', 
+                flex: '1 1 280px', 
+                maxWidth: isMobile ? '100%' : '340px',
+                boxShadow: '0 20px 40px rgba(236, 72, 153, 0.35)',
+                transform: !isMobile ? 'scale(1.03)' : 'none', 
+                position: 'relative',
+                overflow: 'visible'
+              }}>
+                <div style={{ 
+                  position: 'absolute', top: '-14px', left: '50%', transform: 'translateX(-50%)', 
+                  background: '#FBBF24', padding: '6px 16px', borderRadius: '12px', 
+                  fontSize: '12px', fontWeight: '700', color: '#1a1a1a', whiteSpace: 'nowrap', zIndex: 10,
+                  boxShadow: '0 2px 8px rgba(251, 191, 36, 0.4)'
+                }}>⭐ Most Popular</div>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: 'rgba(255,255,255,0.9)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px', marginTop: '8px' }}>PRO</div>
+                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>Full Power Mode</div>
+                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '44px', fontWeight: '700' }}>${billingCycle === 'annual' ? '8.49' : '9.99'}</span>
+                  <span style={{ fontSize: '16px', opacity: 0.9 }}>/mo</span>
+                </div>
+                <div style={{ fontSize: '14px', opacity: 0.9, marginBottom: '24px' }}>For couples crushing their goals</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0' }}>
+                  {[
+                    '2 Users (perfect for couples)',
+                    'Unlimited transactions',
+                    'Full budget & expense tracking',
+                    'Side hustle sales tracker',
+                    'Unlimited bill reminders',
+                    'Savings goals & progress',
+                    'FIRE retirement calculator',
+                    'Advanced reports & analytics',
+                    'Priority support'
+                  ].map((f, j) => (
+                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px', fontSize: '14px' }}>
+                      <span style={{ color: '#FFF', fontSize: '14px', flexShrink: 0 }}>✓</span><span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={() => handleStartTrial('pro')} className="apple-button"
+                  style={{
+                    width: '100%', padding: '16px', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600',
+                    background: '#FFF',
+                    color: '#DB2777'
+                  }}>Start 14-Day Free Trial</button>
+              </div>
+
+              {/* Family */}
+              <div className="hover-lift pricing-card" style={{
+                background: colors.cardBg,
+                color: colors.label,
+                borderRadius: '24px', 
+                padding: isMobile ? '24px' : '32px', 
+                flex: '1 1 280px', 
+                maxWidth: isMobile ? '100%' : '340px',
+                boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.08)',
+                position: 'relative',
+                border: `1px solid ${colors.borderLight}`,
+                borderTop: '4px solid #EC4899'
+              }}>
+                <div style={{ fontSize: '12px', fontWeight: '700', color: '#EC4899', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>FAMILY</div>
+                <div style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px', color: colors.label }}>Whole Household</div>
+                <div style={{ marginBottom: '8px', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '44px', fontWeight: '700', color: colors.label }}>${billingCycle === 'annual' ? '12.74' : '14.99'}</span>
+                  <span style={{ fontSize: '16px', color: colors.secondary }}>/mo</span>
+                </div>
+                <div style={{ fontSize: '14px', color: colors.secondary, marginBottom: '24px' }}>For families building together</div>
+                <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 24px 0' }}>
+                  {[
+                    'Up to 5 family members',
+                    'Everything in Pro',
+                    'Shared family goals',
+                    'Kids\' allowance tracking',
+                    'Family spending reports',
+                    'Multi-account views'
+                  ].map((f, j) => (
+                    <li key={j} style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px', fontSize: '14px', color: colors.secondary }}>
+                      <span style={{ color: '#EC4899', fontSize: '14px', flexShrink: 0 }}>✓</span><span>{f}</span>
+                    </li>
+                  ))}
+                </ul>
+                <button onClick={() => handleStartTrial('family')} className="apple-button"
+                  style={{
+                    width: '100%', padding: '16px', border: 'none', borderRadius: '12px', fontSize: '15px', fontWeight: '600',
+                    background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
+                    color: '#FFF'
+                  }}>Start 14-Day Free Trial</button>
+              </div>
+            </div>
+          </div>
+
+          {/* Coming Soon Hubs */}
+          <div style={{ marginTop: '60px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', color: colors.label, marginBottom: '8px' }}>Expand Your Empire</h3>
+              <p style={{ fontSize: '15px', color: colors.secondary }}>Add more hubs as your business grows. Bundle & save.</p>
+            </div>
+
+            <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              {/* BizBudget Hub */}
+              <div className="hover-lift" style={{
+                background: colors.cardBg,
+                borderRadius: '24px',
+                padding: '28px',
+                flex: '1 1 300px',
+                maxWidth: '400px',
+                border: `1px solid ${colors.borderLight}`,
+                borderTop: '4px solid #A78BFA',
+                position: 'relative',
+                opacity: 0.9
+              }}>
+                <div style={{
+                  position: 'absolute', top: '-12px', right: '20px',
+                  background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
+                  color: '#FFF', padding: '5px 14px', borderRadius: '12px',
+                  fontSize: '11px', fontWeight: '700'
+                }}>COMING SOON</div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px'
+                  }}>💼</div>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: colors.label }}>BizBudget Hub</div>
+                    <div style={{ fontSize: '13px', color: colors.secondary }}>Small Business Command Center</div>
+                  </div>
+                </div>
+                
+                <p style={{ fontSize: '14px', color: colors.secondary, marginBottom: '20px', lineHeight: 1.6 }}>
+                  You made the leap—now scale it. Revenue planning, 1099 contractor management, self-employment taxes, and KPIs built for full-time entrepreneurs.
+                </p>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                  {['Revenue Planning', '1099 Management', 'Tax Estimator', 'Business KPIs'].map((f, i) => (
+                    <span key={i} style={{
+                      background: '#A78BFA20', color: '#8B5CF6',
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '500'
+                    }}>{f}</span>
+                  ))}
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isDarkMode ? 'rgba(167, 139, 250, 0.1)' : '#F5F3FF', borderRadius: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#8B5CF6' }}>${billingCycle === 'annual' ? '8.49' : '9.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
+                    <div style={{ fontSize: '12px', color: colors.secondary }}>or bundle with HomeBudget</div>
+                  </div>
+                  <button style={{
+                    padding: '10px 20px', borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #A78BFA 0%, #8B5CF6 100%)',
+                    color: '#FFF', border: 'none', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
+                  }}>Join Waitlist</button>
+                </div>
+              </div>
+
+              {/* REBudget Hub */}
+              <div className="hover-lift" style={{
+                background: colors.cardBg,
+                borderRadius: '24px',
+                padding: '28px',
+                flex: '1 1 300px',
+                maxWidth: '400px',
+                border: `1px solid ${colors.borderLight}`,
+                borderTop: '4px solid #818CF8',
+                position: 'relative',
+                opacity: 0.9
+              }}>
+                <div style={{
+                  position: 'absolute', top: '-12px', right: '20px',
+                  background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+                  color: '#FFF', padding: '5px 14px', borderRadius: '12px',
+                  fontSize: '11px', fontWeight: '700'
+                }}>COMING SOON</div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                  <div style={{
+                    width: '48px', height: '48px', borderRadius: '14px',
+                    background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px'
+                  }}>🏢</div>
+                  <div>
+                    <div style={{ fontSize: '18px', fontWeight: '700', color: colors.label }}>REBudget Hub</div>
+                    <div style={{ fontSize: '13px', color: colors.secondary }}>Real Estate Investor Toolkit</div>
+                  </div>
+                </div>
+                
+                <p style={{ fontSize: '14px', color: colors.secondary, marginBottom: '20px', lineHeight: 1.6 }}>
+                  Build wealth that works while you sleep. Analyze deals in seconds, track cash flow, and keep your books CPA-ready—all from one dashboard.
+                </p>
+                
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '20px' }}>
+                  {['Deal Analyzer', 'Cash Flow Tracking', 'Portfolio Metrics', 'CPA Reports'].map((f, i) => (
+                    <span key={i} style={{
+                      background: '#818CF820', color: '#6366F1',
+                      padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '500'
+                    }}>{f}</span>
+                  ))}
+                </div>
+                
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px', background: isDarkMode ? 'rgba(129, 140, 248, 0.1)' : '#EEF2FF', borderRadius: '12px' }}>
+                  <div>
+                    <div style={{ fontSize: '24px', fontWeight: '700', color: '#6366F1' }}>${billingCycle === 'annual' ? '8.49' : '9.99'}<span style={{ fontSize: '14px', fontWeight: '500' }}>/mo</span></div>
+                    <div style={{ fontSize: '12px', color: colors.secondary }}>or bundle with HomeBudget</div>
+                  </div>
+                  <button style={{
+                    padding: '10px 20px', borderRadius: '10px',
+                    background: 'linear-gradient(135deg, #818CF8 0%, #6366F1 100%)',
+                    color: '#FFF', border: 'none', fontSize: '13px', fontWeight: '600', cursor: 'pointer'
+                  }}>Join Waitlist</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Bundle Teaser */}
+            <div style={{ 
+              marginTop: '40px', 
+              textAlign: 'center',
+              padding: '32px',
+              background: isDarkMode 
+                ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(99, 102, 241, 0.1) 100%)'
+                : 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)',
+              borderRadius: '20px',
+              border: `1px solid ${colors.borderLight}`
+            }}>
+              <div style={{ fontSize: '28px', marginBottom: '12px' }}>🎁</div>
+              <h4 style={{ fontSize: '20px', fontWeight: '700', color: colors.label, marginBottom: '8px' }}>Bundle & Save Up to 30%</h4>
+              <p style={{ fontSize: '15px', color: colors.secondary, maxWidth: '500px', margin: '0 auto 20px' }}>
+                Combine HomeBudget + BizBudget + REBudget for the ultimate financial command center. Perfect for the entrepreneur building their empire.
+              </p>
+              <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <div style={{ background: colors.cardBg, padding: '12px 20px', borderRadius: '12px', border: `1px solid ${colors.borderLight}` }}>
+                  <div style={{ fontSize: '13px', color: colors.secondary }}>2-Hub Bundle</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700', color: colors.label }}>$16.99<span style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary }}>/mo</span></div>
+                  <div style={{ fontSize: '11px', color: '#10B981' }}>Save 15%</div>
+                </div>
+                <div style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', padding: '12px 20px', borderRadius: '12px', color: '#FFF' }}>
+                  <div style={{ fontSize: '13px', opacity: 0.9 }}>All 3 Hubs</div>
+                  <div style={{ fontSize: '18px', fontWeight: '700' }}>$20.99<span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.8 }}>/mo</span></div>
+                  <div style={{ fontSize: '11px', color: '#34D399' }}>Save 30% 🔥</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
