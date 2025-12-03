@@ -137,6 +137,27 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
     'Rory': '#10B981'
   };
 
+  // Calculate returns by owner (weighted average based on account values)
+  const getOwnerReturns = (owner) => {
+    const ownerAccounts = accounts.filter(a => a.owner === owner && a.ytdReturn !== undefined);
+    if (ownerAccounts.length === 0) return summary; // Return overall summary if no specific data
+    
+    const totalValue = ownerAccounts.reduce((sum, a) => sum + a.value, 0);
+    const weightedYtd = ownerAccounts.reduce((sum, a) => sum + (a.ytdReturn * a.value / totalValue), 0);
+    
+    // Estimate other returns based on YTD ratio
+    const ratio = weightedYtd / summary.ytdReturn;
+    return {
+      ytdReturn: weightedYtd.toFixed(2),
+      oneYearReturn: (summary.oneYearReturn * ratio).toFixed(2),
+      threeYearReturn: (summary.threeYearReturn * ratio).toFixed(2),
+      fiveYearReturn: (summary.fiveYearReturn * ratio).toFixed(2)
+    };
+  };
+  
+  // Get returns based on selection
+  const displayReturns = selectedOwner === 'all' ? summary : getOwnerReturns(selectedOwner);
+
   // Type colors
   const typeColors = {
     'advisory': '#8B5CF6',
@@ -303,6 +324,85 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
         ))}
       </div>
 
+      {/* Investment Rate of Return Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+        <div style={{
+          background: theme.mode === 'dark' ? 'linear-gradient(135deg, #14532D 0%, #115E2B 100%)' : 'linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(76, 175, 80, 0.15)',
+          border: `1px solid ${theme.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📊</span>
+            <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32', fontWeight: '500' }}>YTD Return</span>
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#E8F5E9' : '#1B5E20' }}>
+            +{displayReturns.ytdReturn}%
+          </div>
+          <div style={{ fontSize: '11px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32', marginTop: '4px' }}>
+            {selectedOwner === 'all' ? 'All Members' : selectedOwner}
+          </div>
+        </div>
+        
+        <div style={{
+          background: theme.mode === 'dark' ? 'linear-gradient(135deg, #164E63 0%, #0E4A5C 100%)' : 'linear-gradient(135deg, #E0F7FA 0%, #B2EBF2 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(0, 188, 212, 0.15)',
+          border: `1px solid ${theme.mode === 'dark' ? 'rgba(0, 188, 212, 0.3)' : 'rgba(0, 188, 212, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '16px' }}>📈</span>
+            <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#67E8F9' : '#00838F', fontWeight: '500' }}>1-Year Return</span>
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#E0F7FA' : '#006064' }}>
+            +{displayReturns.oneYearReturn}%
+          </div>
+          <div style={{ fontSize: '11px', color: theme.mode === 'dark' ? '#67E8F9' : '#00838F', marginTop: '4px' }}>
+            {selectedOwner === 'all' ? 'All Members' : selectedOwner}
+          </div>
+        </div>
+        
+        <div style={{
+          background: theme.mode === 'dark' ? 'linear-gradient(135deg, #4A1D6B 0%, #3D1A5A 100%)' : 'linear-gradient(135deg, #F3E5F5 0%, #E1BEE7 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(156, 39, 176, 0.15)',
+          border: `1px solid ${theme.mode === 'dark' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(156, 39, 176, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '16px' }}>🎯</span>
+            <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2', fontWeight: '500' }}>3-Year Return</span>
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#F3E5F5' : '#4A148C' }}>
+            +{displayReturns.threeYearReturn}%
+          </div>
+          <div style={{ fontSize: '11px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2', marginTop: '4px' }}>
+            {selectedOwner === 'all' ? 'All Members' : selectedOwner}
+          </div>
+        </div>
+        
+        <div style={{
+          background: theme.mode === 'dark' ? 'linear-gradient(135deg, #7C2D12 0%, #6B2A0F 100%)' : 'linear-gradient(135deg, #FFF3E0 0%, #FFE0B2 100%)',
+          borderRadius: '16px',
+          padding: '20px',
+          boxShadow: '0 4px 20px rgba(255, 152, 0, 0.15)',
+          border: `1px solid ${theme.mode === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)'}`
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+            <span style={{ fontSize: '16px' }}>🏆</span>
+            <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100', fontWeight: '500' }}>5-Year Return</span>
+          </div>
+          <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#FFF3E0' : '#BF360C' }}>
+            +{displayReturns.fiveYearReturn}%
+          </div>
+          <div style={{ fontSize: '11px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100', marginTop: '4px' }}>
+            {selectedOwner === 'all' ? 'All Members' : selectedOwner}
+          </div>
+        </div>
+      </div>
+
       {activeView === 'overview' && (
         <>
           {/* Portfolio Growth Chart */}
@@ -321,14 +421,14 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
               </span>
             </h3>
             
-            <div style={{ height: '220px', position: 'relative' }}>
-              <svg width="100%" height="100%" viewBox="0 0 600 220" preserveAspectRatio="none">
+            <div style={{ height: '300px', position: 'relative' }}>
+              <svg width="100%" height="100%" viewBox="0 0 700 280" preserveAspectRatio="xMidYMid meet" style={{ overflow: 'visible' }}>
                 {/* Grid lines */}
                 {[0, 1, 2, 3, 4].map(i => (
                   <line 
                     key={i}
-                    x1="50" y1={40 + i * 40} 
-                    x2="580" y2={40 + i * 40} 
+                    x1="60" y1={50 + i * 45} 
+                    x2="680" y2={50 + i * 45} 
                     stroke={theme.borderLight} 
                     strokeWidth="1"
                     strokeDasharray="4,4"
@@ -336,11 +436,11 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
                 ))}
                 
                 {/* Y-axis labels */}
-                <text x="45" y="45" fill={theme.textMuted} fontSize="10" textAnchor="end">$300K</text>
-                <text x="45" y="85" fill={theme.textMuted} fontSize="10" textAnchor="end">$250K</text>
-                <text x="45" y="125" fill={theme.textMuted} fontSize="10" textAnchor="end">$200K</text>
-                <text x="45" y="165" fill={theme.textMuted} fontSize="10" textAnchor="end">$150K</text>
-                <text x="45" y="205" fill={theme.textMuted} fontSize="10" textAnchor="end">$100K</text>
+                <text x="55" y="55" fill={theme.textMuted} fontSize="11" textAnchor="end">$300K</text>
+                <text x="55" y="100" fill={theme.textMuted} fontSize="11" textAnchor="end">$250K</text>
+                <text x="55" y="145" fill={theme.textMuted} fontSize="11" textAnchor="end">$200K</text>
+                <text x="55" y="190" fill={theme.textMuted} fontSize="11" textAnchor="end">$150K</text>
+                <text x="55" y="235" fill={theme.textMuted} fontSize="11" textAnchor="end">$100K</text>
                 
                 {/* Area fill */}
                 <defs>
@@ -352,22 +452,22 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
                 
                 {/* Area path */}
                 <path
-                  d={`M 80 ${200 - ((chartData[0]?.endingBalance || 160000) - 100000) / 1250} 
+                  d={`M 90 ${230 - ((chartData[0]?.endingBalance || 160000) - 100000) / 1100} 
                       ${chartData.map((d, i) => {
-                        const x = 80 + i * 100;
-                        const y = 200 - ((d.endingBalance - 100000) / 1250);
+                        const x = 90 + i * 100;
+                        const y = 230 - ((d.endingBalance - 100000) / 1100);
                         return `L ${x} ${y}`;
                       }).join(' ')} 
-                      L ${80 + (chartData.length - 1) * 100} 200 L 80 200 Z`}
+                      L ${90 + (chartData.length - 1) * 100} 230 L 90 230 Z`}
                   fill="url(#areaGradient)"
                 />
                 
                 {/* Line path */}
                 <path
-                  d={`M 80 ${200 - ((chartData[0]?.endingBalance || 160000) - 100000) / 1250} 
+                  d={`M 90 ${230 - ((chartData[0]?.endingBalance || 160000) - 100000) / 1100} 
                       ${chartData.map((d, i) => {
-                        const x = 80 + i * 100;
-                        const y = 200 - ((d.endingBalance - 100000) / 1250);
+                        const x = 90 + i * 100;
+                        const y = 230 - ((d.endingBalance - 100000) / 1100);
                         return `L ${x} ${y}`;
                       }).join(' ')}`}
                   fill="none"
@@ -379,12 +479,12 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
                 
                 {/* Data points */}
                 {chartData.map((d, i) => {
-                  const x = 80 + i * 100;
-                  const y = 200 - ((d.endingBalance - 100000) / 1250);
+                  const x = 90 + i * 100;
+                  const y = 230 - ((d.endingBalance - 100000) / 1100);
                   return (
                     <g key={i}>
-                      <circle cx={x} cy={y} r="6" fill={theme.bgCard} stroke={theme.primary} strokeWidth="3" />
-                      <text x={x} y="218" fill={theme.textMuted} fontSize="10" textAnchor="middle">
+                      <circle cx={x} cy={y} r="8" fill={theme.bgCard} stroke={theme.primary} strokeWidth="3" />
+                      <text x={x} y="260" fill={theme.textMuted} fontSize="12" textAnchor="middle" fontWeight="500">
                         {d.month.split(' ')[0].substring(0, 3)}
                       </text>
                     </g>
@@ -690,48 +790,6 @@ export default function RetirementTab({ theme: propTheme, retirementData }) {
           </div>
         </div>
       )}
-
-      {/* Performance Summary Footer */}
-      <div style={{
-        marginTop: '24px',
-        background: isDark ? 'rgba(139, 92, 246, 0.1)' : 'linear-gradient(135deg, #EEF2FF 0%, #FDF4FF 100%)',
-        borderRadius: '16px',
-        padding: '20px 24px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        border: `1px solid ${isDark ? 'rgba(139, 92, 246, 0.2)' : '#E0E7FF'}`,
-        flexWrap: 'wrap',
-        gap: '16px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span style={{ fontSize: '24px' }}>🎯</span>
-          <div>
-            <div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Investment Rate of Return</div>
-            <div style={{ fontSize: '12px', color: theme.textMuted }}>Based on IRR methodology</div>
-          </div>
-        </div>
-        <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap' }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>YTD</div>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: theme.success }}>+{summary.ytdReturn}%</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>1-Year</div>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: theme.success }}>+{summary.oneYearReturn}%</div>
-          </div>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>3-Year</div>
-            <div style={{ fontSize: '20px', fontWeight: '700', color: theme.success }}>+{summary.threeYearReturn}%</div>
-          </div>
-          {summary.fiveYearReturn && (
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>5-Year</div>
-              <div style={{ fontSize: '20px', fontWeight: '700', color: theme.success }}>+{summary.fiveYearReturn}%</div>
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }
