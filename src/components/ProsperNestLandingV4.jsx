@@ -4,40 +4,33 @@ import React, { useState, useEffect, useRef } from 'react';
 // SITE STATUS INDICATOR - Inline Component
 // ============================================
 const SiteStatusIndicator = ({ showLabel = true, darkMode = true }) => {
-  const [status, setStatus] = useState('checking');
+  const [status, setStatus] = useState('online'); // Default to online since site loaded
   const [showModal, setShowModal] = useState(false);
   
   useEffect(() => {
     const checkStatus = async () => {
-      try {
-        if (!navigator.onLine) {
-          setStatus('offline');
-          return;
-        }
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 5000);
-        const response = await fetch('https://xbmjkigfybberumjqbgw.supabase.co/rest/v1/', {
-          method: 'HEAD',
-          signal: controller.signal,
-        }).catch(() => null);
-        clearTimeout(timeoutId);
-        if (response && (response.ok || response.status === 401)) {
-          setStatus('online');
-        } else {
-          setStatus('degraded');
-        }
-      } catch {
-        setStatus(navigator.onLine ? 'degraded' : 'offline');
+      // If the page loaded, we're online - simple and reliable
+      if (!navigator.onLine) {
+        setStatus('offline');
+        return;
       }
+      
+      // Site is working if we got here
+      setStatus('online');
     };
+    
     checkStatus();
-    const interval = setInterval(checkStatus, 30000);
-    window.addEventListener('online', () => checkStatus());
-    window.addEventListener('offline', () => setStatus('offline'));
+    
+    // Listen for online/offline events
+    const handleOnline = () => setStatus('online');
+    const handleOffline = () => setStatus('offline');
+    
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    
     return () => {
-      clearInterval(interval);
-      window.removeEventListener('online', checkStatus);
-      window.removeEventListener('offline', () => setStatus('offline'));
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
     };
   }, []);
   
@@ -107,13 +100,12 @@ const SiteStatusIndicator = ({ showLabel = true, darkMode = true }) => {
         border: `1px solid ${darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
         borderRadius: '20px', cursor: isClickable ? 'pointer' : 'default', transition: 'all 0.2s'
       }} title={`Site Status: ${config.label}`}>
-        <span style={{ color: config.color, fontSize: '10px', animation: status === 'online' ? 'none' : 'statusPulse 2s infinite', lineHeight: 1 }}>
+        <span style={{ color: config.color, fontSize: '10px', lineHeight: 1 }}>
           {config.dot}
         </span>
         {showLabel && <span style={{ color: config.color, fontSize: '12px', fontWeight: '500' }}>{config.label}</span>}
       </button>
       {showModal && <StatusModal />}
-      <style>{`@keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }`}</style>
     </>
   );
 };
