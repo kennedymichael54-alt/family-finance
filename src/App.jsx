@@ -2287,6 +2287,8 @@ function Dashboard({
   const [previousTab, setPreviousTab] = useState('home');
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notificationsDismissed, setNotificationsDismissed] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState(() => {
@@ -2425,22 +2427,57 @@ function Dashboard({
 
   const handleSignOut = async () => {
     console.log('🚪 [Auth] Signing out...');
+    
+    // Close any open menus first
+    setShowProfileMenu(false);
+    
     try {
       // Clear our session backup
       saveSession(null);
       
-      // Clear any old storage keys
-      localStorage.removeItem('pn_sb_auth');
-      localStorage.removeItem('sb-auth-token');
-      localStorage.removeItem('pn_supabase_session');
+      // Clear ALL storage keys related to session
+      const keysToRemove = [
+        'pn_sb_auth',
+        'sb-auth-token', 
+        'pn_supabase_session',
+        SESSION_KEY,
+        SESSION_EXPIRY_KEY,
+        SESSION_BACKUP_KEY
+      ];
+      keysToRemove.forEach(key => {
+        try { localStorage.removeItem(key); } catch(e) {}
+      });
       
       const sb = await initSupabase();
       if (sb) {
         await sb.auth.signOut();
         console.log('✅ [Auth] Signed out successfully');
       }
+      
+      // Force state reset and navigation to landing
+      setUser(null);
+      setView('landing');
+      setTransactions([]);
+      setBills([]);
+      setGoals([]);
+      setTasks([]);
+      setProfile({
+        firstName: '',
+        lastName: '',
+        email: '',
+        phone: '',
+        dateOfBirth: '',
+        gender: '',
+        photoUrl: '',
+        sidehustleName: ''
+      });
+      
+      console.log('✅ [Auth] State cleared, navigating to landing');
     } catch (err) {
       console.error('❌ [Auth] Sign out error:', err);
+      // Force navigation even on error
+      setUser(null);
+      setView('landing');
     }
   };
 
@@ -2920,10 +2957,10 @@ function Dashboard({
           top: 0,
           zIndex: 50
         }}>
-          {/* Search Bar - Clean Style (Image 3) */}
+          {/* Search Bar - With Results Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, minWidth: 0 }}>
             <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-              <div style={{ position: 'absolute', left: '16px', color: theme.textMuted }}>
+              <div style={{ position: 'absolute', left: '16px', color: theme.textMuted, zIndex: 2 }}>
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                   <circle cx="11" cy="11" r="8"/>
                   <line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -2931,11 +2968,12 @@ function Dashboard({
               </div>
               <input
                 type="text"
-                placeholder="Search here..."
+                placeholder="Search transactions, goals, bills..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery && setShowSearchResults(true)}
                 style={{
-                  width: '240px',
+                  width: '320px',
                   height: '44px',
                   background: theme.bgCard,
                   border: `1px solid ${theme.borderLight}`,
@@ -2947,6 +2985,278 @@ function Dashboard({
                   boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
                 }}
               />
+              {searchQuery && (
+                <button
+                  onClick={() => { setSearchQuery(''); setShowSearchResults(false); }}
+                  style={{
+                    position: 'absolute',
+                    right: '12px',
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                    color: theme.textMuted,
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                </button>
+              )}
+              
+              {/* Search Results Dropdown */}
+              {searchQuery && showSearchResults && (
+                <div style={{
+                  position: 'absolute',
+                  top: 'calc(100% + 8px)',
+                  left: 0,
+                  width: '400px',
+                  maxHeight: '450px',
+                  overflowY: 'auto',
+                  background: theme.dropdownBg,
+                  borderRadius: '12px',
+                  boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
+                  border: `1px solid ${theme.border}`,
+                  zIndex: 200
+                }}>
+                  {(() => {
+                    const query = searchQuery.toLowerCase();
+                    
+                    // Search transactions
+                    const matchedTransactions = transactions.filter(t => 
+                      t.description?.toLowerCase().includes(query) ||
+                      t.category?.toLowerCase().includes(query) ||
+                      t.amount?.toString().includes(query)
+                    ).slice(0, 5);
+                    
+                    // Search goals
+                    const matchedGoals = goals.filter(g => 
+                      g.name?.toLowerCase().includes(query)
+                    ).slice(0, 3);
+                    
+                    // Search bills
+                    const matchedBills = bills.filter(b => 
+                      b.name?.toLowerCase().includes(query) ||
+                      b.category?.toLowerCase().includes(query)
+                    ).slice(0, 3);
+                    
+                    // Search tasks
+                    const matchedTasks = (tasks || []).filter(t => 
+                      t.title?.toLowerCase().includes(query) ||
+                      t.description?.toLowerCase().includes(query)
+                    ).slice(0, 3);
+                    
+                    // Navigation items
+                    const navMatches = [
+                      { id: 'home', label: 'Dashboard', icon: '📊', keywords: ['dashboard', 'home', 'overview'] },
+                      { id: 'sales', label: 'Sales Tracker', icon: '📈', keywords: ['sales', 'revenue', 'income tracking'] },
+                      { id: 'budget', label: 'Budget', icon: '💰', keywords: ['budget', 'spending', 'allocation'] },
+                      { id: 'transactions', label: 'Transactions', icon: '💳', keywords: ['transactions', 'payments', 'history'] },
+                      { id: 'bills', label: 'Bills', icon: '📄', keywords: ['bills', 'utilities', 'payments due'] },
+                      { id: 'goals', label: 'Goals', icon: '🎯', keywords: ['goals', 'savings', 'targets'] },
+                      { id: 'tasks', label: 'Tasks', icon: '✅', keywords: ['tasks', 'todo', 'to-do'] },
+                      { id: 'retirement', label: 'Retirement', icon: '🏖️', keywords: ['retirement', '401k', 'pension'] },
+                      { id: 'reports', label: 'Reports', icon: '📋', keywords: ['reports', 'analytics', 'summary'] },
+                      { id: 'settings', label: 'Settings', icon: '⚙️', keywords: ['settings', 'preferences', 'account'] },
+                      { id: 'import', label: 'Import Data', icon: '📥', keywords: ['import', 'upload', 'csv'] }
+                    ].filter(nav => 
+                      nav.label.toLowerCase().includes(query) ||
+                      nav.keywords.some(k => k.includes(query))
+                    );
+                    
+                    const hasResults = matchedTransactions.length || matchedGoals.length || matchedBills.length || matchedTasks.length || navMatches.length;
+                    
+                    if (!hasResults) {
+                      return (
+                        <div style={{ padding: '32px', textAlign: 'center', color: theme.textMuted }}>
+                          <span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>🔍</span>
+                          No results found for "{searchQuery}"
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        {/* Navigation Results */}
+                        {navMatches.length > 0 && (
+                          <div>
+                            <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', background: theme.bgMain }}>
+                              Pages
+                            </div>
+                            {navMatches.map((nav, i) => (
+                              <div
+                                key={nav.id}
+                                onClick={() => { setActiveTab(nav.id); setSearchQuery(''); setShowSearchResults(false); }}
+                                style={{
+                                  padding: '12px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  cursor: 'pointer',
+                                  borderBottom: `1px solid ${theme.borderLight}`,
+                                  transition: 'background 0.15s'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = theme.bgMain}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <span style={{ fontSize: '20px' }}>{nav.icon}</span>
+                                <div>
+                                  <div style={{ fontWeight: '500', color: theme.textPrimary }}>{nav.label}</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>Navigate to {nav.label}</div>
+                                </div>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" style={{ marginLeft: 'auto' }}>
+                                  <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Transaction Results */}
+                        {matchedTransactions.length > 0 && (
+                          <div>
+                            <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', background: theme.bgMain }}>
+                              Transactions ({matchedTransactions.length})
+                            </div>
+                            {matchedTransactions.map((txn, i) => (
+                              <div
+                                key={i}
+                                onClick={() => { setActiveTab('transactions'); setSearchQuery(''); setShowSearchResults(false); }}
+                                style={{
+                                  padding: '12px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  cursor: 'pointer',
+                                  borderBottom: `1px solid ${theme.borderLight}`
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = theme.bgMain}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: parseFloat(txn.amount) >= 0 ? '#10B98115' : '#EF444415', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                                  {parseFloat(txn.amount) >= 0 ? '💰' : '💳'}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '500', color: theme.textPrimary }}>{txn.description}</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>{txn.category} • {new Date(txn.date).toLocaleDateString()}</div>
+                                </div>
+                                <div style={{ fontWeight: '600', color: parseFloat(txn.amount) >= 0 ? '#10B981' : '#EF4444' }}>
+                                  {parseFloat(txn.amount) >= 0 ? '+' : ''}{formatCurrency(txn.amount)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Goals Results */}
+                        {matchedGoals.length > 0 && (
+                          <div>
+                            <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', background: theme.bgMain }}>
+                              Goals ({matchedGoals.length})
+                            </div>
+                            {matchedGoals.map((goal, i) => (
+                              <div
+                                key={i}
+                                onClick={() => { setActiveTab('goals'); setSearchQuery(''); setShowSearchResults(false); }}
+                                style={{
+                                  padding: '12px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  cursor: 'pointer',
+                                  borderBottom: `1px solid ${theme.borderLight}`
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = theme.bgMain}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#6366F115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                                  {goal.icon || '🎯'}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '500', color: theme.textPrimary }}>{goal.name}</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}% complete</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Bills Results */}
+                        {matchedBills.length > 0 && (
+                          <div>
+                            <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', background: theme.bgMain }}>
+                              Bills ({matchedBills.length})
+                            </div>
+                            {matchedBills.map((bill, i) => (
+                              <div
+                                key={i}
+                                onClick={() => { setActiveTab('bills'); setSearchQuery(''); setShowSearchResults(false); }}
+                                style={{
+                                  padding: '12px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  cursor: 'pointer',
+                                  borderBottom: `1px solid ${theme.borderLight}`
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = theme.bgMain}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#F59E0B15', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                                  {bill.icon || '📄'}
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>Due {new Date(bill.dueDate).toLocaleDateString()}</div>
+                                </div>
+                                <div style={{ fontWeight: '600', color: theme.textPrimary }}>
+                                  {formatCurrency(bill.amount)}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Tasks Results */}
+                        {matchedTasks.length > 0 && (
+                          <div>
+                            <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: '600', color: theme.textMuted, textTransform: 'uppercase', background: theme.bgMain }}>
+                              Tasks ({matchedTasks.length})
+                            </div>
+                            {matchedTasks.map((task, i) => (
+                              <div
+                                key={i}
+                                onClick={() => { setActiveTab('tasks'); setSearchQuery(''); setShowSearchResults(false); }}
+                                style={{
+                                  padding: '12px 16px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '12px',
+                                  cursor: 'pointer',
+                                  borderBottom: `1px solid ${theme.borderLight}`
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = theme.bgMain}
+                                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                              >
+                                <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#10B98115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
+                                  ✅
+                                </div>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: '500', color: theme.textPrimary }}>{task.title}</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>{task.status}</div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </div>
+              )}
             </div>
           </div>
 
@@ -2976,10 +3286,9 @@ function Dashboard({
                   <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
                 </svg>
                 {(() => {
-                  // Calculate activity count from tasks + goals + bills
-                  const pendingTasks = tasks.filter(t => t.status !== 'completed').length;
-                  const activityCount = pendingTasks + goals.length + bills.length;
-                  return activityCount > 0 ? (
+                  // Calculate unread activity count (not dismissed)
+                  const unreadCount = notificationsDismissed ? 0 : (tasks.filter(t => t.status !== 'completed').length + goals.length + bills.length);
+                  return unreadCount > 0 ? (
                     <span style={{
                       position: 'absolute',
                       top: '4px',
@@ -2994,9 +3303,9 @@ function Dashboard({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      padding: activityCount > 9 ? '0 4px' : 0
+                      padding: unreadCount > 9 ? '0 4px' : 0
                     }}>
-                      {activityCount > 99 ? '99+' : activityCount}
+                      {unreadCount > 99 ? '99+' : unreadCount}
                     </span>
                   ) : null;
                 })()}
@@ -3014,16 +3323,36 @@ function Dashboard({
                   border: `1px solid ${theme.border}`,
                   zIndex: 100
                 }}>
-                  <div style={{ padding: '16px', borderBottom: `1px solid ${theme.borderLight}`, fontWeight: '600', color: theme.textPrimary, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span>Activity</span>
-                    <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '400' }}>
-                      {tasks.filter(t => t.status !== 'completed').length + goals.length + bills.length} items
-                    </span>
+                  <div style={{ padding: '16px', borderBottom: `1px solid ${theme.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <span style={{ fontWeight: '600', color: theme.textPrimary }}>Activity</span>
+                      <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '400', marginLeft: '8px' }}>
+                        {tasks.filter(t => t.status !== 'completed').length + goals.length + bills.length} items
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => setNotificationsDismissed(true)}
+                      style={{
+                        background: notificationsDismissed ? '#E5E7EB' : '#6366F115',
+                        border: 'none',
+                        borderRadius: '6px',
+                        padding: '6px 10px',
+                        fontSize: '11px',
+                        fontWeight: '500',
+                        color: notificationsDismissed ? theme.textMuted : '#6366F1',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}
+                    >
+                      {notificationsDismissed ? '✓ Read' : 'Mark all read'}
+                    </button>
                   </div>
                   <div style={{ maxHeight: '350px', overflowY: 'auto' }}>
                     {/* Pending Tasks */}
                     {tasks.filter(t => t.status !== 'completed').slice(0, 3).map((task, i) => (
-                      <div key={`task-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                      <div key={`task-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}`, opacity: notificationsDismissed ? 0.6 : 1 }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: task.status === 'in-progress' ? '#F59E0B15' : '#6366F115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                           {task.status === 'in-progress' ? '🔄' : '📋'}
                         </div>
@@ -3047,7 +3376,7 @@ function Dashboard({
                     ))}
                     {/* Goals */}
                     {goals.slice(0, 2).map((goal, i) => (
-                      <div key={`goal-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                      <div key={`goal-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}`, opacity: notificationsDismissed ? 0.6 : 1 }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#10B98115', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                           {goal.icon || '🎯'}
                         </div>
@@ -3061,7 +3390,7 @@ function Dashboard({
                     ))}
                     {/* Upcoming Bills */}
                     {bills.slice(0, 2).map((bill, i) => (
-                      <div key={`bill-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}` }}>
+                      <div key={`bill-${i}`} style={{ padding: '12px 16px', display: 'flex', gap: '12px', alignItems: 'flex-start', borderBottom: `1px solid ${theme.borderLight}`, opacity: notificationsDismissed ? 0.6 : 1 }}>
                         <div style={{ width: '36px', height: '36px', borderRadius: '8px', background: '#EF444415', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px' }}>
                           {bill.icon || '📄'}
                         </div>
@@ -3567,6 +3896,116 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
   const [activeAccount, setActiveAccount] = useState('all');
   const [txnSearchQuery, setTxnSearchQuery] = useState('');
   const [txnStatusFilter, setTxnStatusFilter] = useState('');
+  
+  // Draggable dashboard sections
+  const [sectionOrder, setSectionOrder] = useState(() => {
+    try {
+      const saved = localStorage.getItem('pn_dashboard_layout');
+      return saved ? JSON.parse(saved) : ['stats', 'charts', 'budget', 'transactions'];
+    } catch {
+      return ['stats', 'charts', 'budget', 'transactions'];
+    }
+  });
+  const [draggedSection, setDraggedSection] = useState(null);
+  const [dragOverSection, setDragOverSection] = useState(null);
+  const [isEditMode, setIsEditMode] = useState(false);
+  
+  // Save layout to localStorage
+  const saveLayout = (newOrder) => {
+    setSectionOrder(newOrder);
+    localStorage.setItem('pn_dashboard_layout', JSON.stringify(newOrder));
+  };
+  
+  // Drag handlers
+  const handleDragStart = (e, sectionId) => {
+    if (!isEditMode) return;
+    setDraggedSection(sectionId);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  
+  const handleDragOver = (e, sectionId) => {
+    e.preventDefault();
+    if (!isEditMode || !draggedSection || draggedSection === sectionId) return;
+    setDragOverSection(sectionId);
+  };
+  
+  const handleDragLeave = () => {
+    setDragOverSection(null);
+  };
+  
+  const handleDrop = (e, targetSectionId) => {
+    e.preventDefault();
+    if (!draggedSection || draggedSection === targetSectionId) {
+      setDraggedSection(null);
+      setDragOverSection(null);
+      return;
+    }
+    
+    const newOrder = [...sectionOrder];
+    const draggedIndex = newOrder.indexOf(draggedSection);
+    const targetIndex = newOrder.indexOf(targetSectionId);
+    
+    // Remove dragged item and insert at target position
+    newOrder.splice(draggedIndex, 1);
+    newOrder.splice(targetIndex, 0, draggedSection);
+    
+    saveLayout(newOrder);
+    setDraggedSection(null);
+    setDragOverSection(null);
+  };
+  
+  const handleDragEnd = () => {
+    setDraggedSection(null);
+    setDragOverSection(null);
+  };
+  
+  // Draggable section wrapper
+  const DraggableSection = ({ id, children }) => (
+    <div
+      draggable={isEditMode}
+      onDragStart={(e) => handleDragStart(e, id)}
+      onDragOver={(e) => handleDragOver(e, id)}
+      onDragLeave={handleDragLeave}
+      onDrop={(e) => handleDrop(e, id)}
+      onDragEnd={handleDragEnd}
+      style={{
+        position: 'relative',
+        cursor: isEditMode ? 'grab' : 'default',
+        opacity: draggedSection === id ? 0.5 : 1,
+        transition: 'all 0.2s ease',
+        border: dragOverSection === id ? `2px dashed ${theme.primary}` : '2px dashed transparent',
+        borderRadius: '20px',
+        padding: dragOverSection === id ? '4px' : '0',
+        marginBottom: '24px'
+      }}
+    >
+      {isEditMode && (
+        <div style={{
+          position: 'absolute',
+          top: '-12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: theme.primary,
+          color: 'white',
+          padding: '4px 12px',
+          borderRadius: '12px',
+          fontSize: '11px',
+          fontWeight: '600',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px',
+          zIndex: 10,
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+        }}>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M12 5v14M5 12h14" />
+          </svg>
+          Drag to reorder
+        </div>
+      )}
+      {children}
+    </div>
+  );
 
   // Filter transactions by account type
   const personalTransactions = transactions.filter(t => t.accountType !== 'sidehustle');
@@ -3943,20 +4382,90 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
             )}
           </div>
         </div>
-        <div className="account-toggle" style={{ display: 'flex', gap: '8px', background: theme.bgCard, padding: '4px', borderRadius: '12px', boxShadow: theme.cardShadow }}>
-          {[{ id: 'all', label: 'All Accounts', icon: '📊' }, { id: 'personal', label: 'Personal', icon: '👤' }, { id: 'sidehustle', label: 'Side Hustle', icon: '💼' }].map(acc => (
-            <button key={acc.id} onClick={() => setActiveAccount(acc.id)} style={{
-              padding: '10px 16px', border: 'none', borderRadius: '10px',
-              background: activeAccount === acc.id ? theme.primary : 'transparent',
-              color: activeAccount === acc.id ? 'white' : theme.textSecondary,
-              fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s', whiteSpace: 'nowrap'
-            }}><span>{acc.icon}</span>{acc.label}</button>
-          ))}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {/* Edit Layout Button */}
+          <button
+            onClick={() => setIsEditMode(!isEditMode)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              padding: '10px 16px',
+              border: isEditMode ? 'none' : `1px solid ${theme.borderLight}`,
+              borderRadius: '10px',
+              background: isEditMode ? theme.primary : theme.bgCard,
+              color: isEditMode ? 'white' : theme.textSecondary,
+              fontSize: '13px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              boxShadow: theme.cardShadow,
+              transition: 'all 0.2s'
+            }}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            {isEditMode ? 'Done' : 'Edit Layout'}
+          </button>
+          
+          <div className="account-toggle" style={{ display: 'flex', gap: '8px', background: theme.bgCard, padding: '4px', borderRadius: '12px', boxShadow: theme.cardShadow }}>
+            {[{ id: 'all', label: 'All Accounts', icon: '📊' }, { id: 'personal', label: 'Personal', icon: '👤' }, { id: 'sidehustle', label: 'Side Hustle', icon: '💼' }].map(acc => (
+              <button key={acc.id} onClick={() => setActiveAccount(acc.id)} style={{
+                padding: '10px 16px', border: 'none', borderRadius: '10px',
+                background: activeAccount === acc.id ? theme.primary : 'transparent',
+                color: activeAccount === acc.id ? 'white' : theme.textSecondary,
+                fontSize: '13px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s', whiteSpace: 'nowrap'
+              }}><span>{acc.icon}</span>{acc.label}</button>
+            ))}
+          </div>
         </div>
       </div>
+      
+      {/* Edit Mode Instructions */}
+      {isEditMode && (
+        <div style={{
+          background: `${theme.primary}15`,
+          border: `1px solid ${theme.primary}30`,
+          borderRadius: '12px',
+          padding: '16px 20px',
+          marginBottom: '24px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            borderRadius: '10px',
+            background: theme.primary,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+              <path d="M12 5v14M5 12h14" />
+            </svg>
+          </div>
+          <div>
+            <div style={{ fontWeight: '600', color: theme.textPrimary, marginBottom: '2px' }}>Customize Your Dashboard</div>
+            <div style={{ fontSize: '13px', color: theme.textSecondary }}>
+              Drag and drop sections to rearrange them. Your layout will be saved automatically.
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Top Stats Row - OrbitNest Style (Image 1) */}
-      <div className="stat-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginBottom: '24px' }}>
+      {/* Render sections in order */}
+      {sectionOrder.map(sectionId => {
+        switch(sectionId) {
+          case 'stats':
+            return (
+              <DraggableSection key="stats" id="stats">
+                {/* Top Stats Row - OrbitNest Style (Image 1) */}
+                <div className="stat-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
         {/* Income Card */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -4065,7 +4574,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               </div>
             </div>
           </div>
-          <LineChart data={monthlyData} height={320} />
+          <LineChart data={monthlyData} height={380} />
         </div>
 
         {/* Financial Health Gauge (Image 7) */}
@@ -4075,7 +4584,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
             <button style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '18px' }}>⋮</button>
           </div>
           <div style={{ display: 'flex', justifyContent: 'center', flex: 1, alignItems: 'center' }}>
-            <ProgressGauge score={healthScore} size={280} />
+            <ProgressGauge score={healthScore} size={300} />
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-around', padding: '0 10px', marginTop: '16px' }}>
             <div style={{ textAlign: 'center' }}>
@@ -4117,7 +4626,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               </div>
             </div>
           </div>
-          <BudgetBarChart data={monthlyData} budgets={budgets} theme={theme} height={280} />
+          <BudgetBarChart data={monthlyData} budgets={budgets} theme={theme} height={340} />
         </div>
 
         {/* Spending Breakdown - Overlapping Pebble/Triangle Style (like Sales Summary) */}
