@@ -1150,12 +1150,14 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       zIndex: 10002, padding: '20px'
     }}>
       <div style={{
-        background: '#FFF', borderRadius: '24px', width: '100%', maxWidth: '480px',
-        maxHeight: '90vh', overflow: 'auto', boxShadow: '0 25px 80px rgba(0,0,0,0.3)'
+        background: colors.cardBg, borderRadius: '24px', width: '100%', maxWidth: '480px',
+        maxHeight: '90vh', overflow: 'auto', 
+        boxShadow: isDarkMode ? '0 25px 80px rgba(0,0,0,0.5)' : '0 25px 80px rgba(0,0,0,0.3)',
+        border: `1px solid ${colors.borderLight}`
       }}>
         {/* Header */}
         <div style={{
-          padding: '24px', borderBottom: `1px solid ${colors.gray5}`,
+          padding: '24px', borderBottom: `1px solid ${colors.borderLight}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center'
         }}>
           <div>
@@ -1165,23 +1167,23 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
             </div>
           </div>
           <button onClick={() => { setShowSignupModal(false); setSelectedPlan(null); setAuthMode('signup'); }}
-            style={{ background: colors.gray6, border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px' }}>✕</button>
+            style={{ background: colors.gray5, border: 'none', borderRadius: '50%', width: '32px', height: '32px', cursor: 'pointer', fontSize: '16px', color: colors.label }}>✕</button>
         </div>
 
         {/* Google Sign In */}
-        <div style={{ padding: '20px', borderBottom: `1px solid ${colors.gray5}` }}>
+        <div style={{ padding: '20px', borderBottom: `1px solid ${colors.borderLight}` }}>
           <button 
             onClick={handleGoogleSignIn}
             disabled={signinLoading}
             style={{
-              width: '100%', padding: '14px', border: `1px solid ${colors.gray4}`,
-              borderRadius: '12px', background: '#FFF', cursor: signinLoading ? 'wait' : 'pointer',
+              width: '100%', padding: '14px', border: `1px solid ${colors.borderLight}`,
+              borderRadius: '12px', background: colors.cardBg, cursor: signinLoading ? 'wait' : 'pointer',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px',
               fontSize: '15px', fontWeight: '500', transition: 'all 0.2s',
-              opacity: signinLoading ? 0.7 : 1
+              opacity: signinLoading ? 0.7 : 1, color: colors.label
             }}
-            onMouseOver={e => !signinLoading && (e.currentTarget.style.background = colors.gray6)}
-            onMouseOut={e => e.currentTarget.style.background = '#FFF'}>
+            onMouseOver={e => !signinLoading && (e.currentTarget.style.background = colors.gray5)}
+            onMouseOut={e => e.currentTarget.style.background = colors.cardBg}>
             <svg width="20" height="20" viewBox="0 0 24 24">
               <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
               <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -1220,8 +1222,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 onChange={e => { setSigninEmail(e.target.value); setSigninError(''); }}
                 autoComplete="off"
                 style={{
-                  width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
-                  borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
+                  width: '100%', padding: '12px', border: `1px solid ${colors.borderLight}`,
+                  borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+                  background: colors.cardBg, color: colors.label
                 }} />
             </div>
 
@@ -1235,8 +1238,9 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                 onChange={e => { setSigninPassword(e.target.value); setSigninError(''); }}
                 autoComplete="new-password"
                 style={{
-                  width: '100%', padding: '12px', border: `1px solid ${colors.gray4}`,
-                  borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box'
+                  width: '100%', padding: '12px', border: `1px solid ${colors.borderLight}`,
+                  borderRadius: '10px', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+                  background: colors.cardBg, color: colors.label
                 }} />
             </div>
 
@@ -1254,13 +1258,14 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
                   }}
                 /> Remember me
               </label>
-              <a href="#" style={{ fontSize: '13px', color: colors.blue, textDecoration: 'none' }}>Forgot password?</a>
+              <a href="#" style={{ fontSize: '13px', color: '#EC4899', textDecoration: 'none' }}>Forgot password?</a>
             </div>
 
             <button onClick={handleRealSignIn}
               disabled={signinLoading}
               style={{
-                width: '100%', padding: '16px', background: signinLoading ? colors.secondary : colors.blue,
+                width: '100%', padding: '16px', 
+                background: signinLoading ? colors.secondary : 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)',
                 border: 'none', borderRadius: '12px', color: '#FFF', fontSize: '16px',
                 fontWeight: '600', cursor: signinLoading ? 'wait' : 'pointer',
                 opacity: signinLoading ? 0.7 : 1
@@ -1270,7 +1275,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
 
             <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: colors.secondary }}>
               Don't have an account?{' '}
-              <a href="#" onClick={(e) => { e.preventDefault(); setAuthMode('signup'); }} style={{ color: colors.blue, textDecoration: 'none', fontWeight: '500' }}>
+              <a href="#" onClick={(e) => { e.preventDefault(); setAuthMode('signup'); }} style={{ color: '#EC4899', textDecoration: 'none', fontWeight: '500' }}>
                 Sign up for free
               </a>
             </div>
@@ -1962,6 +1967,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         {!isTabletOrMobile && (
           <div className="desktop-nav" style={{ display: 'flex', gap: '28px', alignItems: 'center' }}>
             {[
+              { label: 'Home', id: 'home' },
               { label: 'Products', id: 'products' },
               { label: 'Features', id: 'features' },
               { label: 'Tutorials', id: 'tutorials' },
@@ -1969,7 +1975,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { label: 'Pricing', id: 'pricing' },
               { label: 'Support', id: 'support' }
             ].map(item => (
-              <a key={item.id} onClick={() => scrollToSection(item.id)}
+              <a key={item.id} onClick={() => item.id === 'home' ? scrollToTop() : scrollToSection(item.id)}
                 style={{ color: colors.secondary, textDecoration: 'none', fontSize: '14px', fontWeight: '500', cursor: 'pointer', transition: 'color 0.2s' }}
                 onMouseOver={e => e.target.style.color = colors.label}
                 onMouseOut={e => e.target.style.color = colors.secondary}>
@@ -2030,10 +2036,12 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </nav>
 
       {/* Hero Section */}
-      <section style={{
+      <section id="home" style={{
         minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         padding: isMobile ? '80px 16px 40px' : '100px 24px 60px', 
-        background: `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 100%)`, 
+        background: isDarkMode 
+          ? `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 100%)`
+          : `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 100%)`, 
         textAlign: 'center'
       }}>
         <div className="animate-in" style={{ maxWidth: '1100px', width: '100%' }}>
@@ -2043,11 +2051,17 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           <h1 style={{
             fontSize: isMobile ? 'clamp(26px, 8vw, 36px)' : 'clamp(32px, 7vw, 72px)', 
             fontWeight: '700', lineHeight: 1.1, marginBottom: isMobile ? '16px' : '20px',
-            background: `linear-gradient(135deg, ${colors.label} 0%, ${colors.secondary} 100%)`,
-            WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent'
+            color: colors.label
           }}>
             Your money.<br/>Your hustle.<br/>
-            <span style={{ background: `linear-gradient(135deg, ${colors.blue} 0%, ${colors.purple} 100%)`, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>One nest.</span>
+            <span style={{ 
+              background: isDarkMode 
+                ? 'linear-gradient(135deg, #EC4899 0%, #A78BFA 100%)' 
+                : 'linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%)', 
+              WebkitBackgroundClip: 'text', 
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text'
+            }}>One nest.</span>
           </h1>
           <p style={{ 
             fontSize: isMobile ? 'clamp(13px, 4vw, 16px)' : 'clamp(14px, 3vw, 22px)', 
@@ -2096,7 +2110,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               Start Free Trial
             </button>
             <button onClick={() => scrollToSection('features')} className="apple-button"
-              style={{ padding: isMobile ? '14px 28px' : '16px 36px', background: colors.gray6, border: `1px solid ${colors.gray4}`, borderRadius: '12px', color: colors.label, fontSize: isMobile ? '15px' : '16px', fontWeight: '500', width: isMobile ? '100%' : 'auto', maxWidth: isMobile ? '280px' : 'none' }}>
+              style={{ padding: isMobile ? '14px 28px' : '16px 36px', background: colors.cardBg, border: `1px solid ${colors.borderLight}`, borderRadius: '12px', color: colors.label, fontSize: isMobile ? '15px' : '16px', fontWeight: '500', width: isMobile ? '100%' : 'auto', maxWidth: isMobile ? '280px' : 'none' }}>
               ▶ See Features
             </button>
           </div>
@@ -2107,27 +2121,32 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
           
           <div className="mobile-hero-image" style={{ display: isMobile ? 'block' : 'none', padding: '0 4px' }}>
             <div style={{
-              background: '#FFF', borderRadius: '16px', padding: '16px',
-              boxShadow: '0 12px 40px rgba(0,0,0,0.12)', maxWidth: '280px', margin: '0 auto'
+              background: colors.cardBg, 
+              borderRadius: '16px', 
+              padding: '16px',
+              boxShadow: isDarkMode ? '0 12px 40px rgba(0,0,0,0.4)' : '0 12px 40px rgba(0,0,0,0.12)', 
+              maxWidth: '280px', 
+              margin: '0 auto',
+              border: `1px solid ${colors.borderLight}`
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
                 <PennyLogo size={28} />
                 <div>
-                  <div style={{ fontSize: '12px', fontWeight: '600' }}>Dashboard</div>
-                  <div style={{ fontSize: '10px', color: colors.gray }}>December 2024</div>
+                  <div style={{ fontSize: '12px', fontWeight: '600', color: colors.label }}>Dashboard</div>
+                  <div style={{ fontSize: '10px', color: colors.secondary }}>December 2024</div>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '10px' }}>
-                <div style={{ background: colors.green, borderRadius: '8px', padding: '10px', color: '#FFF' }}>
+                <div style={{ background: '#10B981', borderRadius: '8px', padding: '10px', color: '#FFF' }}>
                   <div style={{ fontSize: '9px', opacity: 0.9 }}>Income</div>
                   <div style={{ fontSize: '16px', fontWeight: '700' }}>$12,450</div>
                 </div>
-                <div style={{ background: colors.orange, borderRadius: '8px', padding: '10px', color: '#FFF' }}>
+                <div style={{ background: '#F59E0B', borderRadius: '8px', padding: '10px', color: '#FFF' }}>
                   <div style={{ fontSize: '9px', opacity: 0.9 }}>Expenses</div>
                   <div style={{ fontSize: '16px', fontWeight: '700' }}>$4,230</div>
                 </div>
               </div>
-              <div style={{ background: colors.blue, borderRadius: '8px', padding: '12px', color: '#FFF' }}>
+              <div style={{ background: '#3B82F6', borderRadius: '8px', padding: '12px', color: '#FFF' }}>
                 <div style={{ fontSize: '9px', opacity: 0.9 }}>Net Cash Flow</div>
                 <div style={{ fontSize: '20px', fontWeight: '700' }}>+$8,220</div>
               </div>
@@ -2156,7 +2175,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       {/* Hub Cards - Flagship Products */}
       <section id="products" style={{ 
         padding: isMobile ? '60px 16px' : '100px 40px', 
-        background: `linear-gradient(180deg, ${colors.gray6} 0%, #FFFFFF 50%, ${colors.gray6} 100%)`,
+        background: `linear-gradient(180deg, ${colors.gray6} 0%, ${colors.background} 50%, ${colors.gray6} 100%)`,
         overflow: 'hidden',
         position: 'relative'
       }}>
@@ -3145,7 +3164,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
         <div style={{ maxWidth: '1200px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
           <div style={{ textAlign: 'center', marginBottom: isMobile ? '36px' : '60px' }}>
             <div style={{ fontSize: isMobile ? '48px' : '64px', marginBottom: '20px' }}>📚</div>
-            <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(32px, 5vw, 48px)', fontWeight: '700', marginBottom: '16px' }}>Learn & Grow</h2>
+            <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(32px, 5vw, 48px)', fontWeight: '700', marginBottom: '16px', color: colors.label }}>Learn & Grow</h2>
             <p style={{ fontSize: isMobile ? '15px' : '19px', color: colors.secondary }}>Master your finances with our tutorials and guides</p>
           </div>
           
@@ -3159,13 +3178,17 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { icon: '🎯', title: 'Goal Setting', desc: 'Achieve financial milestones', time: '7 min' },
             ].map((tutorial, i) => (
               <div key={i} className="hover-lift" style={{
-                background: '#FFF', borderRadius: '20px', padding: isMobile ? '24px' : '32px',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.06)', cursor: 'pointer'
+                background: colors.cardBg, 
+                borderRadius: '20px', 
+                padding: isMobile ? '24px' : '32px',
+                boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.06)', 
+                cursor: 'pointer',
+                border: `1px solid ${colors.borderLight}`
               }}>
                 <div style={{ fontSize: isMobile ? '36px' : '44px', marginBottom: '16px' }}>{tutorial.icon}</div>
-                <h3 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '600', marginBottom: '8px' }}>{tutorial.title}</h3>
+                <h3 style={{ fontSize: isMobile ? '17px' : '20px', fontWeight: '600', marginBottom: '8px', color: colors.label }}>{tutorial.title}</h3>
                 <p style={{ fontSize: isMobile ? '13px' : '15px', color: colors.secondary, marginBottom: '12px' }}>{tutorial.desc}</p>
-                <div style={{ fontSize: '14px', color: colors.blue, fontWeight: '500' }}>⏱ {tutorial.time}</div>
+                <div style={{ fontSize: '14px', color: '#EC4899', fontWeight: '500' }}>⏱ {tutorial.time}</div>
               </div>
             ))}
           </div>
@@ -3500,33 +3523,223 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               </div>
             </div>
 
-            {/* Bundle Teaser */}
+            {/* Bundle Section - Premium Visual */}
             <div style={{ 
-              marginTop: '40px', 
+              marginTop: '60px', 
               textAlign: 'center',
-              padding: '32px',
+              padding: isMobile ? '40px 24px' : '60px 48px',
               background: isDarkMode 
-                ? 'linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(139, 92, 246, 0.1) 50%, rgba(99, 102, 241, 0.1) 100%)'
-                : 'linear-gradient(135deg, rgba(236, 72, 153, 0.08) 0%, rgba(139, 92, 246, 0.08) 50%, rgba(99, 102, 241, 0.08) 100%)',
-              borderRadius: '20px',
-              border: `1px solid ${colors.borderLight}`
+                ? 'linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(49, 46, 129, 0.6) 30%, rgba(67, 56, 202, 0.4) 60%, rgba(236, 72, 153, 0.3) 100%)'
+                : 'linear-gradient(135deg, #1E1B4B 0%, #312E81 30%, #4338CA 60%, #7C3AED 100%)',
+              borderRadius: '32px',
+              border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : 'none',
+              boxShadow: isDarkMode 
+                ? '0 25px 60px rgba(0, 0, 0, 0.5)'
+                : '0 25px 60px rgba(30, 27, 75, 0.4)',
+              position: 'relative',
+              overflow: 'hidden'
             }}>
-              <div style={{ fontSize: '28px', marginBottom: '12px' }}>🎁</div>
-              <h4 style={{ fontSize: '20px', fontWeight: '700', color: colors.label, marginBottom: '8px' }}>Bundle & Save Up to 30%</h4>
-              <p style={{ fontSize: '15px', color: colors.secondary, maxWidth: '500px', margin: '0 auto 20px' }}>
-                Combine HomeBudget + BizBudget + REBudget for the ultimate financial command center. Perfect for the entrepreneur building their empire.
-              </p>
-              <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <div style={{ background: colors.cardBg, padding: '12px 20px', borderRadius: '12px', border: `1px solid ${colors.borderLight}` }}>
-                  <div style={{ fontSize: '13px', color: colors.secondary }}>2-Hub Bundle</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700', color: colors.label }}>$16.99<span style={{ fontSize: '12px', fontWeight: '500', color: colors.secondary }}>/mo</span></div>
-                  <div style={{ fontSize: '11px', color: '#10B981' }}>Save 15%</div>
+              {/* Decorative elements */}
+              <div style={{
+                position: 'absolute',
+                top: '-50px',
+                right: '-50px',
+                width: '200px',
+                height: '200px',
+                background: 'radial-gradient(circle, rgba(236, 72, 153, 0.3) 0%, transparent 70%)',
+                borderRadius: '50%'
+              }} />
+              <div style={{
+                position: 'absolute',
+                bottom: '-30px',
+                left: '-30px',
+                width: '150px',
+                height: '150px',
+                background: 'radial-gradient(circle, rgba(99, 102, 241, 0.3) 0%, transparent 70%)',
+                borderRadius: '50%'
+              }} />
+              
+              <div style={{ position: 'relative', zIndex: 1 }}>
+                <div style={{ 
+                  display: 'inline-flex', 
+                  alignItems: 'center', 
+                  gap: '12px', 
+                  background: 'rgba(255,255,255,0.15)', 
+                  padding: '12px 24px', 
+                  borderRadius: '50px',
+                  marginBottom: '24px'
+                }}>
+                  <span style={{ fontSize: '32px' }}>🎁</span>
+                  <span style={{ color: '#FFF', fontSize: '14px', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>Limited Time Offer</span>
                 </div>
-                <div style={{ background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', padding: '12px 20px', borderRadius: '12px', color: '#FFF' }}>
-                  <div style={{ fontSize: '13px', opacity: 0.9 }}>All 3 Hubs</div>
-                  <div style={{ fontSize: '18px', fontWeight: '700' }}>$20.99<span style={{ fontSize: '12px', fontWeight: '500', opacity: 0.8 }}>/mo</span></div>
-                  <div style={{ fontSize: '11px', color: '#34D399' }}>Save 30% 🔥</div>
+                
+                <h3 style={{ 
+                  fontSize: isMobile ? '32px' : '44px', 
+                  fontWeight: '800', 
+                  color: '#FFF', 
+                  marginBottom: '16px',
+                  lineHeight: 1.2
+                }}>
+                  Bundle & Save Up to <span style={{ color: '#34D399' }}>30%</span>
+                </h3>
+                
+                <p style={{ 
+                  fontSize: isMobile ? '16px' : '18px', 
+                  color: 'rgba(255,255,255,0.85)', 
+                  maxWidth: '600px', 
+                  margin: '0 auto 40px',
+                  lineHeight: 1.6
+                }}>
+                  Combine HomeBudget + BizBudget + REBudget for the ultimate financial command center. 
+                  <strong style={{ color: '#FFF' }}> Perfect for the entrepreneur building their empire.</strong>
+                </p>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  gap: isMobile ? '16px' : '32px', 
+                  justifyContent: 'center', 
+                  flexWrap: 'wrap',
+                  marginBottom: '32px'
+                }}>
+                  {/* 2-Hub Bundle */}
+                  <div className="hover-lift" style={{ 
+                    background: 'rgba(255,255,255,0.1)', 
+                    backdropFilter: 'blur(10px)',
+                    padding: isMobile ? '24px 28px' : '32px 40px', 
+                    borderRadius: '20px', 
+                    border: '1px solid rgba(255,255,255,0.2)',
+                    minWidth: isMobile ? '160px' : '200px',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'rgba(255,255,255,0.7)', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '1px',
+                      marginBottom: '8px'
+                    }}>2-Hub Bundle</div>
+                    <div style={{ 
+                      fontSize: isMobile ? '36px' : '48px', 
+                      fontWeight: '800', 
+                      color: '#FFF',
+                      lineHeight: 1
+                    }}>
+                      $16.99
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.7)', marginBottom: '12px' }}>/month</div>
+                    <div style={{ 
+                      display: 'inline-block',
+                      background: 'rgba(16, 185, 129, 0.2)', 
+                      color: '#34D399', 
+                      padding: '6px 14px', 
+                      borderRadius: '20px', 
+                      fontSize: '13px', 
+                      fontWeight: '700'
+                    }}>Save 15%</div>
+                  </div>
+                  
+                  {/* All 3 Hubs - Featured */}
+                  <div className="hover-lift" style={{ 
+                    background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)', 
+                    padding: isMobile ? '24px 28px' : '32px 40px', 
+                    borderRadius: '20px',
+                    minWidth: isMobile ? '180px' : '220px',
+                    position: 'relative',
+                    cursor: 'pointer',
+                    boxShadow: '0 20px 40px rgba(236, 72, 153, 0.4)',
+                    transform: !isMobile ? 'scale(1.05)' : 'none',
+                    transition: 'all 0.3s ease'
+                  }}>
+                    <div style={{
+                      position: 'absolute',
+                      top: '-12px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      background: '#FBBF24',
+                      color: '#1a1a1a',
+                      padding: '5px 14px',
+                      borderRadius: '20px',
+                      fontSize: '11px',
+                      fontWeight: '700',
+                      whiteSpace: 'nowrap'
+                    }}>🔥 BEST VALUE</div>
+                    <div style={{ 
+                      fontSize: '12px', 
+                      color: 'rgba(255,255,255,0.9)', 
+                      textTransform: 'uppercase', 
+                      letterSpacing: '1px',
+                      marginBottom: '8px',
+                      marginTop: '8px'
+                    }}>All 3 Hubs</div>
+                    <div style={{ 
+                      fontSize: isMobile ? '40px' : '56px', 
+                      fontWeight: '800', 
+                      color: '#FFF',
+                      lineHeight: 1
+                    }}>
+                      $20.99
+                    </div>
+                    <div style={{ fontSize: '14px', color: 'rgba(255,255,255,0.85)', marginBottom: '12px' }}>/month</div>
+                    <div style={{ 
+                      display: 'inline-block',
+                      background: 'rgba(255,255,255,0.25)', 
+                      color: '#FFF', 
+                      padding: '6px 14px', 
+                      borderRadius: '20px', 
+                      fontSize: '13px', 
+                      fontWeight: '700'
+                    }}>Save 30% 🎉</div>
+                  </div>
                 </div>
+                
+                {/* What's included */}
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  gap: isMobile ? '12px' : '24px',
+                  flexWrap: 'wrap'
+                }}>
+                  {[
+                    { icon: '🏠', name: 'HomeBudget', color: '#EC4899' },
+                    { icon: '💼', name: 'BizBudget', color: '#A78BFA' },
+                    { icon: '🏢', name: 'REBudget', color: '#818CF8' }
+                  ].map((hub, i) => (
+                    <div key={i} style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '8px',
+                      background: 'rgba(255,255,255,0.1)',
+                      padding: '10px 18px',
+                      borderRadius: '30px'
+                    }}>
+                      <span style={{ fontSize: '20px' }}>{hub.icon}</span>
+                      <span style={{ color: '#FFF', fontSize: '14px', fontWeight: '600' }}>{hub.name}</span>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34D399" strokeWidth="3" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </div>
+                  ))}
+                </div>
+                
+                <button 
+                  onClick={() => handleStartTrial('bundle')}
+                  style={{
+                    marginTop: '32px',
+                    padding: '18px 48px',
+                    background: '#FFF',
+                    border: 'none',
+                    borderRadius: '14px',
+                    color: '#1E1B4B',
+                    fontSize: '16px',
+                    fontWeight: '700',
+                    cursor: 'pointer',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
+                    transition: 'all 0.3s ease'
+                  }}
+                >
+                  Get the Bundle Deal →
+                </button>
               </div>
             </div>
           </div>
@@ -3537,7 +3750,7 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       <section id="support" style={{ padding: isMobile ? '50px 16px' : '100px 40px', background: colors.background }}>
         <div style={{ maxWidth: '1000px', margin: '0 auto', textAlign: 'center' }}>
           <div style={{ fontSize: isMobile ? '48px' : '64px', marginBottom: '24px' }}>💬</div>
-          <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(32px, 5vw, 48px)', fontWeight: '700', marginBottom: '20px' }}>We're here to help</h2>
+          <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 36px)' : 'clamp(32px, 5vw, 48px)', fontWeight: '700', marginBottom: '20px', color: colors.label }}>We're here to help</h2>
           <p style={{ fontSize: isMobile ? '15px' : '19px', color: colors.secondary, marginBottom: '44px' }}>Have questions? Our support team is available to help you.</p>
           <div className="support-cards" style={{ display: 'flex', gap: '24px', justifyContent: 'center', flexWrap: 'wrap' }}>
             {[
@@ -3546,11 +3759,17 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
               { icon: '📚', title: 'Help Center', desc: 'Guides & tutorials', action: () => scrollToSection('tutorials') }
             ].map((item, i) => (
               <div key={i} onClick={item.action} className="hover-lift" style={{
-                background: colors.gray6, borderRadius: '20px', padding: isMobile ? '28px 20px' : '36px', 
-                flex: '1 1 260px', maxWidth: isMobile ? '100%' : '300px', cursor: 'pointer'
+                background: colors.cardBg, 
+                borderRadius: '20px', 
+                padding: isMobile ? '28px 20px' : '36px', 
+                flex: '1 1 260px', 
+                maxWidth: isMobile ? '100%' : '300px', 
+                cursor: 'pointer',
+                border: `1px solid ${colors.borderLight}`,
+                boxShadow: isDarkMode ? '0 4px 20px rgba(0,0,0,0.3)' : '0 4px 20px rgba(0,0,0,0.08)'
               }}>
                 <div style={{ fontSize: isMobile ? '36px' : '44px', marginBottom: '16px' }}>{item.icon}</div>
-                <div style={{ fontWeight: '600', fontSize: isMobile ? '16px' : '18px', marginBottom: '8px' }}>{item.title}</div>
+                <div style={{ fontWeight: '600', fontSize: isMobile ? '16px' : '18px', marginBottom: '8px', color: colors.label }}>{item.title}</div>
                 <div style={{ fontSize: isMobile ? '13px' : '15px', color: colors.secondary }}>{item.desc}</div>
               </div>
             ))}
@@ -3559,13 +3778,18 @@ const ProsperNestLandingV4 = ({ onNavigate }) => {
       </section>
 
       {/* Final CTA */}
-      <section style={{ padding: isMobile ? '60px 16px' : '80px 20px', background: colors.label, color: '#FFF', textAlign: 'center' }}>
+      <section style={{ 
+        padding: isMobile ? '60px 16px' : '80px 20px', 
+        background: 'linear-gradient(135deg, #1E1B4B 0%, #312E81 100%)', 
+        color: '#FFF', 
+        textAlign: 'center' 
+      }}>
         <div style={{ maxWidth: '550px', margin: '0 auto' }}>
           <PennyLogo size={isMobile ? 60 : 70} />
           <h2 style={{ fontSize: isMobile ? 'clamp(24px, 7vw, 32px)' : 'clamp(28px, 5vw, 36px)', fontWeight: '700', marginTop: '20px', marginBottom: '12px' }}>Ready to prosper?</h2>
           <p style={{ fontSize: isMobile ? '14px' : '16px', opacity: 0.8, marginBottom: '28px' }}>Join 12,000+ families on their journey to financial independence.</p>
           <button onClick={() => handleStartTrial()} className="apple-button"
-            style={{ padding: '16px 36px', background: colors.blue, border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '16px', fontWeight: '500', width: isMobile ? '100%' : 'auto', maxWidth: '280px' }}>
+            style={{ padding: '16px 36px', background: 'linear-gradient(135deg, #EC4899 0%, #DB2777 100%)', border: 'none', borderRadius: '14px', color: '#FFF', fontSize: '16px', fontWeight: '600', width: isMobile ? '100%' : 'auto', maxWidth: '280px', boxShadow: '0 8px 24px rgba(236, 72, 153, 0.4)' }}>
             Start Your Free Trial
           </button>
           <div style={{ marginTop: '16px', fontSize: '13px', opacity: 0.6 }}>No credit card required • 14-day free trial</div>
