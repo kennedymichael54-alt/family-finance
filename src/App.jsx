@@ -4993,6 +4993,18 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
   // Bulk selection for transactions
   const [selectedTxns, setSelectedTxns] = useState([]);
   
+  // Collapsible sections
+  const [collapsedSections, setCollapsedSections] = useState({
+    quickActions: false,
+    financialOverview: false,
+    spendingAnalysis: false,
+    transactions: false
+  });
+  
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+  
   // Handle bulk delete
   const handleBulkDelete = () => {
     if (selectedTxns.length === 0) return;
@@ -5609,15 +5621,20 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* QUICK ACTIONS - Bills & Goals (Moved up for visibility) */}
+      {/* QUICK ACTIONS - Bills & Goals (Collapsible) */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '12px', 
-        marginBottom: '16px',
-        paddingTop: '8px'
-      }}>
+      <div 
+        onClick={() => toggleSection('quickActions')}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: collapsedSections.quickActions ? '24px' : '16px',
+          paddingTop: '8px',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
         <div style={{ 
           width: '4px', 
           height: '24px', 
@@ -5638,9 +5655,17 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           padding: '4px 10px',
           borderRadius: '6px'
         }}>Items needing attention</span>
+        <span style={{ 
+          marginLeft: 'auto', 
+          fontSize: '12px', 
+          color: theme.textMuted,
+          transition: 'transform 0.2s',
+          transform: collapsedSections.quickActions ? 'rotate(-90deg)' : 'rotate(0deg)'
+        }}>▼</span>
       </div>
 
       {/* Bills, Tasks & Goals Row - Priority Section (3 columns) */}
+      {!collapsedSections.quickActions && (
       <div className="quick-actions-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '32px' }}>
         {/* Upcoming Bills */}
         <div style={{ 
@@ -5794,16 +5819,22 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </div>
         </div>
       </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* FINANCIAL OVERVIEW */}
+      {/* FINANCIAL OVERVIEW (Collapsible) */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '12px', 
-        marginBottom: '16px'
-      }}>
+      <div 
+        onClick={() => toggleSection('financialOverview')}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: collapsedSections.financialOverview ? '24px' : '16px',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
         <div style={{ 
           width: '4px', 
           height: '24px', 
@@ -5817,9 +5848,17 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           margin: 0,
           letterSpacing: '-0.3px'
         }}>Financial Overview</h2>
+        <span style={{ 
+          marginLeft: 'auto', 
+          fontSize: '12px', 
+          color: theme.textMuted,
+          transition: 'transform 0.2s',
+          transform: collapsedSections.financialOverview ? 'rotate(-90deg)' : 'rotate(0deg)'
+        }}>▼</span>
       </div>
 
       {/* Chart Row - 3 Columns: Income vs Expenses | Income Forecast | Health Gauge */}
+      {!collapsedSections.financialOverview && (
       <div className="chart-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '24px' }}>
         {/* Income vs. Expenses Line Chart */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
@@ -5946,16 +5985,22 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </div>
         </div>
       </div>
+      )}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      {/* SPENDING ANALYSIS */}
+      {/* SPENDING ANALYSIS (Collapsible) */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        gap: '12px', 
-        marginBottom: '16px'
-      }}>
+      <div 
+        onClick={() => toggleSection('spendingAnalysis')}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: collapsedSections.spendingAnalysis ? '24px' : '16px',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
         <div style={{ 
           width: '4px', 
           height: '24px', 
@@ -5969,9 +6014,17 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           margin: 0,
           letterSpacing: '-0.3px'
         }}>Spending Analysis</h2>
+        <span style={{ 
+          marginLeft: 'auto', 
+          fontSize: '12px', 
+          color: theme.textMuted,
+          transition: 'transform 0.2s',
+          transform: collapsedSections.spendingAnalysis ? 'rotate(-90deg)' : 'rotate(0deg)'
+        }}>▼</span>
       </div>
 
       {/* Spending Analysis Row - 3 Columns */}
+      {!collapsedSections.spendingAnalysis && (
       <div className="chart-grid-3" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '20px', marginBottom: '32px' }}>
         {/* Budgeted vs. Actual Expenses - Bar Chart */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
@@ -6175,8 +6228,46 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </div>
         </div>
       </div>
+      )}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* LATEST TRANSACTIONS (Collapsible) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div 
+        onClick={() => toggleSection('transactions')}
+        style={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: '12px', 
+          marginBottom: collapsedSections.transactions ? '24px' : '16px',
+          cursor: 'pointer',
+          userSelect: 'none'
+        }}
+      >
+        <div style={{ 
+          width: '4px', 
+          height: '24px', 
+          background: 'linear-gradient(180deg, #6366F1 0%, #8B5CF6 100%)', 
+          borderRadius: '2px' 
+        }} />
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '700', 
+          color: theme.textPrimary, 
+          margin: 0,
+          letterSpacing: '-0.3px'
+        }}>Latest Transactions</h2>
+        <span style={{ 
+          marginLeft: 'auto', 
+          fontSize: '12px', 
+          color: theme.textMuted,
+          transition: 'transform 0.2s',
+          transform: collapsedSections.transactions ? 'rotate(-90deg)' : 'rotate(0deg)'
+        }}>▼</span>
+      </div>
 
       {/* Latest Transactions Table */}
+      {!collapsedSections.transactions && (
       <div style={{ 
         background: theme.bgCard, 
         borderRadius: '16px', 
@@ -6197,7 +6288,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)'
         }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Latest Transactions</h3>
+          <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Filter & Search</h3>
           <button style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '18px' }}>⋮</button>
         </div>
         
@@ -6361,14 +6452,31 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                         </span>
                       </td>
                       <td style={{ padding: '16px 8px' }}>
-                        <span style={{ 
-                          display: 'inline-flex', alignItems: 'center', gap: '6px',
-                          padding: '4px 12px', borderRadius: '20px', 
-                          background: acctStyle.bg, color: acctStyle.color, 
-                          fontSize: '12px', fontWeight: '500'
-                        }}>
-                          {acctStyle.icon} {acctStyle.label}
-                        </span>
+                        <select
+                          value={t.accountType || 'personal'}
+                          onChange={(e) => {
+                            // Update transaction account type
+                            console.log('Update transaction', t.id, 'to', e.target.value);
+                            // TODO: Implement actual update via Supabase
+                          }}
+                          style={{ 
+                            appearance: 'none',
+                            display: 'inline-flex', 
+                            alignItems: 'center', 
+                            gap: '6px',
+                            padding: '4px 24px 4px 12px', 
+                            borderRadius: '20px', 
+                            background: `${acctStyle.bg} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center`,
+                            color: acctStyle.color, 
+                            fontSize: '12px', 
+                            fontWeight: '500',
+                            border: 'none',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          <option value="personal">👤 {accountLabels?.personal || 'Personal'}</option>
+                          <option value="sidehustle">💼 {accountLabels?.sidehustle || 'Side Hustle'}</option>
+                        </select>
                       </td>
                       <td style={{ padding: '16px 8px', textAlign: 'center' }}>
                         <button style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '16px' }}>ⓘ</button>
@@ -6397,6 +6505,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </>
         )}
       </div>
+      )}
 
       {transactions.length === 0 && (
         <div style={{ marginTop: '24px', background: theme.bgCard, borderRadius: '16px', padding: '60px', textAlign: 'center', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
@@ -6961,14 +7070,30 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
                       {getStatusBadge(t.status)}
                     </td>
                     <td style={{ padding: '16px 20px', textAlign: 'center' }}>
-                      <span style={{ 
-                        display: 'inline-flex', alignItems: 'center', gap: '6px',
-                        padding: '4px 12px', borderRadius: '20px', 
-                        background: acctStyle.bg, color: acctStyle.color, 
-                        fontSize: '12px', fontWeight: '500'
-                      }}>
-                        {acctStyle.icon} {acctStyle.label}
-                      </span>
+                      <select
+                        value={t.accountType || 'personal'}
+                        onChange={(e) => {
+                          console.log('Update transaction', t.id, 'to', e.target.value);
+                          // TODO: Implement actual update via Supabase
+                        }}
+                        style={{ 
+                          appearance: 'none',
+                          display: 'inline-flex', 
+                          alignItems: 'center', 
+                          gap: '6px',
+                          padding: '4px 24px 4px 12px', 
+                          borderRadius: '20px', 
+                          background: `${acctStyle.bg} url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center`,
+                          color: acctStyle.color, 
+                          fontSize: '12px', 
+                          fontWeight: '500',
+                          border: 'none',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        <option value="personal">👤 {accountLabels?.personal || 'Personal'}</option>
+                        <option value="sidehustle">💼 {accountLabels?.sidehustle || 'Side Hustle'}</option>
+                      </select>
                     </td>
                   </tr>
                 );
