@@ -5471,6 +5471,145 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         </div>
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* QUICK ACTIONS - Bills & Goals (Moved up for visibility) */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        marginBottom: '16px',
+        paddingTop: '8px'
+      }}>
+        <div style={{ 
+          width: '4px', 
+          height: '24px', 
+          background: 'linear-gradient(180deg, #EC4899 0%, #8B5CF6 100%)', 
+          borderRadius: '2px' 
+        }} />
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '700', 
+          color: theme.textPrimary, 
+          margin: 0,
+          letterSpacing: '-0.3px'
+        }}>Quick Actions</h2>
+        <span style={{ 
+          fontSize: '12px', 
+          color: theme.textMuted,
+          background: theme.bgMain,
+          padding: '4px 10px',
+          borderRadius: '6px'
+        }}>Items needing attention</span>
+      </div>
+
+      {/* Bills & Goals Row - Priority Section */}
+      <div className="chart-grid-1-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
+        {/* Upcoming Bills */}
+        <div style={{ 
+          background: theme.bgCard, 
+          borderRadius: '16px', 
+          padding: '24px', 
+          boxShadow: theme.cardShadow, 
+          border: `1px solid ${theme.borderLight}`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Subtle gradient accent */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #EF4444 0%, #F97316 100%)'
+          }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Upcoming Bills</h3>
+            <span style={{ padding: '4px 10px', background: '#FEE2E2', color: '#DC2626', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>{upcomingBills.length} due soon</span>
+          </div>
+          <div style={{ display: 'grid', gap: '12px' }}>
+            {upcomingBills.slice(0, 4).map((bill, i) => {
+              const dueDate = new Date(bill.dueDate);
+              const daysUntil = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
+              return (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px', borderRadius: '12px', background: theme.bgMain, border: daysUntil <= 3 ? '1px solid #FCA5A5' : `1px solid ${theme.borderLight}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{bill.icon || '📄'}</div>
+                    <div><div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div><div style={{ fontSize: '12px', color: daysUntil <= 3 ? '#DC2626' : theme.textMuted }}>{daysUntil <= 0 ? 'Due today!' : daysUntil === 1 ? 'Due tomorrow' : `Due in ${daysUntil} days`}</div></div>
+                  </div>
+                  <span style={{ fontSize: '15px', fontWeight: '700', color: theme.textPrimary }}>${bill.amount.toFixed(2)}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Savings Goals */}
+        <div style={{ 
+          background: theme.bgCard, 
+          borderRadius: '16px', 
+          padding: '24px', 
+          boxShadow: theme.cardShadow, 
+          border: `1px solid ${theme.borderLight}`,
+          position: 'relative',
+          overflow: 'hidden'
+        }}>
+          {/* Subtle gradient accent */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: 'linear-gradient(90deg, #10B981 0%, #06B6D4 100%)'
+          }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Savings Goals</h3>
+            <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>View All →</button>
+          </div>
+          <div style={{ display: 'grid', gap: '16px' }}>
+            {displayGoals.slice(0, 3).map((goal, i) => {
+              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              return (
+                <div key={i} style={{ padding: '12px', background: theme.bgMain, borderRadius: '12px', border: `1px solid ${theme.borderLight}` }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${goal.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{goal.icon}</div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div><div style={{ fontSize: '12px', color: theme.textMuted }}>{formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}</div></div>
+                    <span style={{ fontSize: '14px', fontWeight: '700', color: goal.color }}>{progress.toFixed(0)}%</span>
+                  </div>
+                  <div style={{ height: '8px', background: theme.borderLight, borderRadius: '4px', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${goal.color} 0%, ${goal.color}CC 100%)`, borderRadius: '4px', transition: 'width 0.5s ease' }} /></div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* FINANCIAL OVERVIEW */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        marginBottom: '16px'
+      }}>
+        <div style={{ 
+          width: '4px', 
+          height: '24px', 
+          background: 'linear-gradient(180deg, #3B82F6 0%, #06B6D4 100%)', 
+          borderRadius: '2px' 
+        }} />
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '700', 
+          color: theme.textPrimary, 
+          margin: 0,
+          letterSpacing: '-0.3px'
+        }}>Financial Overview</h2>
+      </div>
+
       {/* Chart Row - Line Chart + Health Gauge */}
       <div className="chart-grid-2-1" style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
         {/* Income vs. Expenses Line Chart (Image 2) */}
@@ -5521,8 +5660,32 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         </div>
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* SPENDING ANALYSIS */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        marginBottom: '16px'
+      }}>
+        <div style={{ 
+          width: '4px', 
+          height: '24px', 
+          background: 'linear-gradient(180deg, #8B5CF6 0%, #EC4899 100%)', 
+          borderRadius: '2px' 
+        }} />
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '700', 
+          color: theme.textPrimary, 
+          margin: 0,
+          letterSpacing: '-0.3px'
+        }}>Spending Analysis</h2>
+      </div>
+
       {/* Spending & Budget Row */}
-      <div className="chart-grid-1-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '24px' }}>
+      <div className="chart-grid-1-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '32px' }}>
         {/* Budgeted vs. Actual Expenses - Bar Chart (Image 3/8) */}
         <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
@@ -5684,8 +5847,26 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         </div>
       </div>
 
-      {/* Latest Transactions Table (Image 6) */}
-      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, marginBottom: '24px' }}>
+      {/* Latest Transactions Table */}
+      <div style={{ 
+        background: theme.bgCard, 
+        borderRadius: '16px', 
+        padding: '24px', 
+        boxShadow: theme.cardShadow, 
+        border: `1px solid ${theme.borderLight}`, 
+        marginBottom: '24px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle gradient accent */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%)'
+        }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Latest Transactions</h3>
           <button style={{ background: 'none', border: 'none', color: theme.textMuted, cursor: 'pointer', fontSize: '18px' }}>⋮</button>
@@ -5843,8 +6024,50 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         )}
       </div>
 
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* ACTIVITY & PRODUCTIVITY */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div style={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: '12px', 
+        marginBottom: '16px'
+      }}>
+        <div style={{ 
+          width: '4px', 
+          height: '24px', 
+          background: 'linear-gradient(180deg, #F59E0B 0%, #EF4444 100%)', 
+          borderRadius: '2px' 
+        }} />
+        <h2 style={{ 
+          fontSize: '18px', 
+          fontWeight: '700', 
+          color: theme.textPrimary, 
+          margin: 0,
+          letterSpacing: '-0.3px'
+        }}>Activity & Productivity</h2>
+      </div>
+
       {/* Tasks Progress Section */}
-      <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, marginBottom: '24px' }}>
+      <div style={{ 
+        background: theme.bgCard, 
+        borderRadius: '16px', 
+        padding: '24px', 
+        boxShadow: theme.cardShadow, 
+        border: `1px solid ${theme.borderLight}`, 
+        marginBottom: '24px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Subtle gradient accent */}
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '3px',
+          background: 'linear-gradient(90deg, #F59E0B 0%, #EF4444 100%)'
+        }} />
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Task Progress</h3>
           <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>View All →</button>
@@ -5981,52 +6204,6 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               <span style={{ fontSize: '13px', color: theme.textMuted }}>No pending tasks. Add a task to get started!</span>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Bills & Goals Row */}
-      <div className="chart-grid-1-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Upcoming Bills</h3>
-            <span style={{ padding: '4px 10px', background: '#FEE2E2', color: '#DC2626', borderRadius: '12px', fontSize: '12px', fontWeight: '600' }}>{upcomingBills.length} due soon</span>
-          </div>
-          <div style={{ display: 'grid', gap: '12px' }}>
-            {upcomingBills.map((bill, i) => {
-              const dueDate = new Date(bill.dueDate);
-              const daysUntil = Math.ceil((dueDate - new Date()) / (1000 * 60 * 60 * 24));
-              return (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px', borderRadius: '12px', background: theme.bgMain, border: daysUntil <= 3 ? '1px solid #FCA5A5' : 'none' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{bill.icon || '📄'}</div>
-                    <div><div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div><div style={{ fontSize: '12px', color: daysUntil <= 3 ? '#DC2626' : theme.textMuted }}>{daysUntil <= 0 ? 'Due today!' : daysUntil === 1 ? 'Due tomorrow' : `Due in ${daysUntil} days`}</div></div>
-                  </div>
-                  <span style={{ fontSize: '15px', fontWeight: '700', color: theme.textPrimary }}>${bill.amount.toFixed(2)}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-        <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}` }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h3 style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Savings Goals</h3>
-            <button style={{ background: 'none', border: 'none', color: theme.primary, fontSize: '13px', cursor: 'pointer', fontWeight: '500' }}>View All →</button>
-          </div>
-          <div style={{ display: 'grid', gap: '16px' }}>
-            {displayGoals.map((goal, i) => {
-              const progress = (goal.currentAmount / goal.targetAmount) * 100;
-              return (
-                <div key={i} style={{ padding: '12px', background: theme.bgMain, borderRadius: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                    <div style={{ width: '36px', height: '36px', borderRadius: '10px', background: `${goal.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>{goal.icon}</div>
-                    <div style={{ flex: 1 }}><div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div><div style={{ fontSize: '12px', color: theme.textMuted }}>{formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}</div></div>
-                    <span style={{ fontSize: '14px', fontWeight: '700', color: goal.color }}>{progress.toFixed(0)}%</span>
-                  </div>
-                  <div style={{ height: '6px', background: theme.borderLight, borderRadius: '3px', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: goal.color, borderRadius: '3px' }} /></div>
-                </div>
-              );
-            })}
-          </div>
         </div>
       </div>
 
