@@ -11,6 +11,7 @@ import TransactionsTab from './components/TransactionsTab';
 import ReportsTab from './components/ReportsTab';
 import RetirementTab from './components/RetirementTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
+import TasksTab from './components/TasksTab';
 import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
 // Default data - baked in from real bank/retirement imports
 import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultData';
@@ -7081,9 +7082,9 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
   );
 }
 // ============================================================================
-// TASKS TAB - Task Management (Image 6 inspired)
+// TASKS TAB - Task Management (Image 6 inspired) [DEPRECATED - Now imported from ./components/TasksTab]
 // ============================================================================
-function TasksTab({ tasks, onUpdateTasks, theme, lastImportDate }) {
+function _TasksTabInline({ tasks, onUpdateTasks, theme, lastImportDate }) {
   const [filter, setFilter] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '', priority: 'medium', category: 'Personal' });
