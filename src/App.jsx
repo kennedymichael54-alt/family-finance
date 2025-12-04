@@ -3385,12 +3385,13 @@ function Dashboard({
     {
       id: 'bizbudget',
       label: 'BizBudget Hub',
-      subtitle: 'KM GA LLC - HomeVestors',
+      subtitle: 'Business Command Center',
       icon: Icons.BizBudgetHub,
       color: '#A78BFA', // Light Purple
       status: BIZBUDGET_ACCESS_USERS.includes(user?.email?.toLowerCase()) ? 'active' : 'coming_soon',
       requiresBizBudgetAccess: true,
       items: BIZBUDGET_ACCESS_USERS.includes(user?.email?.toLowerCase()) ? [
+        { id: 'bizbudget-dashboard', label: 'Dashboard', icon: Icons.Dashboard },
         { id: 'bizbudget-pipeline', label: 'Deal Pipeline', icon: Icons.HomeBudgetHub },
         { id: 'bizbudget-forecast', label: 'Revenue Forecast', icon: Icons.Reports },
         { id: 'bizbudget-tax', label: 'Tax Planning', icon: Icons.Budget },
@@ -3402,7 +3403,7 @@ function Dashboard({
     {
       id: 'rebudget',
       label: 'REBudget Hub',
-      subtitle: 'Real Estate & Rentals',
+      subtitle: 'Real Estate Toolkit',
       icon: Icons.REBudgetHub,
       color: '#818CF8', // Indigo
       status: 'coming_soon',
@@ -3550,6 +3551,7 @@ function Dashboard({
       case 'reports':
         return <GradientSection tab="reports"><ReportsTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} /></GradientSection>;
       // BizBudget Hub tabs - accessible only to authorized users
+      case 'bizbudget-dashboard':
       case 'bizbudget-pipeline':
       case 'bizbudget-forecast':
       case 'bizbudget-tax':
@@ -3559,7 +3561,7 @@ function Dashboard({
         if (!BIZBUDGET_ACCESS_USERS.includes(user?.email?.toLowerCase())) {
           return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
         }
-        return <GradientSection tab="bizbudget"><BizBudgetHub theme={theme} lastImportDate={lastImportDate} userEmail={user?.email} initialTab={activeTab.replace('bizbudget-', '')} /></GradientSection>;
+        return <GradientSection tab="bizbudget"><BizBudgetHub theme={theme} lastImportDate={lastImportDate} userEmail={user?.email} initialTab={activeTab.replace('bizbudget-', '')} profile={profile} onUpdateProfile={saveProfileToDB} /></GradientSection>;
       case 'settings':
         return <GradientSection tab="settings"><SettingsTabDS 
           theme={theme} 
@@ -4236,7 +4238,7 @@ function Dashboard({
                   </div>
                   
                   {/* Hub Label */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ flex: 1, minWidth: 0, overflow: 'hidden', marginRight: '8px' }}>
                     <div style={{ 
                       fontSize: '14px', 
                       fontWeight: '700', 
@@ -4244,7 +4246,8 @@ function Dashboard({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      marginBottom: '2px'
+                      marginBottom: '2px',
+                      flexWrap: 'nowrap'
                     }}>
                       {hub.label}
                       {isComingSoon && (
@@ -4270,7 +4273,10 @@ function Dashboard({
                     <div style={{ 
                       fontSize: '11px', 
                       color: 'rgba(255, 255, 255, 0.5)', 
-                      fontWeight: '500'
+                      fontWeight: '500',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis'
                     }}>
                       {hub.subtitle}
                     </div>
@@ -4288,7 +4294,8 @@ function Dashboard({
                       justifyContent: 'center',
                       transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
                       transition: 'all 0.3s ease',
-                      color: isExpanded ? hub.color : 'rgba(255, 255, 255, 0.5)'
+                      color: isExpanded ? hub.color : 'rgba(255, 255, 255, 0.5)',
+                      flexShrink: 0
                     }}>
                       <Icons.ChevronRight />
                     </div>
