@@ -634,6 +634,7 @@ const PERPETUAL_LICENSE_USERS = [
   'michael.kennedy@homevestors.com',
   'anthony.montgomery@homevestors.com',
   'tucker.pate@homevestors.com',
+  'alecias0415@gmail.com', // Alecia Matheson - HomeBudget Hub tester
 ];
 
 // Users with BizBudget Hub access
