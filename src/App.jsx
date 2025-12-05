@@ -4711,8 +4711,7 @@ function Dashboard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-          minHeight: '80px',
-          position: 'relative'
+          minHeight: '80px'
         }}>
           {/* Logo */}
           <div 
@@ -4725,7 +4724,6 @@ function Dashboard({
               overflow: 'hidden',
               flex: sidebarCollapsed ? 'none' : 1,
               minWidth: 0,
-              marginRight: sidebarCollapsed ? '0' : '12px',
               justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
             }}
           >
@@ -4818,46 +4816,44 @@ function Dashboard({
             )}
           </div>
           
-          {/* Status Indicator - Always visible, separate from collapse button */}
+          {/* Right side: Status Indicator + Collapse Button */}
           {!sidebarCollapsed && (
             <div style={{ 
-              position: 'absolute', 
-              right: '52px', 
-              top: '50%', 
-              transform: 'translateY(-50%)',
-              zIndex: 10
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '10px',
+              flexShrink: 0
             }}>
+              {/* Status Indicator */}
               <SiteStatusIndicator showLabel={false} darkMode={true} />
+              
+              {/* Collapse Toggle Button */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setSidebarCollapsed(true); }}
+                className="collapse-btn"
+                style={{
+                  width: '32px',
+                  height: '32px',
+                  minWidth: '32px',
+                  flexShrink: 0,
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  border: '1px solid rgba(255, 255, 255, 0.12)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.7)',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Collapse sidebar"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="11 17 6 12 11 7"/>
+                  <polyline points="18 17 13 12 18 7"/>
+                </svg>
+              </button>
             </div>
-          )}
-          
-          {/* Collapse Toggle Button */}
-          {!sidebarCollapsed && (
-            <button
-              onClick={() => setSidebarCollapsed(true)}
-              className="collapse-btn"
-              style={{
-                width: '32px',
-                height: '32px',
-                minWidth: '32px',
-                flexShrink: 0,
-                borderRadius: '10px',
-                background: 'rgba(255, 255, 255, 0.08)',
-                border: '1px solid rgba(255, 255, 255, 0.12)',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'rgba(255, 255, 255, 0.7)',
-                transition: 'all 0.2s ease'
-              }}
-              title="Collapse sidebar"
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="11 17 6 12 11 7"/>
-                <polyline points="18 17 13 12 18 7"/>
-              </svg>
-            </button>
           )}
         </div>
         
