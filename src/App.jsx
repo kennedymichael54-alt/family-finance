@@ -4131,8 +4131,8 @@ function Dashboard({
     onUpdateProfile(newProfile);
   }, [onUpdateProfile]);
 
-  // Sign out handler - memoized
-  const handleSignOut = useCallback(async () => {
+  // Sign out handler
+  const handleSignOut = async () => {
     console.log('🚪 [Auth] Signing out...');
     
     // Close any open menus first
@@ -4161,33 +4161,20 @@ function Dashboard({
         console.log('✅ [Auth] Signed out successfully');
       }
       
-      // Force state reset and navigation to landing
-      setUser(null);
+      // Navigate to landing - App component will detect auth change and clear state
       setView('landing');
-      setTransactions([]);
-      setBills([]);
-      setGoals([]);
-      setTasks([]);
-      setProfile({
-        firstName: '',
-        lastName: '',
-        email: '',
-        phone: '',
-        dateOfBirth: '',
-        gender: '',
-        photoUrl: '',
-        sidehustleName: '',
-        sideHustle: ''
-      });
+      
+      // Force reload to ensure clean state
+      window.location.reload();
       
       console.log('✅ [Auth] State cleared, navigating to landing');
     } catch (err) {
       console.error('❌ [Auth] Sign out error:', err);
       // Force navigation even on error
-      setUser(null);
       setView('landing');
+      window.location.reload();
     }
-  }, [setView, setUser, setTransactions, setBills, setGoals, setTasks, setProfile]);
+  };
 
   // Memoized display name calculation
   const displayName = useMemo(() => {
@@ -11222,3 +11209,4 @@ export default function AppWrapper() {
     </ErrorBoundary>
   );
 }
+
