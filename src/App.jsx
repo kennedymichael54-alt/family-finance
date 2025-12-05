@@ -14,6 +14,7 @@ import SalesTrackerTab from './components/SalesTrackerTab';
 import BizBudgetHub from './components/BizBudgetHub';
 import RealEstateCommandCenter from './components/RealEstateCommandCenter';
 import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
+import { InfoTooltip, MetricLabel, ProjectionBadge, ActualDataBadge, FINANCIAL_TOOLTIPS } from './components/InfoTooltip';
 // Default data - baked in from real bank/retirement imports
 import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultData';
 
@@ -6159,6 +6160,207 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
     monthlyData.push({ month: monthNames[i], income, expenses });
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REAL MONTH-OVER-MONTH CALCULATIONS - Based on actual transaction data
+  // ═══════════════════════════════════════════════════════════════════════════
+  const currentMonth = new Date().getMonth(); // 0-11
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  
+  const currentMonthData = monthlyData[currentMonth] || { income: 0, expenses: 0 };
+  const lastMonthData = monthlyData[lastMonth] || { income: 0, expenses: 0 };
+  
+  // Calculate real percentage changes
+  const calcPercentChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+  
+  const monthOverMonth = {
+    income: {
+      current: currentMonthData.income,
+      previous: lastMonthData.income,
+      change: calcPercentChange(currentMonthData.income, lastMonthData.income),
+      isUp: currentMonthData.income >= lastMonthData.income
+    },
+    expenses: {
+      current: currentMonthData.expenses,
+      previous: lastMonthData.expenses,
+      change: calcPercentChange(currentMonthData.expenses, lastMonthData.expenses),
+      isUp: currentMonthData.expenses >= lastMonthData.expenses
+    },
+    savings: {
+      current: currentMonthData.income - currentMonthData.expenses,
+      previous: lastMonthData.income - lastMonthData.expenses,
+      change: calcPercentChange(
+        currentMonthData.income - currentMonthData.expenses,
+        lastMonthData.income - lastMonthData.expenses
+      ),
+      isUp: (currentMonthData.income - currentMonthData.expenses) >= (lastMonthData.income - lastMonthData.expenses)
+    }
+  };
+  
+  // Transaction count by month
+  const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const lastMonthStr = `${lastMonthYear}-${String(lastMonth + 1).padStart(2, '0')}`;
+  
+  const currentMonthTxnCount = activeTransactions.filter(t => t.date?.startsWith(currentMonthStr)).length;
+  const lastMonthTxnCount = activeTransactions.filter(t => t.date?.startsWith(lastMonthStr)).length;
+  
+  monthOverMonth.transactions = {
+    current: currentMonthTxnCount,
+    previous: lastMonthTxnCount,
+    change: calcPercentChange(currentMonthTxnCount, lastMonthTxnCount),
+    isUp: currentMonthTxnCount >= lastMonthTxnCount
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REAL DEBT DETECTION - From actual transaction categories
+  // ═══════════════════════════════════════════════════════════════════════════
+  const debtKeywords = ['loan', 'debt', 'credit', 'mortgage', 'payment', 'finance', 'lending'];
+  const debtTransactions = activeTransactions.filter(t => {
+    const category = (t.category || '').toLowerCase();
+    const description = (t.description || '').toLowerCase();
+    return debtKeywords.some(keyword => category.includes(keyword) || description.includes(keyword)) &&
+           parseFloat(t.amount) < 0;
+  });
+  const totalDebtPayments = debtTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+  const monthlyDebtPayments = totalDebtPayments / Math.max(1, new Set(debtTransactions.map(t => t.date?.slice(0, 7))).size);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REAL RECURRING TRANSACTION DETECTION - Pattern matching
+  // ═══════════════════════════════════════════════════════════════════════════
+  const detectRecurringTransactions = () => {
+    const descriptionGroups = {};
+    activeTransactions.forEach(t => {
+      const normalizedDesc = (t.description || '').toLowerCase().replace(/[0-9#]/g, '').trim();
+      if (normalizedDesc.length > 3) {
+        if (!descriptionGroups[normalizedDesc]) {
+          descriptionGroups[normalizedDesc] = [];
+        }
+        descriptionGroups[normalizedDesc].push(t);
+      }
+    });
+    
+    const recurring = [];
+    Object.entries(descriptionGroups).forEach(([desc, txns]) => {
+      if (txns.length >= 2) {
+        const avgAmount = txns.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0) / txns.length;
+        const isSubscription = ['netflix', 'spotify', 'hulu', 'disney', 'hbo', 'apple', 'amazon prime', 
+                                'youtube', 'adobe', 'microsoft', 'gym', 'membership'].some(s => desc.includes(s));
+        recurring.push({
+          description: txns[0].description,
+          count: txns.length,
+          avgAmount,
+          isSubscription,
+          category: txns[0].category,
+          lastDate: txns.sort((a, b) => new Date(b.date) - new Date(a.date))[0].date
+        });
+      }
+    });
+    return recurring.sort((a, b) => b.avgAmount - a.avgAmount);
+  };
+  
+  const recurringTransactions = detectRecurringTransactions();
+  const totalMonthlyRecurring = recurringTransactions.reduce((sum, r) => sum + r.avgAmount, 0);
+  const subscriptions = recurringTransactions.filter(r => r.isSubscription);
+  const fixedBills = recurringTransactions.filter(r => !r.isSubscription);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REAL NET WORTH CALCULATION - Assets vs Liabilities
+  // ═══════════════════════════════════════════════════════════════════════════
+  const calculateRealNetWorth = () => {
+    // Assets from goals (savings)
+    const savingsFromGoals = goals.reduce((sum, g) => sum + (parseFloat(g.currentAmount) || 0), 0);
+    
+    // Retirement assets (if available from default data for owner account)
+    let retirementAssets = 0;
+    if (user?.email === 'kennedymichael54@gmail.com' && DEFAULT_RETIREMENT_DATA) {
+      retirementAssets = DEFAULT_RETIREMENT_DATA.accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+    }
+    
+    // Estimate checking/savings from recent positive balances (net positive months)
+    const recentPositiveFlow = monthlyData.slice(-6).reduce((sum, m) => {
+      const net = m.income - m.expenses;
+      return sum + (net > 0 ? net : 0);
+    }, 0);
+    
+    // Total Assets
+    const totalAssets = savingsFromGoals + retirementAssets + recentPositiveFlow;
+    
+    // Liabilities - estimated from debt payments (annual payments / typical interest = principal estimate)
+    const estimatedDebtPrincipal = monthlyDebtPayments * 12 * 5; // Rough estimate: 5 years of payments
+    
+    // Credit card spending detection (revolving debt indicator)
+    const creditCardSpending = activeTransactions.filter(t => {
+      const desc = (t.description || '').toLowerCase();
+      return desc.includes('credit') || desc.includes('visa') || desc.includes('mastercard') || 
+             desc.includes('amex') || desc.includes('discover');
+    }).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount) < 0 ? parseFloat(t.amount) : 0), 0);
+    
+    const totalLiabilities = estimatedDebtPrincipal + (creditCardSpending * 0.3); // Assume 30% of CC spending is carried
+    
+    return {
+      assets: {
+        savings: savingsFromGoals,
+        retirement: retirementAssets,
+        recentSavings: recentPositiveFlow,
+        total: totalAssets
+      },
+      liabilities: {
+        estimatedDebt: estimatedDebtPrincipal,
+        estimatedCreditCard: creditCardSpending * 0.3,
+        total: totalLiabilities
+      },
+      netWorth: totalAssets - totalLiabilities,
+      isEstimated: true // Flag that some values are estimates
+    };
+  };
+  
+  const realNetWorth = calculateRealNetWorth();
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // REAL FINANCIAL HEALTH METRICS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const realFinancialMetrics = {
+    // Savings Rate (actual)
+    savingsRate: activeTotals.income > 0 
+      ? Math.max(0, ((activeTotals.income - activeTotals.expenses) / activeTotals.income) * 100)
+      : 0,
+    
+    // Debt-to-Income Ratio (actual)
+    debtToIncome: activeTotals.income > 0 
+      ? (monthlyDebtPayments / (activeTotals.income / Math.max(1, monthlyData.filter(m => m.income > 0).length))) * 100
+      : 0,
+    
+    // Emergency Fund Coverage (actual months)
+    emergencyFundMonths: (() => {
+      const emergencyGoal = goals.find(g => g.name?.toLowerCase().includes('emergency'));
+      const emergencySavings = emergencyGoal?.currentAmount || 0;
+      const avgMonthlyExpenses = activeTotals.expenses / Math.max(1, monthlyData.filter(m => m.expenses > 0).length);
+      return avgMonthlyExpenses > 0 ? emergencySavings / avgMonthlyExpenses : 0;
+    })(),
+    
+    // Bills on time (actual from bills data)
+    billsOnTimeRate: bills.length > 0 
+      ? (bills.filter(b => b.status === 'paid' || b.isPaid).length / bills.length) * 100
+      : 100,
+    
+    // Goal progress (actual)
+    avgGoalProgress: goals.length > 0
+      ? goals.reduce((sum, g) => sum + (((g.currentAmount || 0) / (g.targetAmount || 1)) * 100), 0) / goals.length
+      : 0,
+    
+    // Days under budget this month
+    daysUnderBudget: (() => {
+      const today = new Date();
+      const dayOfMonth = today.getDate();
+      const dailyBudget = totalBudget / 30;
+      const dailySpent = totalSpentOnBudgeted / dayOfMonth;
+      return dailySpent <= dailyBudget ? dayOfMonth : Math.floor(dayOfMonth * (dailyBudget / dailySpent));
+    })()
+  };
+
   // Budget calculations
   const budgets = [
     { category: 'Fast Food', budget: 300, color: '#8B5CF6' },
@@ -6601,16 +6803,22 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               background: theme.mode === 'dark' ? 'rgba(0, 188, 212, 0.3)' : 'rgba(0, 188, 212, 0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' 
             }}>💰</div>
-            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#67E8F9' : '#00838F', fontWeight: '600' }}>Income</span>
+            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#67E8F9' : '#00838F', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Income
+              <InfoTooltip {...FINANCIAL_TOOLTIPS.income} isDarkMode={theme.mode === 'dark'} size="small" />
+            </span>
           </div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#E0F7FA' : '#006064', marginBottom: '8px' }}>
             {formatCurrency(activeTotals.income)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#67E8F9' : '#00695C' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 25%
+              <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#67E8F9' : '#00695C', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                vs last month
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.monthOverMonthChange} isDarkMode={theme.mode === 'dark'} size="small" />
+              </span>
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.income.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.income.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.income.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.income)} color="#00BCD4" width={70} height={40} />
@@ -6631,7 +6839,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               background: theme.mode === 'dark' ? 'rgba(255, 152, 0, 0.3)' : 'rgba(255, 152, 0, 0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' 
             }}>🔥</div>
-            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100', fontWeight: '600' }}>Expenses</span>
+            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Expenses
+              <InfoTooltip {...FINANCIAL_TOOLTIPS.expenses} isDarkMode={theme.mode === 'dark'} size="small" />
+            </span>
           </div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#FFF3E0' : '#BF360C', marginBottom: '8px' }}>
             {formatCurrency(activeTotals.expenses)}
@@ -6639,8 +6850,8 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 5%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.expenses.isUp ? '#EF4444' : '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.expenses.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.expenses.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.expenses)} color="#FF9800" width={70} height={40} />
@@ -6661,16 +6872,19 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               background: theme.mode === 'dark' ? 'rgba(76, 175, 80, 0.3)' : 'rgba(76, 175, 80, 0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' 
             }}>🏦</div>
-            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32', fontWeight: '600' }}>Savings</span>
+            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Savings
+              <InfoTooltip {...FINANCIAL_TOOLTIPS.savings} isDarkMode={theme.mode === 'dark'} size="small" />
+            </span>
           </div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#E8F5E9' : '#1B5E20', marginBottom: '8px' }}>
-            {formatCurrency(Math.max(0, activeTotals.net))}
+            {formatCurrency(activeTotals.net)}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: activeTotals.net >= 0 ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                {activeTotals.net >= 0 ? '↗' : '↘'} 15%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.savings.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.savings.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.savings.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.income - m.expenses)} color="#4CAF50" width={70} height={40} />
@@ -6691,7 +6905,18 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               background: theme.mode === 'dark' ? 'rgba(156, 39, 176, 0.3)' : 'rgba(156, 39, 176, 0.2)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' 
             }}>📊</div>
-            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2', fontWeight: '600' }}>Transactions</span>
+            <span style={{ fontSize: '14px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              Transactions
+              <InfoTooltip 
+                title="Total Transactions"
+                definition="The number of financial transactions (both income and expenses) imported from your bank."
+                dataSource="Your imported bank transactions"
+                calculation="Count of all transactions in the selected time period"
+                tips={['More transactions means better data for tracking patterns', 'Import regularly to keep your data current']}
+                isDarkMode={theme.mode === 'dark'} 
+                size="small" 
+              />
+            </span>
           </div>
           <div style={{ fontSize: '28px', fontWeight: '700', color: theme.mode === 'dark' ? '#F3E5F5' : '#4A148C', marginBottom: '8px' }}>
             {activeTransactions.length.toLocaleString()}
@@ -6699,11 +6924,14 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 10%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.transactions.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.transactions.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.transactions.change).toFixed(0)}%
               </span>
             </div>
-            <Sparkline data={[30, 45, 35, 50, 40, 55, 60]} color="#9C27B0" width={70} height={40} />
+            <Sparkline data={monthlyData.map(m => {
+              const monthStr = `${currentYear}-${String(monthNames.indexOf(m.month) + 1).padStart(2, '0')}`;
+              return activeTransactions.filter(t => t.date?.startsWith(monthStr)).length;
+            })} color="#9C27B0" width={70} height={40} />
           </div>
         </div>
       </div>
@@ -6790,8 +7018,9 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #10B981, #06B6D4)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Financial Health Score
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.financialHealthScore} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
               <span style={{ 
                 background: `${scoreColor}20`,
@@ -6910,7 +7139,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>💰</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Savings Rate</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Savings Rate
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.savingsRate} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -6945,7 +7177,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>📊</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Budget Adherence</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Budget Adherence
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.budgetAdherence} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -6980,7 +7215,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>🛡️</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Emergency Fund</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Emergency Fund
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.emergencyFund} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -7015,7 +7253,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>📉</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Debt-to-Income</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Debt-to-Income
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.debtToIncome} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -7050,7 +7291,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>📅</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Bills On Time</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Bills On Time
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.billsOnTime} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -7085,7 +7329,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
                         <span style={{ fontSize: '18px' }}>🎯</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Goal Progress</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                          Goal Progress
+                          <InfoTooltip {...FINANCIAL_TOOLTIPS.goalProgress} isDarkMode={theme.mode === 'dark'} size="small" />
+                        </span>
                       </div>
                       <div style={{ 
                         fontSize: '26px', 
@@ -7110,6 +7357,59 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                         </span>
                       </div>
                     </div>
+                  </div>
+                </div>
+                
+                {/* How Score is Calculated - Educational Panel */}
+                <div style={{ 
+                  marginTop: '24px', 
+                  padding: '18px 22px', 
+                  background: theme.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                  borderRadius: '14px',
+                  border: `1px solid ${theme.borderLight}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
+                    <span style={{ fontSize: '18px' }}>🧮</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>How Your Score is Calculated</span>
+                    <InfoTooltip {...FINANCIAL_TOOLTIPS.healthScoreFormula} isDarkMode={theme.mode === 'dark'} size="small" />
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', fontSize: '12px' }}>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Savings Rate</div>
+                      <div style={{ color: '#10B981', fontWeight: '600' }}>{savingsRateCalc.toFixed(0)}% × 25% = {(savingsRateCalc * 0.25).toFixed(1)} pts</div>
+                    </div>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Budget Adherence</div>
+                      <div style={{ color: '#3B82F6', fontWeight: '600' }}>{budgetAdherenceCalc.toFixed(0)}% × 25% = {(budgetAdherenceCalc * 0.25).toFixed(1)} pts</div>
+                    </div>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(6, 182, 212, 0.08)' : 'rgba(6, 182, 212, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Emergency Fund</div>
+                      <div style={{ color: '#06B6D4', fontWeight: '600' }}>{Math.min(100, emergencyMonthsCovered * 16.7).toFixed(0)}% × 20% = {(Math.min(100, emergencyMonthsCovered * 16.7) * 0.20).toFixed(1)} pts</div>
+                    </div>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(236, 72, 153, 0.08)' : 'rgba(236, 72, 153, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Low Debt</div>
+                      <div style={{ color: '#EC4899', fontWeight: '600' }}>{Math.max(0, 100 - debtToIncomeRatio).toFixed(0)}% × 15% = {(Math.max(0, 100 - debtToIncomeRatio) * 0.15).toFixed(1)} pts</div>
+                    </div>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Bills On Time</div>
+                      <div style={{ color: '#F59E0B', fontWeight: '600' }}>{billsOnTimePercent.toFixed(0)}% × 10% = {(billsOnTimePercent * 0.10).toFixed(1)} pts</div>
+                    </div>
+                    <div style={{ background: theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.05)', padding: '10px 12px', borderRadius: '8px' }}>
+                      <div style={{ color: theme.textMuted, marginBottom: '4px' }}>Goal Progress</div>
+                      <div style={{ color: '#8B5CF6', fontWeight: '600' }}>{avgGoalProgress.toFixed(0)}% × 5% = {(avgGoalProgress * 0.05).toFixed(1)} pts</div>
+                    </div>
+                  </div>
+                  <div style={{ 
+                    marginTop: '14px', 
+                    paddingTop: '12px', 
+                    borderTop: `1px solid ${theme.borderLight}`,
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <span style={{ fontSize: '13px', color: theme.textMuted }}>Total Score:</span>
+                    <span style={{ fontSize: '18px', fontWeight: '700', color: scoreColor }}>{overallHealthScore} / 100</span>
                   </div>
                 </div>
                 
@@ -7146,22 +7446,25 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
       {/* 💰 NET WORTH TRACKER - Wealth Building */}
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {(() => {
-        // Calculate net worth metrics
-        const savingsFromGoals = goals.reduce((sum, g) => sum + (parseFloat(g.currentAmount) || 0), 0);
-        const estimatedAssets = (activeTotals.income * 2.5) + savingsFromGoals;
-        const estimatedLiabilities = activeTotals.expenses * 0.25;
-        const netWorthValue = estimatedAssets - estimatedLiabilities;
-        const monthlyChange = activeTotals.income - activeTotals.expenses;
+        // Use the real net worth calculation from earlier
+        const netWorthValue = realNetWorth.netWorth;
+        const monthlyChange = monthOverMonth.savings.current;
+        const totalAssets = realNetWorth.assets.total;
+        const totalLiabilities = realNetWorth.liabilities.total;
         
-        // Trend data (simulated - 6 months)
-        const trendData = [
-          { month: 'Jul', value: netWorthValue * 0.82 },
-          { month: 'Aug', value: netWorthValue * 0.86 },
-          { month: 'Sep', value: netWorthValue * 0.90 },
-          { month: 'Oct', value: netWorthValue * 0.94 },
-          { month: 'Nov', value: netWorthValue * 0.97 },
-          { month: 'Dec', value: netWorthValue }
-        ];
+        // Build trend from actual monthly net savings (cumulative)
+        const trendData = [];
+        let cumulativeNetWorth = netWorthValue - (monthlyData.slice(-6).reduce((sum, m) => sum + (m.income - m.expenses), 0));
+        const last6Months = monthlyData.slice(-6);
+        last6Months.forEach((m, i) => {
+          cumulativeNetWorth += (m.income - m.expenses);
+          trendData.push({ month: m.month, value: cumulativeNetWorth });
+        });
+        
+        // If no trend data, use current value
+        if (trendData.length === 0) {
+          trendData.push({ month: 'Now', value: netWorthValue });
+        }
         
         const minVal = Math.min(...trendData.map(d => d.value)) * 0.95;
         const maxVal = Math.max(...trendData.map(d => d.value)) * 1.05;
@@ -7185,9 +7488,13 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #10B981, #3B82F6)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Net Worth
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.netWorth} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
+              {realNetWorth.isEstimated && (
+                <ProjectionBadge isDarkMode={theme.mode === 'dark'} />
+              )}
               <span style={{ 
                 background: monthlyChange >= 0 ? '#10B98120' : '#EF444420',
                 color: monthlyChange >= 0 ? '#10B981' : '#EF4444',
@@ -7229,7 +7536,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '40px' }}>
                   {/* Left: Net Worth Display */}
                   <div>
-                    <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px' }}>Total Net Worth</div>
+                    <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      Total Net Worth
+                      {realNetWorth.isEstimated && <span style={{ fontSize: '10px', color: '#F59E0B' }}>(Estimated)</span>}
+                    </div>
                     <div style={{ 
                       fontSize: '40px', 
                       fontWeight: '800', 
@@ -7251,7 +7561,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{ fontSize: '22px' }}>📈</span>
-                            <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500' }}>Total Assets</span>
+                            <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              Total Assets
+                              <InfoTooltip {...FINANCIAL_TOOLTIPS.totalAssets} isDarkMode={theme.mode === 'dark'} size="small" />
+                            </span>
                           </div>
                           <span style={{ fontSize: '20px', fontWeight: '700', color: '#10B981' }}>
                             {formatCurrency(estimatedAssets)}
@@ -7268,7 +7581,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                             <span style={{ fontSize: '22px' }}>📉</span>
-                            <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500' }}>Total Liabilities</span>
+                            <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              Total Liabilities
+                              <InfoTooltip {...FINANCIAL_TOOLTIPS.totalLiabilities} isDarkMode={theme.mode === 'dark'} size="small" />
+                            </span>
                           </div>
                           <span style={{ fontSize: '20px', fontWeight: '700', color: '#EF4444' }}>
                             {formatCurrency(estimatedLiabilities)}
@@ -7429,9 +7745,11 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #3B82F6, #06B6D4)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Cash Flow Forecast
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.cashFlowForecast} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
+              <ProjectionBadge isDarkMode={theme.mode === 'dark'} />
               <span style={{ 
                 background: netChange >= 0 ? '#10B98120' : '#EF444420',
                 color: netChange >= 0 ? '#10B981' : '#EF4444',
@@ -7473,14 +7791,20 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 {/* Balance Summary */}
                 <div style={{ display: 'flex', gap: '32px', marginBottom: '24px' }}>
                   <div>
-                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px' }}>Current Balance</div>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Current Balance
+                      <ActualDataBadge isDarkMode={theme.mode === 'dark'} />
+                    </div>
                     <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary }}>
                       {formatCurrency(startBalance)}
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', color: theme.textMuted, fontSize: '24px' }}>→</div>
                   <div>
-                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px' }}>Projected in 30 Days</div>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      Projected in 30 Days
+                      <InfoTooltip {...FINANCIAL_TOOLTIPS.projectedBalance} isDarkMode={theme.mode === 'dark'} size="small" />
+                    </div>
                     <div style={{ 
                       fontSize: '28px', 
                       fontWeight: '700', 
@@ -7644,8 +7968,9 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #EC4899, #8B5CF6)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Spending by Category
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.spendingByCategory} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
               <span style={{ 
                 background: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
@@ -7870,8 +8195,9 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #F59E0B, #EF4444)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Recurring Transactions
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.recurringTransactions} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
               <span style={{ 
                 background: '#F59E0B20',
@@ -7915,7 +8241,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>Subscriptions</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Subscriptions
+                        <InfoTooltip {...FINANCIAL_TOOLTIPS.subscriptions} isDarkMode={theme.mode === 'dark'} size="small" />
+                      </div>
                       <div style={{ fontSize: '12px', color: theme.textMuted }}>{subscriptions.length} active services</div>
                     </div>
                     <div style={{ 
@@ -7985,7 +8314,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                   
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                     <div>
-                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>Fixed Bills</div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Fixed Bills
+                        <InfoTooltip {...FINANCIAL_TOOLTIPS.fixedBills} isDarkMode={theme.mode === 'dark'} size="small" />
+                      </div>
                       <div style={{ fontSize: '12px', color: theme.textMuted }}>{fixedBills.length} recurring payments</div>
                     </div>
                     <div style={{ 
@@ -8335,8 +8667,9 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 background: 'linear-gradient(180deg, #F59E0B, #EC4899)', 
                 borderRadius: '2px' 
               }} />
-              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Achievements & Streaks
+                <InfoTooltip {...FINANCIAL_TOOLTIPS.achievements} isDarkMode={theme.mode === 'dark'} size="small" />
               </h2>
               <span style={{ 
                 background: '#F59E0B20',
@@ -8400,7 +8733,10 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     <div style={{ fontSize: '48px' }}>🔥</div>
                     <div>
                       <div style={{ fontSize: '36px', fontWeight: '800', color: '#F59E0B', lineHeight: 1 }}>{budgetStreak}</div>
-                      <div style={{ fontSize: '14px', color: theme.textSecondary, marginTop: '4px' }}>Days under budget</div>
+                      <div style={{ fontSize: '14px', color: theme.textSecondary, marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        Days under budget
+                        <InfoTooltip {...FINANCIAL_TOOLTIPS.streaks} isDarkMode={theme.mode === 'dark'} size="small" />
+                      </div>
                     </div>
                   </div>
                   
