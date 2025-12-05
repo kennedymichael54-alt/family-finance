@@ -4338,7 +4338,6 @@ function Dashboard({
 
   const bottomNavItems = useMemo(() => [
     { id: 'settings', label: 'Settings', icon: Icons.Settings },
-    { id: 'import', label: 'Import', icon: Icons.Import },
   ], []);
 
   // Get gradient for current tab - memoized
@@ -5053,6 +5052,166 @@ function Dashboard({
               title={`Trial: ${(userRole === USER_ROLES.OWNER || userRole === USER_ROLES.ADMIN || userRole === USER_ROLES.TESTER) ? 14 : subscriptionAccess.daysLeft} days left`}
             >
               ⏱️
+            </div>
+          )}
+
+          {/* FINANCIAL DATA IMPORT SECTION */}
+          {!sidebarCollapsed && (
+            <div style={{ 
+              padding: '0 8px 12px', 
+              color: 'rgba(255, 255, 255, 0.5)', 
+              fontSize: '11px', 
+              fontWeight: '700', 
+              textTransform: 'uppercase', 
+              letterSpacing: '1px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>📥</span> Financial Data Import
+            </div>
+          )}
+
+          {/* Manual Import Option */}
+          {sidebarCollapsed ? (
+            <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
+              <div
+                onClick={() => setActiveTab('import')}
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: activeTab === 'import' ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' : 'rgba(255, 255, 255, 0.05)',
+                  border: activeTab === 'import' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: activeTab === 'import' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  cursor: 'pointer',
+                  boxShadow: activeTab === 'import' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                title="Manual Import"
+              >
+                <Icons.Import />
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Manual Import */}
+              <div
+                onClick={() => setActiveTab('import')}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  color: activeTab === 'import' ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                  background: activeTab === 'import' 
+                    ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' 
+                    : 'rgba(255, 255, 255, 0.03)',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '6px',
+                  fontSize: '14px',
+                  fontWeight: activeTab === 'import' ? '600' : '500',
+                  border: activeTab === 'import' 
+                    ? 'none' 
+                    : '1px solid rgba(255, 255, 255, 0.06)',
+                  boxShadow: activeTab === 'import' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none'
+                }}
+              >
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: activeTab === 'import' 
+                    ? 'rgba(255,255,255,0.2)' 
+                    : 'rgba(255, 255, 255, 0.06)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <Icons.Import />
+                </div>
+                <span>Manual Import</span>
+              </div>
+
+              {/* Plaid Integration - Coming Soon */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '12px 14px',
+                  borderRadius: '12px',
+                  cursor: 'not-allowed',
+                  color: 'rgba(255, 255, 255, 0.35)',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  transition: 'all 0.2s ease',
+                  marginBottom: '16px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                  opacity: 0.6
+                }}
+                title="Plaid Integration - Coming Soon"
+              >
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '8px',
+                  background: 'rgba(255, 255, 255, 0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                    <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                  </svg>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                  <span>Plaid Integration</span>
+                  <span style={{ 
+                    fontSize: '10px', 
+                    color: 'rgba(251, 191, 36, 0.7)',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
+                  }}>Coming Soon</span>
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* Collapsed Plaid indicator */}
+          {sidebarCollapsed && (
+            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+              <div
+                style={{
+                  width: '48px',
+                  height: '48px',
+                  borderRadius: '12px',
+                  background: 'rgba(255, 255, 255, 0.02)',
+                  border: '1px solid rgba(255, 255, 255, 0.04)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.25)',
+                  cursor: 'not-allowed',
+                  opacity: 0.5
+                }}
+                title="Plaid Integration - Coming Soon"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                  <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                </svg>
+              </div>
             </div>
           )}
 
@@ -6099,7 +6258,7 @@ function Dashboard({
                 }}
                 title="Logout"
               >
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
                   <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                   <polyline points="16 17 21 12 16 7"/>
                   <line x1="21" y1="12" x2="9" y2="12"/>
