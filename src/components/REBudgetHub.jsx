@@ -1,0 +1,2295 @@
+import React, { useState, useMemo } from 'react';
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// RE BUDGET HUB - Real Estate Investment Analysis Dashboard
+// A comprehensive real estate deal analyzer with beautiful visualizations
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const REBudgetHub = ({ theme, profile }) => {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // STATE MANAGEMENT
+  // ═══════════════════════════════════════════════════════════════════════════
+  const [activeTab, setActiveTab] = useState('analyzer');
+  const [collapsedSections, setCollapsedSections] = useState({});
+  
+  // Property Input State
+  const [propertyData, setPropertyData] = useState({
+    // Property Details
+    propertyAddress: '1234 Main St, City, State 12345',
+    arv: 440000,
+    purchasePrice: 440000,
+    sellerConcessions: 3000,
+    downPaymentPercent: 25,
+    closingCostsPercent: 1.1,
+    rentReadyCosts: 3000,
+    
+    // Mortgage
+    mortgageAmount: 330000,
+    interestRate: 6.875,
+    loanTermYears: 30,
+    pmiRate: 0,
+    dropPmiLtv: 80,
+    
+    // Income
+    monthlyRent: 3600,
+    otherIncome: 0,
+    
+    // Expenses (Annual)
+    vacancyRate: 3,
+    propertyTaxRate: 0.715,
+    propertyInsurance: 1500,
+    hoaDues: 350,
+    utilities: 0,
+    otherExpenses1: 0,
+    otherExpenses2: 0,
+    maintenancePercent: 10,
+    capEx: 0,
+    managementPercent: 10,
+    
+    // Depreciation
+    landValuePercent: 15,
+    propertyType: 'R', // R = Residential (27.5 years)
+    effectiveTaxRate: 20,
+    
+    // Appreciation & Growth
+    annualAppreciation: 3,
+    annualRentGrowth: 2,
+    
+    // Sale Assumptions
+    realEstateCommission: 3,
+    closingCostsAtSale: 1,
+    capitalGainsTaxRate: 15,
+    depreciationRecaptureRate: 25
+  });
+
+  // Toggle section collapse
+  const toggleSection = (section) => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  // Update property data
+  const updateProperty = (field, value) => {
+    setPropertyData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // CALCULATIONS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const calculations = useMemo(() => {
+    const p = propertyData;
+    
+    // Basic Calculations
+    const downPayment = p.purchasePrice * (p.downPaymentPercent / 100);
+    const closingCosts = p.purchasePrice * (p.closingCostsPercent / 100);
+    const totalInvested = downPayment + closingCosts + p.rentReadyCosts - p.sellerConcessions;
+    const loanAmount = p.purchasePrice - downPayment;
+    
+    // Monthly Mortgage Payment (P&I)
+    const monthlyRate = p.interestRate / 100 / 12;
+    const numPayments = p.loanTermYears * 12;
+    const monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    const annualPI = monthlyPI * 12;
+    
+    // Income
+    const grossPotentialIncome = p.monthlyRent * 12 + p.otherIncome * 12;
+    const vacancyLoss = grossPotentialIncome * (p.vacancyRate / 100);
+    const effectiveGrossIncome = grossPotentialIncome - vacancyLoss;
+    
+    // Operating Expenses
+    const propertyTaxes = p.purchasePrice * (p.propertyTaxRate / 100);
+    const maintenance = effectiveGrossIncome * (p.maintenancePercent / 100);
+    const management = effectiveGrossIncome * (p.managementPercent / 100);
+    const totalOperatingExpenses = propertyTaxes + p.propertyInsurance + p.hoaDues + p.utilities + 
+      p.otherExpenses1 + p.otherExpenses2 + maintenance + p.capEx + management;
+    
+    // Net Operating Income (NOI)
+    const noi = effectiveGrossIncome - totalOperatingExpenses;
+    
+    // Cash Flow
+    const annualCashFlow = noi - annualPI;
+    const monthlyCashFlow = annualCashFlow / 12;
+    
+    // Depreciation
+    const buildingValue = p.purchasePrice * (1 - p.landValuePercent / 100);
+    const depreciationYears = p.propertyType === 'R' ? 27.5 : 39;
+    const annualDepreciation = buildingValue / depreciationYears;
+    const cashFlowFromDepreciation = annualDepreciation * (p.effectiveTaxRate / 100);
+    
+    // True Cash Flow (including tax benefits)
+    const trueCashFlow = annualCashFlow + cashFlowFromDepreciation;
+    const monthlyTrueCashFlow = trueCashFlow / 12;
+    
+    // Returns
+    const capRate = (noi / p.purchasePrice) * 100;
+    const cashOnCashReturn = (annualCashFlow / totalInvested) * 100;
+    const trueCashOnCashReturn = (trueCashFlow / totalInvested) * 100;
+    
+    // First Year Interest vs Principal
+    let remainingBalance = loanAmount;
+    let totalInterestYear1 = 0;
+    let totalPrincipalYear1 = 0;
+    for (let month = 0; month < 12; month++) {
+      const interestPayment = remainingBalance * monthlyRate;
+      const principalPayment = monthlyPI - interestPayment;
+      totalInterestYear1 += interestPayment;
+      totalPrincipalYear1 += principalPayment;
+      remainingBalance -= principalPayment;
+    }
+    
+    // Equity Year 1
+    const equityYear1 = downPayment + totalPrincipalYear1;
+    
+    // ROI Quadrants (Year 1)
+    const appreciationReturn = p.purchasePrice * (p.annualAppreciation / 100);
+    const appreciationROI = (appreciationReturn / totalInvested) * 100;
+    const cashFlowROI = (annualCashFlow / totalInvested) * 100;
+    const debtPaydownROI = (totalPrincipalYear1 / totalInvested) * 100;
+    const depreciationROI = (cashFlowFromDepreciation / totalInvested) * 100;
+    const totalROI = appreciationROI + cashFlowROI + debtPaydownROI + depreciationROI;
+    
+    // Generate multi-year projections
+    const years = 18;
+    const projections = [];
+    let currentValue = p.purchasePrice;
+    let currentRent = p.monthlyRent;
+    let loanBalance = loanAmount;
+    let cumulativeAppreciation = 0;
+    let cumulativeCashFlow = 0;
+    let cumulativeDebtPaydown = 0;
+    let cumulativeDepreciation = 0;
+    
+    for (let year = 1; year <= years; year++) {
+      // Property Value & Rent Growth
+      if (year > 1) {
+        currentValue *= (1 + p.annualAppreciation / 100);
+        currentRent *= (1 + p.annualRentGrowth / 100);
+      }
+      
+      // Recalculate for this year
+      const yearGrossIncome = currentRent * 12;
+      const yearVacancy = yearGrossIncome * (p.vacancyRate / 100);
+      const yearEffectiveIncome = yearGrossIncome - yearVacancy;
+      const yearNOI = yearEffectiveIncome - totalOperatingExpenses;
+      const yearCashFlow = yearNOI - annualPI;
+      
+      // Calculate loan paydown for this year
+      let yearPrincipal = 0;
+      let yearInterest = 0;
+      let tempBalance = loanBalance;
+      for (let month = 0; month < 12; month++) {
+        const interest = tempBalance * monthlyRate;
+        const principal = monthlyPI - interest;
+        yearPrincipal += principal;
+        yearInterest += interest;
+        tempBalance -= principal;
+      }
+      loanBalance = tempBalance;
+      
+      // Equity
+      const equity = currentValue - loanBalance;
+      const ltv = (loanBalance / currentValue) * 100;
+      
+      // Appreciation this year
+      const yearAppreciation = year === 1 
+        ? p.purchasePrice * (p.annualAppreciation / 100)
+        : currentValue * (p.annualAppreciation / 100) / (1 + p.annualAppreciation / 100);
+      
+      // Cumulative totals
+      cumulativeAppreciation += yearAppreciation;
+      cumulativeCashFlow += yearCashFlow;
+      cumulativeDebtPaydown += yearPrincipal;
+      cumulativeDepreciation += cashFlowFromDepreciation;
+      
+      const totalReturn = cumulativeAppreciation + cumulativeCashFlow + cumulativeDebtPaydown + cumulativeDepreciation;
+      
+      // Cash-out Refi calculations
+      const maxLTV = 75;
+      const cashOutRefiEquity = equity * (maxLTV / 100) - loanBalance;
+      const costToAccessEquity = currentValue * 0.015; // 1.5% refi cost
+      const trueNetEquity = equity - costToAccessEquity;
+      
+      projections.push({
+        year,
+        propertyValue: currentValue,
+        monthlyRent: currentRent,
+        annualCashFlow: yearCashFlow,
+        monthlyCashFlow: yearCashFlow / 12,
+        loanBalance,
+        equity,
+        ltv,
+        principalPaid: yearPrincipal,
+        interestPaid: yearInterest,
+        appreciation: yearAppreciation,
+        cumulativeAppreciation,
+        cumulativeCashFlow,
+        cumulativeDebtPaydown,
+        cumulativeDepreciation,
+        totalReturn,
+        roi: (totalReturn / totalInvested) * 100,
+        annualizedROI: Math.pow(1 + totalReturn / totalInvested, 1 / year) - 1,
+        capRate: (yearNOI / currentValue) * 100,
+        cashOnCash: (yearCashFlow / totalInvested) * 100,
+        cashOutRefiEquity: Math.max(0, cashOutRefiEquity),
+        trueNetEquity,
+        costToAccessEquity
+      });
+    }
+    
+    return {
+      // Basic
+      downPayment,
+      closingCosts,
+      totalInvested,
+      loanAmount,
+      
+      // Mortgage
+      monthlyPI,
+      annualPI,
+      
+      // Income
+      grossPotentialIncome,
+      vacancyLoss,
+      effectiveGrossIncome,
+      
+      // Expenses
+      propertyTaxes,
+      maintenance,
+      management,
+      totalOperatingExpenses,
+      
+      // NOI & Cash Flow
+      noi,
+      annualCashFlow,
+      monthlyCashFlow,
+      
+      // Depreciation
+      buildingValue,
+      annualDepreciation,
+      cashFlowFromDepreciation,
+      
+      // True Cash Flow
+      trueCashFlow,
+      monthlyTrueCashFlow,
+      
+      // Returns
+      capRate,
+      cashOnCashReturn,
+      trueCashOnCashReturn,
+      
+      // Year 1 Details
+      totalInterestYear1,
+      totalPrincipalYear1,
+      equityYear1,
+      
+      // ROI Quadrants
+      appreciationReturn,
+      appreciationROI,
+      cashFlowROI,
+      debtPaydownROI,
+      depreciationROI,
+      totalROI,
+      
+      // Projections
+      projections
+    };
+  }, [propertyData]);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // FORMATTERS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const formatCurrency = (value) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  };
+
+  const formatPercent = (value, decimals = 2) => {
+    return `${value.toFixed(decimals)}%`;
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // COMPONENT STYLES
+  // ═══════════════════════════════════════════════════════════════════════════
+  const cardStyle = {
+    background: theme.bgCard,
+    borderRadius: '20px',
+    padding: '24px',
+    boxShadow: theme.cardShadow,
+    border: `1px solid ${theme.borderLight}`,
+    position: 'relative',
+    overflow: 'hidden'
+  };
+
+  const inputStyle = {
+    width: '100%',
+    padding: '10px 14px',
+    borderRadius: '10px',
+    border: `1px solid ${theme.borderLight}`,
+    background: theme.bgMain,
+    color: theme.textPrimary,
+    fontSize: '14px',
+    fontWeight: '500'
+  };
+
+  const labelStyle = {
+    fontSize: '12px',
+    color: theme.textMuted,
+    marginBottom: '6px',
+    display: 'block',
+    fontWeight: '500'
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // SUB-TABS
+  // ═══════════════════════════════════════════════════════════════════════════
+  const tabs = [
+    { id: 'analyzer', label: 'Deal Analyzer', icon: '🏠', color: '#10B981' },
+    { id: 'cashflow', label: 'Cash Flow', icon: '💵', color: '#3B82F6' },
+    { id: 'roi', label: 'ROI Analysis', icon: '📈', color: '#8B5CF6' },
+    { id: 'equity', label: 'Equity Tracker', icon: '💰', color: '#F59E0B' },
+    { id: 'sale', label: 'Sale Projections', icon: '🏷️', color: '#EC4899' },
+    { id: 'simulation', label: 'Deal Simulation', icon: '🎯', color: '#EF4444' },
+    { id: 'aianalysis', label: 'AI Analysis', icon: '🪙', color: '#F472B6' }
+  ];
+  
+  // Simulation Criteria State
+  const [simulationCriteria, setSimulationCriteria] = useState({
+    minCashOnCash: 8,
+    minCapRate: 5,
+    minMonthlyCashFlow: 200,
+    minAnnualCashFlow: 2400,
+    maxLTV: 80,
+    minDSCR: 1.2,
+    minTotalROI: 12,
+    maxPurchasePrice: 500000,
+    minEquityYear5: 100000,
+    maxVacancyRate: 5,
+    minAppreciation: 3,
+    maxDebtToIncome: 45
+  });
+  
+  const updateCriteria = (field, value) => {
+    setSimulationCriteria(prev => ({ ...prev, [field]: parseFloat(value) || 0 }));
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: DEAL ANALYZER TAB
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderAnalyzerTab = () => (
+    <div style={{ display: 'grid', gridTemplateColumns: '380px 1fr', gap: '24px' }}>
+      {/* Left Column - Inputs */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Property Address */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6)' }} />
+          <input
+            type="text"
+            value={propertyData.propertyAddress}
+            onChange={(e) => updateProperty('propertyAddress', e.target.value)}
+            style={{ ...inputStyle, fontSize: '16px', fontWeight: '600', textAlign: 'center', marginBottom: '16px' }}
+          />
+          
+          {/* Purchase Inputs */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '16px' }}>🏷️</span>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Purchase Inputs</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', fontSize: '13px' }}>
+              {[
+                { label: 'ARV', field: 'arv', prefix: '$' },
+                { label: 'Purchase Price', field: 'purchasePrice', prefix: '$' },
+                { label: 'Seller Concessions', field: 'sellerConcessions', prefix: '$' },
+                { label: 'Down Payment', field: 'downPaymentPercent', suffix: '%' },
+                { label: 'Closing Costs', field: 'closingCostsPercent', suffix: '%' },
+                { label: 'Rent Ready Costs', field: 'rentReadyCosts', prefix: '$' }
+              ].map(item => (
+                <React.Fragment key={item.field}>
+                  <span style={{ color: theme.textSecondary, display: 'flex', alignItems: 'center' }}>{item.label}</span>
+                  <div style={{ position: 'relative' }}>
+                    {item.prefix && <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '12px' }}>{item.prefix}</span>}
+                    <input
+                      type="number"
+                      value={propertyData[item.field]}
+                      onChange={(e) => updateProperty(item.field, parseFloat(e.target.value) || 0)}
+                      style={{ ...inputStyle, padding: item.prefix ? '8px 10px 8px 20px' : '8px 10px', textAlign: 'right', fontSize: '13px' }}
+                    />
+                    {item.suffix && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '12px' }}>{item.suffix}</span>}
+                  </div>
+                </React.Fragment>
+              ))}
+            </div>
+            <div style={{ marginTop: '12px', padding: '10px 14px', background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)', borderRadius: '10px', border: '1px solid rgba(16, 185, 129, 0.2)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '13px', color: theme.textSecondary }}>Total Invested</span>
+                <span style={{ fontSize: '16px', fontWeight: '700', color: '#10B981' }}>{formatCurrency(calculations.totalInvested)}</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Mortgage */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '16px' }}>🏦</span>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Mortgage</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', fontSize: '13px' }}>
+              {[
+                { label: 'Loan Amount', value: formatCurrency(calculations.loanAmount), readonly: true },
+                { label: 'Interest Rate', field: 'interestRate', suffix: '%' },
+                { label: 'Loan Term', field: 'loanTermYears', suffix: ' yrs' },
+                { label: 'PMI Rate', field: 'pmiRate', suffix: '%' },
+                { label: 'Drop PMI LTV', field: 'dropPmiLtv', suffix: '%' }
+              ].map(item => (
+                <React.Fragment key={item.field || item.label}>
+                  <span style={{ color: theme.textSecondary, display: 'flex', alignItems: 'center' }}>{item.label}</span>
+                  {item.readonly ? (
+                    <div style={{ ...inputStyle, padding: '8px 10px', textAlign: 'right', fontSize: '13px', background: theme.bgMain, color: '#10B981', fontWeight: '600' }}>{item.value}</div>
+                  ) : (
+                    <div style={{ position: 'relative' }}>
+                      <input
+                        type="number"
+                        step={item.field === 'interestRate' ? '0.125' : '1'}
+                        value={propertyData[item.field]}
+                        onChange={(e) => updateProperty(item.field, parseFloat(e.target.value) || 0)}
+                        style={{ ...inputStyle, padding: '8px 10px', textAlign: 'right', fontSize: '13px' }}
+                      />
+                      {item.suffix && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '11px' }}>{item.suffix}</span>}
+                    </div>
+                  )}
+                </React.Fragment>
+              ))}
+            </div>
+          </div>
+          
+          {/* Income */}
+          <div style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+              <span style={{ fontSize: '16px' }}>💵</span>
+              <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Income</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', fontSize: '13px' }}>
+              <span style={{ color: theme.textSecondary }}>Monthly Rent</span>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '12px' }}>$</span>
+                <input
+                  type="number"
+                  value={propertyData.monthlyRent}
+                  onChange={(e) => updateProperty('monthlyRent', parseFloat(e.target.value) || 0)}
+                  style={{ ...inputStyle, padding: '8px 10px 8px 20px', textAlign: 'right', fontSize: '13px' }}
+                />
+              </div>
+              <span style={{ color: theme.textSecondary }}>Other Income</span>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '12px' }}>$</span>
+                <input
+                  type="number"
+                  value={propertyData.otherIncome}
+                  onChange={(e) => updateProperty('otherIncome', parseFloat(e.target.value) || 0)}
+                  style={{ ...inputStyle, padding: '8px 10px 8px 20px', textAlign: 'right', fontSize: '13px' }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Annual Expenses */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EF4444, #F59E0B)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '16px' }}>📊</span>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Annual Expenses</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 80px', gap: '8px', fontSize: '12px' }}>
+            <span style={{ color: theme.textMuted, fontWeight: '600' }}>Expense</span>
+            <span style={{ color: theme.textMuted, fontWeight: '600', textAlign: 'center' }}>Rate</span>
+            <span style={{ color: theme.textMuted, fontWeight: '600', textAlign: 'right' }}>Dollars</span>
+            
+            <span style={{ color: theme.textSecondary }}>Vacancy Rate</span>
+            <input type="number" step="0.1" value={propertyData.vacancyRate} onChange={(e) => updateProperty('vacancyRate', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} />
+            <span style={{ color: '#EF4444', textAlign: 'right', fontWeight: '500' }}>{formatCurrency(calculations.vacancyLoss)}</span>
+            
+            <span style={{ color: theme.textSecondary }}>Property Taxes</span>
+            <input type="number" step="0.01" value={propertyData.propertyTaxRate} onChange={(e) => updateProperty('propertyTaxRate', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} />
+            <span style={{ color: '#EF4444', textAlign: 'right', fontWeight: '500' }}>{formatCurrency(calculations.propertyTaxes)}</span>
+            
+            <span style={{ color: theme.textSecondary }}>Property Insurance</span>
+            <span style={{ textAlign: 'center', color: theme.textMuted }}>—</span>
+            <input type="number" value={propertyData.propertyInsurance} onChange={(e) => updateProperty('propertyInsurance', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'right' }} />
+            
+            <span style={{ color: theme.textSecondary }}>HOA Dues</span>
+            <span style={{ textAlign: 'center', color: theme.textMuted }}>—</span>
+            <input type="number" value={propertyData.hoaDues} onChange={(e) => updateProperty('hoaDues', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'right' }} />
+            
+            <span style={{ color: theme.textSecondary }}>Maintenance</span>
+            <input type="number" step="1" value={propertyData.maintenancePercent} onChange={(e) => updateProperty('maintenancePercent', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} />
+            <span style={{ color: '#EF4444', textAlign: 'right', fontWeight: '500' }}>{formatCurrency(calculations.maintenance)}</span>
+            
+            <span style={{ color: theme.textSecondary }}>Management</span>
+            <input type="number" step="1" value={propertyData.managementPercent} onChange={(e) => updateProperty('managementPercent', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '6px 8px', fontSize: '12px', textAlign: 'center' }} />
+            <span style={{ color: '#EF4444', textAlign: 'right', fontWeight: '500' }}>{formatCurrency(calculations.management)}</span>
+          </div>
+          
+          <div style={{ marginTop: '14px', padding: '10px 14px', background: theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)', borderRadius: '10px', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: theme.textSecondary }}>Total Operating Expenses</span>
+              <span style={{ fontSize: '16px', fontWeight: '700', color: '#EF4444' }}>{formatCurrency(calculations.totalOperatingExpenses)}</span>
+            </div>
+          </div>
+        </div>
+        
+        {/* Depreciation */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+            <span style={{ fontSize: '16px' }}>📉</span>
+            <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Depreciation Details</span>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 100px', gap: '8px', fontSize: '13px' }}>
+            <span style={{ color: theme.textSecondary }}>Land Value %</span>
+            <input type="number" step="1" value={propertyData.landValuePercent} onChange={(e) => updateProperty('landValuePercent', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '8px 10px', textAlign: 'right', fontSize: '13px' }} />
+            
+            <span style={{ color: theme.textSecondary }}>Property Type</span>
+            <select value={propertyData.propertyType} onChange={(e) => updateProperty('propertyType', e.target.value)} style={{ ...inputStyle, padding: '8px 10px', fontSize: '13px' }}>
+              <option value="R">Residential (27.5)</option>
+              <option value="C">Commercial (39)</option>
+            </select>
+            
+            <span style={{ color: theme.textSecondary }}>Effective Tax Rate</span>
+            <input type="number" step="1" value={propertyData.effectiveTaxRate} onChange={(e) => updateProperty('effectiveTaxRate', parseFloat(e.target.value) || 0)} style={{ ...inputStyle, padding: '8px 10px', textAlign: 'right', fontSize: '13px' }} />
+          </div>
+          
+          <div style={{ marginTop: '14px', padding: '10px 14px', background: theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.1)' : 'rgba(139, 92, 246, 0.05)', borderRadius: '10px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '13px', color: theme.textSecondary }}>Annual Depreciation</span>
+              <span style={{ fontSize: '16px', fontWeight: '700', color: '#8B5CF6' }}>{formatCurrency(calculations.annualDepreciation)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Right Column - Dashboard */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        {/* Monthly Cash Flow Chart */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #8B5CF6)' }} />
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Monthly Cash Flow - Year 1</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+            {/* Monthly Cash Flow Bar */}
+            <div style={{ background: theme.bgMain, borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>Monthly Cash Flow</div>
+              <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '12px' }}>
+                <div style={{ 
+                  width: '60px', 
+                  height: `${Math.min(100, Math.abs(calculations.monthlyCashFlow) / 10)}%`,
+                  background: calculations.monthlyCashFlow >= 0 
+                    ? 'linear-gradient(180deg, #10B981, #059669)' 
+                    : 'linear-gradient(180deg, #EF4444, #DC2626)',
+                  borderRadius: '8px 8px 0 0',
+                  position: 'relative'
+                }}>
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '-25px', 
+                    left: '50%', 
+                    transform: 'translateX(-50%)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: calculations.monthlyCashFlow >= 0 ? '#10B981' : '#EF4444'
+                  }}>
+                    {formatCurrency(calculations.monthlyCashFlow)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Cash Flow from Depreciation Bar */}
+            <div style={{ background: theme.bgMain, borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>Cash Flow from Depreciation™</div>
+              <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '12px' }}>
+                <div style={{ 
+                  width: '60px', 
+                  height: `${Math.min(100, (calculations.cashFlowFromDepreciation / 12) / 10)}%`,
+                  background: 'linear-gradient(180deg, #F59E0B, #D97706)',
+                  borderRadius: '8px 8px 0 0',
+                  position: 'relative'
+                }}>
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '-25px', 
+                    left: '50%', 
+                    transform: 'translateX(-50%)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: '#F59E0B'
+                  }}>
+                    {formatCurrency(calculations.cashFlowFromDepreciation / 12)}
+                  </span>
+                </div>
+              </div>
+            </div>
+            
+            {/* True Cash Flow Bar */}
+            <div style={{ background: theme.bgMain, borderRadius: '16px', padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '12px' }}>True Cash Flow™</div>
+              <div style={{ height: '120px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', marginBottom: '12px' }}>
+                <div style={{ 
+                  width: '60px', 
+                  height: `${Math.min(100, Math.abs(calculations.monthlyTrueCashFlow) / 10)}%`,
+                  background: calculations.monthlyTrueCashFlow >= 0 
+                    ? 'linear-gradient(180deg, #3B82F6, #2563EB)' 
+                    : 'linear-gradient(180deg, #EF4444, #DC2626)',
+                  borderRadius: '8px 8px 0 0',
+                  position: 'relative'
+                }}>
+                  <span style={{ 
+                    position: 'absolute', 
+                    top: '-25px', 
+                    left: '50%', 
+                    transform: 'translateX(-50%)',
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    color: calculations.monthlyTrueCashFlow >= 0 ? '#3B82F6' : '#EF4444'
+                  }}>
+                    {formatCurrency(calculations.monthlyTrueCashFlow)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Key Metrics Row */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {[
+            { label: 'Cap Rate', value: formatPercent(calculations.capRate), color: '#10B981', icon: '📊' },
+            { label: 'Cash on Cash', value: formatPercent(calculations.cashOnCashReturn), color: '#3B82F6', icon: '💰' },
+            { label: 'NOI', value: formatCurrency(calculations.noi), color: '#8B5CF6', icon: '📈' },
+            { label: 'Monthly P&I', value: formatCurrency(calculations.monthlyPI), color: '#F59E0B', icon: '🏦' }
+          ].map((metric, i) => (
+            <div key={i} style={{ ...cardStyle, padding: '20px', textAlign: 'center' }}>
+              <div style={{ fontSize: '24px', marginBottom: '8px' }}>{metric.icon}</div>
+              <div style={{ fontSize: '24px', fontWeight: '800', color: metric.color, marginBottom: '4px' }}>{metric.value}</div>
+              <div style={{ fontSize: '12px', color: theme.textMuted }}>{metric.label}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Return on Investment - Year 1 */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #F59E0B, #EC4899)' }} />
+          <h3 style={{ fontSize: '16px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Return on Investment - Year 1</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '24px' }}>
+            {/* ROI Quadrants */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                { label: 'Appreciation', value: calculations.appreciationROI, color: '#3B82F6' },
+                { label: 'Cash Flow', value: calculations.cashFlowROI, color: calculations.cashFlowROI >= 0 ? '#10B981' : '#EF4444' },
+                { label: 'Debt Paydown', value: calculations.debtPaydownROI, color: '#F59E0B' },
+                { label: 'Cash Flow from Depreciation™', value: calculations.depreciationROI, color: '#8B5CF6' }
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: item.color }} />
+                  <span style={{ flex: 1, fontSize: '13px', color: theme.textSecondary }}>{item.label}</span>
+                  <span style={{ 
+                    fontSize: '13px', 
+                    fontWeight: '600', 
+                    color: item.color,
+                    padding: '4px 10px',
+                    background: `${item.color}15`,
+                    borderRadius: '6px'
+                  }}>{formatPercent(item.value)}</span>
+                </div>
+              ))}
+              <div style={{ borderTop: `1px solid ${theme.borderLight}`, paddingTop: '10px', marginTop: '4px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>Total Return on Investment</span>
+                  <span style={{ fontSize: '18px', fontWeight: '800', color: '#10B981' }}>{formatPercent(calculations.totalROI)}</span>
+                </div>
+              </div>
+            </div>
+            
+            {/* Stacked Bar Chart */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+              <div style={{ flex: 1, height: '160px', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', borderRadius: '12px', overflow: 'hidden' }}>
+                  {[
+                    { value: Math.max(0, calculations.appreciationROI), color: '#3B82F6' },
+                    { value: Math.max(0, calculations.cashFlowROI), color: '#10B981' },
+                    { value: Math.max(0, calculations.debtPaydownROI), color: '#F59E0B' },
+                    { value: Math.max(0, calculations.depreciationROI), color: '#8B5CF6' }
+                  ].reverse().map((segment, i) => (
+                    <div 
+                      key={i}
+                      style={{ 
+                        height: `${(segment.value / Math.max(calculations.totalROI, 1)) * 160}px`,
+                        background: segment.color,
+                        minHeight: segment.value > 0 ? '8px' : '0'
+                      }}
+                    />
+                  ))}
+                </div>
+              </div>
+              
+              {/* Metrics Labels */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ textAlign: 'center', padding: '12px 16px', background: theme.bgMain, borderRadius: '12px' }}>
+                  <div style={{ fontSize: '10px', color: theme.textMuted, marginBottom: '4px' }}>Year 1</div>
+                  <div style={{ fontSize: '24px', fontWeight: '800', color: '#10B981' }}>{formatPercent(calculations.totalROI)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Annual Key Metrics */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {[
+            { label: 'Gross Potential Income', value: formatCurrency(calculations.grossPotentialIncome), color: '#10B981' },
+            { label: 'Gross Operating Income', value: formatCurrency(calculations.effectiveGrossIncome), color: '#3B82F6' },
+            { label: 'Operating Expenses', value: formatCurrency(calculations.totalOperatingExpenses), color: '#EF4444' },
+            { label: 'Net Operating Income', value: formatCurrency(calculations.noi), color: '#8B5CF6' }
+          ].map((metric, i) => (
+            <div key={i} style={{ background: theme.bgMain, borderRadius: '16px', padding: '20px', textAlign: 'center', border: `1px solid ${theme.borderLight}` }}>
+              <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{metric.label}</div>
+              <div style={{ fontSize: '20px', fontWeight: '700', color: metric.color }}>{metric.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: CASH FLOW TAB
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderCashFlowTab = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Cash Flow Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Annual Cash Flow', value: formatCurrency(calculations.annualCashFlow), color: calculations.annualCashFlow >= 0 ? '#10B981' : '#EF4444', icon: '💵' },
+          { label: 'Monthly Cash Flow', value: formatCurrency(calculations.monthlyCashFlow), color: calculations.monthlyCashFlow >= 0 ? '#10B981' : '#EF4444', icon: '📅' },
+          { label: 'Cash on Cash ROI', value: formatPercent(calculations.cashOnCashReturn), color: '#3B82F6', icon: '📊' },
+          { label: 'Cap Rate', value: formatPercent(calculations.capRate), color: '#8B5CF6', icon: '🎯' },
+          { label: 'True Cash Flow™', value: formatCurrency(calculations.trueCashFlow), color: '#F59E0B', icon: '✨' }
+        ].map((metric, i) => (
+          <div key={i} style={{ ...cardStyle, textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>{metric.icon}</div>
+            <div style={{ fontSize: '28px', fontWeight: '800', color: metric.color, marginBottom: '8px' }}>{metric.value}</div>
+            <div style={{ fontSize: '13px', color: theme.textMuted }}>{metric.label}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Multi-Year Cash Flow Chart */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Cash Flow Projection - 18 Years</h3>
+        
+        <div style={{ height: '300px', position: 'relative' }}>
+          <svg width="100%" height="100%" viewBox="0 0 900 280" preserveAspectRatio="xMidYMid meet">
+            {/* Grid Lines */}
+            {[0, 1, 2, 3, 4].map(i => (
+              <line key={i} x1="50" y1={40 + i * 50} x2="870" y2={40 + i * 50} stroke={theme.borderLight} strokeWidth="1" opacity="0.5" />
+            ))}
+            
+            {/* Y-axis labels */}
+            {[0, 1, 2, 3, 4].map(i => {
+              const maxCF = Math.max(...calculations.projections.map(p => p.annualCashFlow));
+              const minCF = Math.min(...calculations.projections.map(p => p.annualCashFlow), 0);
+              const range = maxCF - minCF;
+              const value = maxCF - (i / 4) * range;
+              return (
+                <text key={i} x="45" y={45 + i * 50} fill={theme.textMuted} fontSize="11" textAnchor="end">{formatCurrency(value)}</text>
+              );
+            })}
+            
+            {/* Bars */}
+            {calculations.projections.map((proj, i) => {
+              const maxCF = Math.max(...calculations.projections.map(p => p.annualCashFlow));
+              const minCF = Math.min(...calculations.projections.map(p => p.annualCashFlow), 0);
+              const range = maxCF - minCF || 1;
+              const barHeight = ((proj.annualCashFlow - minCF) / range) * 200;
+              const yPos = 240 - barHeight;
+              
+              return (
+                <g key={i}>
+                  <rect
+                    x={60 + i * 45}
+                    y={yPos}
+                    width="35"
+                    height={barHeight}
+                    fill={proj.annualCashFlow >= 0 ? '#10B981' : '#EF4444'}
+                    rx="4"
+                    opacity="0.9"
+                  />
+                  <text x={77.5 + i * 45} y="260" fill={theme.textMuted} fontSize="10" textAnchor="middle">{proj.year}</text>
+                </g>
+              );
+            })}
+          </svg>
+        </div>
+      </div>
+      
+      {/* Cash Flow Table */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3B82F6, #8B5CF6)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Detailed Cash Flow Analysis</h3>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ background: theme.bgMain }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>Year</th>
+                {calculations.projections.slice(0, 10).map((_, i) => (
+                  <th key={i} style={{ padding: '12px 8px', textAlign: 'right', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>{i + 1}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Annual Cash Flow', key: 'annualCashFlow', format: 'currency', colorLogic: true },
+                { label: 'Monthly Cash Flow', key: 'monthlyCashFlow', format: 'currency', colorLogic: true },
+                { label: 'Cash on Cash ROI', key: 'cashOnCash', format: 'percent', colorLogic: true },
+                { label: 'Cap Rate', key: 'capRate', format: 'percent' },
+                { label: 'Property Value', key: 'propertyValue', format: 'currency' },
+                { label: 'Monthly Rent', key: 'monthlyRent', format: 'currency' }
+              ].map((row, rowIdx) => (
+                <tr key={rowIdx} style={{ borderBottom: `1px solid ${theme.borderLight}` }}>
+                  <td style={{ padding: '10px 16px', color: theme.textSecondary, fontWeight: '500' }}>{row.label}</td>
+                  {calculations.projections.slice(0, 10).map((proj, i) => {
+                    const value = proj[row.key];
+                    const displayValue = row.format === 'currency' ? formatCurrency(value) : formatPercent(value);
+                    const color = row.colorLogic 
+                      ? (value >= 0 ? '#10B981' : '#EF4444')
+                      : theme.textPrimary;
+                    return (
+                      <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color, fontWeight: '500' }}>{displayValue}</td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: ROI ANALYSIS TAB
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderROITab = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* ROI Summary */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Appreciation ROI', value: calculations.appreciationROI, color: '#3B82F6', icon: '📈' },
+          { label: 'Cash Flow ROI', value: calculations.cashFlowROI, color: '#10B981', icon: '💵' },
+          { label: 'Debt Paydown ROI', value: calculations.debtPaydownROI, color: '#F59E0B', icon: '🏦' },
+          { label: 'Depreciation ROI', value: calculations.depreciationROI, color: '#8B5CF6', icon: '📉' }
+        ].map((metric, i) => (
+          <div key={i} style={{ ...cardStyle, textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>{metric.icon}</div>
+            <div style={{ fontSize: '32px', fontWeight: '800', color: metric.color, marginBottom: '8px' }}>{formatPercent(metric.value)}</div>
+            <div style={{ fontSize: '13px', color: theme.textMuted }}>{metric.label}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Total ROI Card */}
+      <div style={{ ...cardStyle, background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)'}, ${theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)'})`, textAlign: 'center', padding: '32px' }}>
+        <div style={{ fontSize: '18px', color: theme.textSecondary, marginBottom: '8px' }}>Total Return on Investment - Year 1</div>
+        <div style={{ fontSize: '64px', fontWeight: '800', color: '#10B981', marginBottom: '8px' }}>{formatPercent(calculations.totalROI)}</div>
+        <div style={{ fontSize: '14px', color: theme.textMuted }}>Based on {formatCurrency(calculations.totalInvested)} invested</div>
+      </div>
+      
+      {/* ROI Over Time Chart */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #F59E0B, #8B5CF6)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Cumulative ROI Over Time</h3>
+        
+        <div style={{ height: '350px', position: 'relative' }}>
+          <svg width="100%" height="100%" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="roiGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.3" />
+                <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            
+            {/* Grid Lines */}
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <line key={i} x1="60" y1={30 + i * 45} x2="870" y2={30 + i * 45} stroke={theme.borderLight} strokeWidth="1" opacity="0.5" />
+            ))}
+            
+            {/* Y-axis labels */}
+            {[0, 1, 2, 3, 4, 5].map(i => {
+              const maxROI = Math.max(...calculations.projections.map(p => p.roi));
+              const value = maxROI - (i / 5) * maxROI;
+              return (
+                <text key={i} x="55" y={35 + i * 45} fill={theme.textMuted} fontSize="11" textAnchor="end">{formatPercent(value, 0)}</text>
+              );
+            })}
+            
+            {/* Area Fill */}
+            <path
+              d={`M 70 ${255 - (calculations.projections[0]?.roi / Math.max(...calculations.projections.map(p => p.roi))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${70 + i * 45} ${255 - (p.roi / Math.max(...calculations.projections.map(p => p.roi))) * 225}`).join(' ')} 
+                L ${70 + (calculations.projections.length - 1) * 45} 255 L 70 255 Z`}
+              fill="url(#roiGradient)"
+            />
+            
+            {/* Line */}
+            <path
+              d={`M 70 ${255 - (calculations.projections[0]?.roi / Math.max(...calculations.projections.map(p => p.roi))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${70 + i * 45} ${255 - (p.roi / Math.max(...calculations.projections.map(p => p.roi))) * 225}`).join(' ')}`}
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            
+            {/* Data Points */}
+            {calculations.projections.map((p, i) => (
+              <g key={i}>
+                <circle 
+                  cx={70 + i * 45} 
+                  cy={255 - (p.roi / Math.max(...calculations.projections.map(p => p.roi))) * 225}
+                  r="5"
+                  fill="#10B981"
+                  stroke="white"
+                  strokeWidth="2"
+                />
+                <text x={70 + i * 45} y="280" fill={theme.textMuted} fontSize="10" textAnchor="middle">{p.year}</text>
+              </g>
+            ))}
+          </svg>
+        </div>
+        
+        {/* Legend */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '24px', marginTop: '16px' }}>
+          {[
+            { label: 'Appreciation', color: '#3B82F6' },
+            { label: 'Cash Flow', color: '#10B981' },
+            { label: 'Debt Paydown', color: '#F59E0B' },
+            { label: 'Depreciation', color: '#8B5CF6' }
+          ].map((item, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{ width: '12px', height: '12px', borderRadius: '3px', background: item.color }} />
+              <span style={{ fontSize: '12px', color: theme.textSecondary }}>{item.label}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* ROI Comparison Table */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EC4899, #8B5CF6)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>ROI Before & After Taxes</h3>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ background: theme.bgMain }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>Metric</th>
+                {calculations.projections.slice(0, 10).map((_, i) => (
+                  <th key={i} style={{ padding: '12px 8px', textAlign: 'right', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>Year {i + 1}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Cumulative ROI', key: 'roi', colorStart: '#10B981' },
+                { label: 'Annualized ROI', key: 'annualizedROI', multiplier: 100, colorStart: '#3B82F6' },
+                { label: 'Total Return $', key: 'totalReturn', format: 'currency', colorStart: '#8B5CF6' }
+              ].map((row, rowIdx) => (
+                <tr key={rowIdx} style={{ borderBottom: `1px solid ${theme.borderLight}` }}>
+                  <td style={{ padding: '10px 16px', color: theme.textSecondary, fontWeight: '500' }}>{row.label}</td>
+                  {calculations.projections.slice(0, 10).map((proj, i) => {
+                    let value = proj[row.key];
+                    if (row.multiplier) value *= row.multiplier;
+                    const displayValue = row.format === 'currency' ? formatCurrency(value) : formatPercent(value);
+                    return (
+                      <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color: row.colorStart, fontWeight: '500' }}>{displayValue}</td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: EQUITY TRACKER TAB
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderEquityTab = () => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* Equity Summary Cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Year 1 Equity', value: formatCurrency(calculations.projections[0]?.equity || 0), color: '#10B981', icon: '💰' },
+          { label: 'Year 5 Equity', value: formatCurrency(calculations.projections[4]?.equity || 0), color: '#3B82F6', icon: '📈' },
+          { label: 'Year 10 Equity', value: formatCurrency(calculations.projections[9]?.equity || 0), color: '#8B5CF6', icon: '🚀' },
+          { label: 'Year 18 Equity', value: formatCurrency(calculations.projections[17]?.equity || 0), color: '#F59E0B', icon: '🏆' }
+        ].map((metric, i) => (
+          <div key={i} style={{ ...cardStyle, textAlign: 'center', padding: '24px' }}>
+            <div style={{ fontSize: '32px', marginBottom: '12px' }}>{metric.icon}</div>
+            <div style={{ fontSize: '28px', fontWeight: '800', color: metric.color, marginBottom: '8px' }}>{metric.value}</div>
+            <div style={{ fontSize: '13px', color: theme.textMuted }}>{metric.label}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Equity Growth Chart */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6, #8B5CF6)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Equity & Property Value Growth</h3>
+        
+        <div style={{ height: '350px', position: 'relative' }}>
+          <svg width="100%" height="100%" viewBox="0 0 900 320" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <linearGradient id="equityGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#10B981" stopOpacity="0.2" />
+                <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            
+            {/* Grid Lines */}
+            {[0, 1, 2, 3, 4, 5].map(i => (
+              <line key={i} x1="70" y1={30 + i * 45} x2="870" y2={30 + i * 45} stroke={theme.borderLight} strokeWidth="1" opacity="0.5" />
+            ))}
+            
+            {/* Y-axis labels */}
+            {[0, 1, 2, 3, 4, 5].map(i => {
+              const maxValue = Math.max(...calculations.projections.map(p => p.propertyValue));
+              const value = maxValue - (i / 5) * maxValue;
+              return (
+                <text key={i} x="65" y={35 + i * 45} fill={theme.textMuted} fontSize="10" textAnchor="end">{formatCurrency(value)}</text>
+              );
+            })}
+            
+            {/* Property Value Line */}
+            <path
+              d={`M 80 ${255 - (calculations.projections[0]?.propertyValue / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${80 + i * 44} ${255 - (p.propertyValue / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225}`).join(' ')}`}
+              fill="none"
+              stroke="#3B82F6"
+              strokeWidth="2"
+              strokeDasharray="6,4"
+            />
+            
+            {/* Equity Area Fill */}
+            <path
+              d={`M 80 ${255 - (calculations.projections[0]?.equity / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${80 + i * 44} ${255 - (p.equity / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225}`).join(' ')} 
+                L ${80 + (calculations.projections.length - 1) * 44} 255 L 80 255 Z`}
+              fill="url(#equityGradient)"
+            />
+            
+            {/* Equity Line */}
+            <path
+              d={`M 80 ${255 - (calculations.projections[0]?.equity / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${80 + i * 44} ${255 - (p.equity / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225}`).join(' ')}`}
+              fill="none"
+              stroke="#10B981"
+              strokeWidth="3"
+              strokeLinecap="round"
+            />
+            
+            {/* Loan Balance Line */}
+            <path
+              d={`M 80 ${255 - (calculations.projections[0]?.loanBalance / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225} 
+                ${calculations.projections.map((p, i) => `L ${80 + i * 44} ${255 - (p.loanBalance / Math.max(...calculations.projections.map(p => p.propertyValue))) * 225}`).join(' ')}`}
+              fill="none"
+              stroke="#EF4444"
+              strokeWidth="2"
+            />
+            
+            {/* X-axis labels */}
+            {calculations.projections.map((p, i) => (
+              <text key={i} x={80 + i * 44} y="280" fill={theme.textMuted} fontSize="10" textAnchor="middle">{p.year}</text>
+            ))}
+          </svg>
+        </div>
+        
+        {/* Legend */}
+        <div style={{ display: 'flex', justifyContent: 'center', gap: '32px', marginTop: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '24px', height: '3px', background: '#10B981', borderRadius: '2px' }} />
+            <span style={{ fontSize: '13px', color: theme.textSecondary }}>Equity</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '24px', height: '3px', background: '#3B82F6', borderRadius: '2px', borderStyle: 'dashed' }} />
+            <span style={{ fontSize: '13px', color: theme.textSecondary }}>Property Value</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ width: '24px', height: '3px', background: '#EF4444', borderRadius: '2px' }} />
+            <span style={{ fontSize: '13px', color: theme.textSecondary }}>Loan Balance</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Equity Table */}
+      <div style={cardStyle}>
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #F59E0B, #EC4899)' }} />
+        <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Equity & Refinance Analysis</h3>
+        
+        <div style={{ overflowX: 'auto' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+            <thead>
+              <tr style={{ background: theme.bgMain }}>
+                <th style={{ padding: '12px 16px', textAlign: 'left', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>Year</th>
+                {calculations.projections.slice(0, 10).map((_, i) => (
+                  <th key={i} style={{ padding: '12px 8px', textAlign: 'right', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>{i + 1}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { label: 'Property Value', key: 'propertyValue', format: 'currency', color: '#3B82F6' },
+                { label: 'Loan Balance', key: 'loanBalance', format: 'currency', color: '#EF4444' },
+                { label: 'Equity', key: 'equity', format: 'currency', color: '#10B981' },
+                { label: 'LTV', key: 'ltv', format: 'percent', color: '#F59E0B' },
+                { label: 'Cash-Out Refi Equity (75% LTV)', key: 'cashOutRefiEquity', format: 'currency', color: '#8B5CF6' },
+                { label: 'True Net Equity™', key: 'trueNetEquity', format: 'currency', color: '#EC4899' }
+              ].map((row, rowIdx) => (
+                <tr key={rowIdx} style={{ borderBottom: `1px solid ${theme.borderLight}` }}>
+                  <td style={{ padding: '10px 16px', color: theme.textSecondary, fontWeight: '500' }}>{row.label}</td>
+                  {calculations.projections.slice(0, 10).map((proj, i) => {
+                    const value = proj[row.key];
+                    const displayValue = row.format === 'currency' ? formatCurrency(value) : formatPercent(value);
+                    return (
+                      <td key={i} style={{ padding: '10px 8px', textAlign: 'right', color: row.color, fontWeight: '500' }}>{displayValue}</td>
+                    );
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: SALE PROJECTIONS TAB
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderSaleTab = () => {
+    // Calculate sale projections
+    const saleProjections = calculations.projections.map(proj => {
+      const salePrice = proj.propertyValue;
+      const realEstateCommission = salePrice * (propertyData.realEstateCommission / 100);
+      const closingCosts = salePrice * (propertyData.closingCostsAtSale / 100);
+      const grossProfit = salePrice - proj.loanBalance - calculations.totalInvested;
+      const cumulativeDepreciation = calculations.annualDepreciation * proj.year;
+      const depreciationRecapture = cumulativeDepreciation * (propertyData.depreciationRecaptureRate / 100);
+      const capitalGains = Math.max(0, grossProfit - cumulativeDepreciation);
+      const capitalGainsTax = capitalGains * (propertyData.capitalGainsTaxRate / 100);
+      const totalTaxes = depreciationRecapture + capitalGainsTax;
+      const netProfitAfterTaxes = grossProfit - realEstateCommission - closingCosts - totalTaxes;
+      const totalReturn = proj.cumulativeCashFlow + netProfitAfterTaxes;
+      const roi = (totalReturn / calculations.totalInvested) * 100;
+      
+      return {
+        ...proj,
+        salePrice,
+        realEstateCommission,
+        closingCostsAtSale: closingCosts,
+        grossProfit,
+        cumulativeDepreciation,
+        depreciationRecapture,
+        capitalGains,
+        capitalGainsTax,
+        totalTaxes,
+        netProfitAfterTaxes,
+        totalReturnWithSale: totalReturn,
+        roiWithSale: roi
+      };
+    });
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Sale Projections Cards */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+          {[
+            { label: 'If Sold Year 1', value: formatCurrency(saleProjections[0]?.totalReturnWithSale || 0), sub: formatPercent(saleProjections[0]?.roiWithSale || 0) + ' ROI', color: saleProjections[0]?.totalReturnWithSale >= 0 ? '#10B981' : '#EF4444' },
+            { label: 'If Sold Year 5', value: formatCurrency(saleProjections[4]?.totalReturnWithSale || 0), sub: formatPercent(saleProjections[4]?.roiWithSale || 0) + ' ROI', color: '#3B82F6' },
+            { label: 'If Sold Year 10', value: formatCurrency(saleProjections[9]?.totalReturnWithSale || 0), sub: formatPercent(saleProjections[9]?.roiWithSale || 0) + ' ROI', color: '#8B5CF6' },
+            { label: 'If Sold Year 18', value: formatCurrency(saleProjections[17]?.totalReturnWithSale || 0), sub: formatPercent(saleProjections[17]?.roiWithSale || 0) + ' ROI', color: '#F59E0B' }
+          ].map((metric, i) => (
+            <div key={i} style={{ ...cardStyle, textAlign: 'center', padding: '24px' }}>
+              <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '12px' }}>{metric.label}</div>
+              <div style={{ fontSize: '28px', fontWeight: '800', color: metric.color, marginBottom: '4px' }}>{metric.value}</div>
+              <div style={{ fontSize: '14px', color: metric.color, opacity: 0.8 }}>{metric.sub}</div>
+            </div>
+          ))}
+        </div>
+        
+        {/* Sale Settings */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EC4899, #F59E0B)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Sale Assumptions</h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px' }}>
+            {[
+              { label: 'Real Estate Commission', field: 'realEstateCommission', suffix: '%' },
+              { label: 'Closing Costs at Sale', field: 'closingCostsAtSale', suffix: '%' },
+              { label: 'Capital Gains Tax Rate', field: 'capitalGainsTaxRate', suffix: '%' },
+              { label: 'Depreciation Recapture', field: 'depreciationRecaptureRate', suffix: '%' }
+            ].map((item, i) => (
+              <div key={i}>
+                <label style={labelStyle}>{item.label}</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    type="number"
+                    step="0.5"
+                    value={propertyData[item.field]}
+                    onChange={(e) => updateProperty(item.field, parseFloat(e.target.value) || 0)}
+                    style={{ ...inputStyle, paddingRight: '30px' }}
+                  />
+                  <span style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted }}>{item.suffix}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Sale Returns Chart */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #3B82F6)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '24px' }}>Returns if Sold (ROI)</h3>
+          
+          <div style={{ height: '300px', position: 'relative' }}>
+            <svg width="100%" height="100%" viewBox="0 0 900 280" preserveAspectRatio="xMidYMid meet">
+              {/* Grid Lines */}
+              {[0, 1, 2, 3, 4].map(i => (
+                <line key={i} x1="60" y1={40 + i * 50} x2="870" y2={40 + i * 50} stroke={theme.borderLight} strokeWidth="1" opacity="0.5" />
+              ))}
+              
+              {/* Y-axis labels */}
+              {[0, 1, 2, 3, 4].map(i => {
+                const maxROI = Math.max(...saleProjections.map(p => p.roiWithSale));
+                const value = maxROI - (i / 4) * maxROI;
+                return (
+                  <text key={i} x="55" y={45 + i * 50} fill={theme.textMuted} fontSize="11" textAnchor="end">{formatPercent(value, 0)}</text>
+                );
+              })}
+              
+              {/* Line */}
+              <path
+                d={`M 70 ${240 - (saleProjections[0]?.roiWithSale / Math.max(...saleProjections.map(p => p.roiWithSale))) * 200} 
+                  ${saleProjections.map((p, i) => `L ${70 + i * 45} ${240 - (p.roiWithSale / Math.max(...saleProjections.map(p => p.roiWithSale))) * 200}`).join(' ')}`}
+                fill="none"
+                stroke="#10B981"
+                strokeWidth="3"
+                strokeLinecap="round"
+              />
+              
+              {/* Data Points */}
+              {saleProjections.map((p, i) => (
+                <g key={i}>
+                  <circle 
+                    cx={70 + i * 45} 
+                    cy={240 - (p.roiWithSale / Math.max(...saleProjections.map(p => p.roiWithSale))) * 200}
+                    r="5"
+                    fill="#10B981"
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                  <text x={70 + i * 45} y="265" fill={theme.textMuted} fontSize="10" textAnchor="middle">{p.year}</text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
+        
+        {/* Sale Analysis Table */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Sale of Property - Detailed Analysis</h3>
+          
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px' }}>
+              <thead>
+                <tr style={{ background: theme.bgMain }}>
+                  <th style={{ padding: '12px 16px', textAlign: 'left', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>If Sold in Year</th>
+                  {[1, 2, 3, 5, 7, 10, 15, 18].map(year => (
+                    <th key={year} style={{ padding: '12px 8px', textAlign: 'right', color: theme.textMuted, fontWeight: '600', borderBottom: `2px solid ${theme.borderLight}` }}>{year}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {[
+                  { label: 'Sale Price (ARV)', key: 'salePrice', format: 'currency', color: '#3B82F6' },
+                  { label: 'Loan Balance', key: 'loanBalance', format: 'currency', color: '#EF4444' },
+                  { label: 'Gross Profit', key: 'grossProfit', format: 'currency', colorLogic: true },
+                  { label: 'Commission + Closing', key: 'realEstateCommission', format: 'currency', color: '#EF4444', addKey: 'closingCostsAtSale' },
+                  { label: 'Total Taxes', key: 'totalTaxes', format: 'currency', color: '#EF4444' },
+                  { label: 'Net Profit After Taxes', key: 'netProfitAfterTaxes', format: 'currency', colorLogic: true },
+                  { label: 'Cumulative Cash Flow', key: 'cumulativeCashFlow', format: 'currency', color: '#10B981' },
+                  { label: 'Total Return', key: 'totalReturnWithSale', format: 'currency', color: '#10B981', bold: true },
+                  { label: 'ROI', key: 'roiWithSale', format: 'percent', color: '#8B5CF6', bold: true }
+                ].map((row, rowIdx) => (
+                  <tr key={rowIdx} style={{ borderBottom: `1px solid ${theme.borderLight}`, background: row.bold ? (theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.05)' : 'rgba(16, 185, 129, 0.03)') : 'transparent' }}>
+                    <td style={{ padding: '10px 16px', color: theme.textSecondary, fontWeight: row.bold ? '600' : '500' }}>{row.label}</td>
+                    {[1, 2, 3, 5, 7, 10, 15, 18].map(year => {
+                      const proj = saleProjections[year - 1];
+                      if (!proj) return <td key={year} style={{ padding: '10px 8px', textAlign: 'right' }}>—</td>;
+                      
+                      let value = proj[row.key];
+                      if (row.addKey) value += proj[row.addKey];
+                      
+                      const displayValue = row.format === 'currency' ? formatCurrency(value) : formatPercent(value);
+                      const color = row.colorLogic ? (value >= 0 ? '#10B981' : '#EF4444') : row.color;
+                      
+                      return (
+                        <td key={year} style={{ padding: '10px 8px', textAlign: 'right', color, fontWeight: row.bold ? '700' : '500' }}>{displayValue}</td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: SIMULATION TAB - Pass/Fail Criteria Checker
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderSimulationTab = () => {
+    // Calculate all criteria results
+    const criteriaResults = [
+      {
+        id: 'cashOnCash',
+        name: 'Cash on Cash Return',
+        icon: '💰',
+        actual: calculations.cashOnCashReturn,
+        target: simulationCriteria.minCashOnCash,
+        unit: '%',
+        comparison: 'min',
+        category: 'returns',
+        importance: 'critical',
+        explanation: 'Cash on Cash Return measures annual cash flow as a percentage of total cash invested. Industry standard for good deals is 8-12%.'
+      },
+      {
+        id: 'capRate',
+        name: 'Cap Rate',
+        icon: '📊',
+        actual: calculations.capRate,
+        target: simulationCriteria.minCapRate,
+        unit: '%',
+        comparison: 'min',
+        category: 'returns',
+        importance: 'critical',
+        explanation: 'Capitalization Rate shows the property\'s return independent of financing. Higher cap rates indicate better income potential but may come with more risk.'
+      },
+      {
+        id: 'monthlyCashFlow',
+        name: 'Monthly Cash Flow',
+        icon: '📅',
+        actual: calculations.monthlyCashFlow,
+        target: simulationCriteria.minMonthlyCashFlow,
+        unit: '$',
+        comparison: 'min',
+        category: 'cashflow',
+        importance: 'critical',
+        explanation: 'Positive monthly cash flow ensures the property pays for itself. Aim for at least $100-200/month per door as a safety buffer.'
+      },
+      {
+        id: 'annualCashFlow',
+        name: 'Annual Cash Flow',
+        icon: '💵',
+        actual: calculations.annualCashFlow,
+        target: simulationCriteria.minAnnualCashFlow,
+        unit: '$',
+        comparison: 'min',
+        category: 'cashflow',
+        importance: 'high',
+        explanation: 'Total yearly cash flow after all expenses and debt service. This is your actual profit from the property.'
+      },
+      {
+        id: 'ltv',
+        name: 'Loan-to-Value (LTV)',
+        icon: '🏦',
+        actual: (calculations.loanAmount / propertyData.purchasePrice) * 100,
+        target: simulationCriteria.maxLTV,
+        unit: '%',
+        comparison: 'max',
+        category: 'risk',
+        importance: 'high',
+        explanation: 'Lower LTV means more equity and less risk. Most lenders require 75-80% LTV for investment properties.'
+      },
+      {
+        id: 'dscr',
+        name: 'Debt Service Coverage Ratio',
+        icon: '🛡️',
+        actual: calculations.noi / calculations.annualPI,
+        target: simulationCriteria.minDSCR,
+        unit: 'x',
+        comparison: 'min',
+        category: 'risk',
+        importance: 'critical',
+        explanation: 'DSCR measures ability to cover debt payments. Lenders typically require 1.2-1.25x minimum. Higher is safer.'
+      },
+      {
+        id: 'totalROI',
+        name: 'Total ROI (Year 1)',
+        icon: '📈',
+        actual: calculations.totalROI,
+        target: simulationCriteria.minTotalROI,
+        unit: '%',
+        comparison: 'min',
+        category: 'returns',
+        importance: 'high',
+        explanation: 'Total return including appreciation, cash flow, debt paydown, and tax benefits. Aim for 12-20% for good deals.'
+      },
+      {
+        id: 'purchasePrice',
+        name: 'Purchase Price',
+        icon: '🏷️',
+        actual: propertyData.purchasePrice,
+        target: simulationCriteria.maxPurchasePrice,
+        unit: '$',
+        comparison: 'max',
+        category: 'affordability',
+        importance: 'medium',
+        explanation: 'Ensure the purchase price fits within your investment budget and risk tolerance.'
+      },
+      {
+        id: 'equityYear5',
+        name: 'Projected Equity (Year 5)',
+        icon: '💎',
+        actual: calculations.projections[4]?.equity || 0,
+        target: simulationCriteria.minEquityYear5,
+        unit: '$',
+        comparison: 'min',
+        category: 'growth',
+        importance: 'medium',
+        explanation: 'Equity build-up provides options for refinancing, selling, or leveraging into more properties.'
+      },
+      {
+        id: 'vacancyRate',
+        name: 'Vacancy Rate',
+        icon: '🏚️',
+        actual: propertyData.vacancyRate,
+        target: simulationCriteria.maxVacancyRate,
+        unit: '%',
+        comparison: 'max',
+        category: 'risk',
+        importance: 'medium',
+        explanation: 'Conservative vacancy estimates protect against income loss. 3-5% is typical for stable markets, 8-10% for riskier areas.'
+      }
+    ];
+    
+    // Calculate pass/fail for each criteria
+    const results = criteriaResults.map(criteria => {
+      let passed;
+      if (criteria.comparison === 'min') {
+        passed = criteria.actual >= criteria.target;
+      } else {
+        passed = criteria.actual <= criteria.target;
+      }
+      return { ...criteria, passed };
+    });
+    
+    const passedCount = results.filter(r => r.passed).length;
+    const totalCount = results.length;
+    const passRate = (passedCount / totalCount) * 100;
+    const criticalFails = results.filter(r => !r.passed && r.importance === 'critical');
+    
+    // Overall deal grade
+    let dealGrade, gradeColor, gradeEmoji;
+    if (passRate >= 90 && criticalFails.length === 0) {
+      dealGrade = 'A+'; gradeColor = '#10B981'; gradeEmoji = '🏆';
+    } else if (passRate >= 80 && criticalFails.length === 0) {
+      dealGrade = 'A'; gradeColor = '#10B981'; gradeEmoji = '✨';
+    } else if (passRate >= 70 && criticalFails.length <= 1) {
+      dealGrade = 'B'; gradeColor = '#3B82F6'; gradeEmoji = '👍';
+    } else if (passRate >= 60) {
+      dealGrade = 'C'; gradeColor = '#F59E0B'; gradeEmoji = '⚠️';
+    } else if (passRate >= 40) {
+      dealGrade = 'D'; gradeColor = '#EF4444'; gradeEmoji = '🚨';
+    } else {
+      dealGrade = 'F'; gradeColor = '#DC2626'; gradeEmoji = '❌';
+    }
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Overall Score Card */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '24px' }}>
+          {/* Grade Card */}
+          <div style={{ 
+            ...cardStyle, 
+            background: `linear-gradient(135deg, ${gradeColor}15, ${gradeColor}05)`,
+            border: `2px solid ${gradeColor}30`,
+            textAlign: 'center',
+            padding: '32px'
+          }}>
+            <div style={{ fontSize: '48px', marginBottom: '12px' }}>{gradeEmoji}</div>
+            <div style={{ fontSize: '72px', fontWeight: '900', color: gradeColor, lineHeight: 1 }}>{dealGrade}</div>
+            <div style={{ fontSize: '16px', color: theme.textSecondary, marginTop: '12px', fontWeight: '600' }}>Deal Grade</div>
+            <div style={{ 
+              marginTop: '20px', 
+              padding: '12px 20px', 
+              background: theme.bgMain, 
+              borderRadius: '12px',
+              display: 'inline-block'
+            }}>
+              <span style={{ fontSize: '24px', fontWeight: '800', color: gradeColor }}>{passedCount}</span>
+              <span style={{ color: theme.textMuted, fontSize: '14px' }}> / {totalCount} criteria passed</span>
+            </div>
+          </div>
+          
+          {/* Summary Stats */}
+          <div style={cardStyle}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: `linear-gradient(90deg, ${gradeColor}, #8B5CF6)` }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>Deal Simulation Summary</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '24px' }}>
+              {[
+                { label: 'Pass Rate', value: `${passRate.toFixed(0)}%`, color: passRate >= 70 ? '#10B981' : '#EF4444' },
+                { label: 'Critical Fails', value: criticalFails.length, color: criticalFails.length === 0 ? '#10B981' : '#EF4444' },
+                { label: 'High Priority Fails', value: results.filter(r => !r.passed && r.importance === 'high').length, color: '#F59E0B' },
+                { label: 'Areas to Improve', value: results.filter(r => !r.passed).length, color: '#8B5CF6' }
+              ].map((stat, i) => (
+                <div key={i} style={{ textAlign: 'center', padding: '16px', background: theme.bgMain, borderRadius: '12px' }}>
+                  <div style={{ fontSize: '28px', fontWeight: '800', color: stat.color }}>{stat.value}</div>
+                  <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '4px' }}>{stat.label}</div>
+                </div>
+              ))}
+            </div>
+            
+            {/* Quick Verdict */}
+            <div style={{ 
+              padding: '16px 20px', 
+              background: `${gradeColor}10`, 
+              borderRadius: '12px',
+              border: `1px solid ${gradeColor}30`
+            }}>
+              <div style={{ fontWeight: '700', color: gradeColor, marginBottom: '8px', fontSize: '15px' }}>
+                {passRate >= 70 ? '✅ Deal Recommendation: PROCEED WITH CAUTION' : '⚠️ Deal Recommendation: NEEDS IMPROVEMENT'}
+              </div>
+              <div style={{ fontSize: '13px', color: theme.textSecondary, lineHeight: 1.6 }}>
+                {criticalFails.length > 0 
+                  ? `This deal fails ${criticalFails.length} critical criteria: ${criticalFails.map(f => f.name).join(', ')}. Consider renegotiating terms or finding a better deal.`
+                  : passRate >= 80 
+                    ? 'This deal meets most of your investment criteria and appears to be a solid opportunity.'
+                    : 'This deal has potential but needs improvement in several areas before moving forward.'}
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Criteria Settings */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #F59E0B, #EF4444)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>🎯 Your Investment Criteria</h3>
+            <span style={{ fontSize: '12px', color: theme.textMuted }}>Customize your pass/fail thresholds</span>
+          </div>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+            {[
+              { label: 'Min Cash on Cash %', field: 'minCashOnCash', suffix: '%' },
+              { label: 'Min Cap Rate %', field: 'minCapRate', suffix: '%' },
+              { label: 'Min Monthly Cash Flow', field: 'minMonthlyCashFlow', prefix: '$' },
+              { label: 'Min Annual Cash Flow', field: 'minAnnualCashFlow', prefix: '$' },
+              { label: 'Max LTV %', field: 'maxLTV', suffix: '%' },
+              { label: 'Min DSCR', field: 'minDSCR', suffix: 'x' },
+              { label: 'Min Total ROI %', field: 'minTotalROI', suffix: '%' },
+              { label: 'Max Purchase Price', field: 'maxPurchasePrice', prefix: '$' },
+              { label: 'Min Equity Year 5', field: 'minEquityYear5', prefix: '$' },
+              { label: 'Max Vacancy Rate %', field: 'maxVacancyRate', suffix: '%' }
+            ].map((item, i) => (
+              <div key={i}>
+                <label style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '6px', display: 'block' }}>{item.label}</label>
+                <div style={{ position: 'relative' }}>
+                  {item.prefix && <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '12px' }}>{item.prefix}</span>}
+                  <input
+                    type="number"
+                    step={item.field.includes('DSCR') ? '0.1' : '1'}
+                    value={simulationCriteria[item.field]}
+                    onChange={(e) => updateCriteria(item.field, e.target.value)}
+                    style={{ ...inputStyle, padding: item.prefix ? '10px 10px 10px 22px' : '10px', fontSize: '13px', textAlign: 'right' }}
+                  />
+                  {item.suffix && <span style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', color: theme.textMuted, fontSize: '11px' }}>{item.suffix}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Detailed Results */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #10B981, #EF4444)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>📋 Detailed Criteria Analysis</h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {results.map((result, i) => (
+              <div 
+                key={i}
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: '50px 1fr 120px 120px 100px',
+                  gap: '16px',
+                  alignItems: 'center',
+                  padding: '16px 20px',
+                  background: result.passed 
+                    ? (theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.04)')
+                    : (theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(239, 68, 68, 0.04)'),
+                  borderRadius: '12px',
+                  border: `1px solid ${result.passed ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)'}`
+                }}
+              >
+                <div style={{ fontSize: '28px', textAlign: 'center' }}>{result.icon}</div>
+                
+                <div>
+                  <div style={{ fontWeight: '600', color: theme.textPrimary, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {result.name}
+                    {result.importance === 'critical' && (
+                      <span style={{ fontSize: '9px', padding: '2px 6px', background: '#EF444420', color: '#EF4444', borderRadius: '4px', fontWeight: '700' }}>CRITICAL</span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: '12px', color: theme.textMuted, lineHeight: 1.4 }}>{result.explanation}</div>
+                </div>
+                
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>Your Target</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: theme.textSecondary }}>
+                    {result.comparison === 'min' ? '≥' : '≤'} {result.unit === '$' ? formatCurrency(result.target) : `${result.target}${result.unit}`}
+                  </div>
+                </div>
+                
+                <div style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px' }}>Actual</div>
+                  <div style={{ fontSize: '16px', fontWeight: '700', color: result.passed ? '#10B981' : '#EF4444' }}>
+                    {result.unit === '$' ? formatCurrency(result.actual) : `${result.actual.toFixed(2)}${result.unit}`}
+                  </div>
+                </div>
+                
+                <div style={{ 
+                  textAlign: 'center',
+                  padding: '8px 16px',
+                  borderRadius: '8px',
+                  background: result.passed ? '#10B98120' : '#EF444420',
+                  color: result.passed ? '#10B981' : '#EF4444',
+                  fontWeight: '700',
+                  fontSize: '14px'
+                }}>
+                  {result.passed ? '✓ PASS' : '✗ FAIL'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Failed Criteria Deep Dive */}
+        {results.filter(r => !r.passed).length > 0 && (
+          <div style={cardStyle}>
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EF4444, #F59E0B)' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px' }}>🔧 How to Fix Failed Criteria</h3>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+              {results.filter(r => !r.passed).map((result, i) => {
+                let fixSuggestion = '';
+                const gap = result.comparison === 'min' 
+                  ? result.target - result.actual 
+                  : result.actual - result.target;
+                
+                switch(result.id) {
+                  case 'cashOnCash':
+                    fixSuggestion = `Increase rent by ${formatCurrency(gap * calculations.totalInvested / 100 / 12)}/month, reduce purchase price by ${formatCurrency(gap * calculations.totalInvested / 100 / 0.08)}, or increase down payment.`;
+                    break;
+                  case 'capRate':
+                    fixSuggestion = `Negotiate a lower purchase price or find ways to increase NOI through higher rent or lower expenses.`;
+                    break;
+                  case 'monthlyCashFlow':
+                    fixSuggestion = `Increase rent by ${formatCurrency(Math.abs(gap))}/month, reduce expenses, or refinance at a lower rate.`;
+                    break;
+                  case 'dscr':
+                    fixSuggestion = `Increase NOI by ${formatCurrency((gap * calculations.annualPI))}/year through higher rent or lower expenses.`;
+                    break;
+                  case 'ltv':
+                    fixSuggestion = `Increase your down payment by ${formatCurrency((result.actual - result.target) / 100 * propertyData.purchasePrice)} to meet LTV requirements.`;
+                    break;
+                  default:
+                    fixSuggestion = `Review and adjust your inputs or negotiate better terms with the seller.`;
+                }
+                
+                return (
+                  <div key={i} style={{ 
+                    padding: '16px', 
+                    background: theme.bgMain, 
+                    borderRadius: '12px',
+                    border: `1px solid ${theme.borderLight}`
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                      <span style={{ fontSize: '20px' }}>{result.icon}</span>
+                      <span style={{ fontWeight: '600', color: '#EF4444' }}>{result.name}</span>
+                    </div>
+                    <div style={{ fontSize: '13px', color: theme.textSecondary, lineHeight: 1.5 }}>
+                      <strong>Gap:</strong> {result.unit === '$' ? formatCurrency(Math.abs(gap)) : `${Math.abs(gap).toFixed(2)}${result.unit}`} {result.comparison === 'min' ? 'below' : 'above'} target
+                    </div>
+                    <div style={{ fontSize: '13px', color: theme.textPrimary, marginTop: '8px', lineHeight: 1.5 }}>
+                      <strong>💡 Suggestion:</strong> {fixSuggestion}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RENDER: AI ANALYSIS TAB - Penny's Insights
+  // ═══════════════════════════════════════════════════════════════════════════
+  const renderAIAnalysisTab = () => {
+    // Generate AI insights based on the deal
+    const generateInsights = () => {
+      const insights = [];
+      
+      // Cash Flow Analysis
+      if (calculations.monthlyCashFlow < 0) {
+        insights.push({
+          type: 'warning',
+          category: 'Cash Flow',
+          title: 'Negative Cash Flow Alert',
+          message: `This property is projected to lose ${formatCurrency(Math.abs(calculations.monthlyCashFlow))}/month. You'll need to subsidize ${formatCurrency(Math.abs(calculations.annualCashFlow))}/year from other income.`,
+          recommendation: 'Consider increasing rent, negotiating a lower price, or increasing your down payment to improve cash flow.'
+        });
+      } else if (calculations.monthlyCashFlow < 200) {
+        insights.push({
+          type: 'caution',
+          category: 'Cash Flow',
+          title: 'Thin Cash Flow Margins',
+          message: `Monthly cash flow of ${formatCurrency(calculations.monthlyCashFlow)} leaves little room for unexpected expenses or vacancies.`,
+          recommendation: 'Build a 6-month reserve fund and consider ways to increase rental income.'
+        });
+      } else {
+        insights.push({
+          type: 'positive',
+          category: 'Cash Flow',
+          title: 'Healthy Cash Flow',
+          message: `Strong monthly cash flow of ${formatCurrency(calculations.monthlyCashFlow)} provides good protection against vacancies and repairs.`,
+          recommendation: 'Consider reinvesting excess cash flow into property improvements or your next investment.'
+        });
+      }
+      
+      // Cap Rate Analysis
+      if (calculations.capRate < 4) {
+        insights.push({
+          type: 'warning',
+          category: 'Returns',
+          title: 'Below-Market Cap Rate',
+          message: `A ${formatPercent(calculations.capRate)} cap rate is below the typical 5-8% range for most markets.`,
+          recommendation: 'This may indicate an overpriced property or a premium market. Ensure appreciation potential justifies the low cap rate.'
+        });
+      } else if (calculations.capRate >= 8) {
+        insights.push({
+          type: 'positive',
+          category: 'Returns',
+          title: 'Strong Cap Rate',
+          message: `A ${formatPercent(calculations.capRate)} cap rate exceeds market averages and indicates strong income potential.`,
+          recommendation: 'Verify the numbers are accurate and investigate why the cap rate is high - there may be hidden risks.'
+        });
+      }
+      
+      // DSCR Analysis
+      const dscr = calculations.noi / calculations.annualPI;
+      if (dscr < 1.0) {
+        insights.push({
+          type: 'critical',
+          category: 'Risk',
+          title: 'DSCR Below 1.0 - High Risk',
+          message: `A DSCR of ${dscr.toFixed(2)}x means the property cannot cover its debt payments from rental income alone.`,
+          recommendation: 'This deal is risky. Increase down payment or negotiate better terms before proceeding.'
+        });
+      } else if (dscr < 1.25) {
+        insights.push({
+          type: 'caution',
+          category: 'Risk',
+          title: 'DSCR Below Lender Threshold',
+          message: `Most lenders require DSCR of 1.25x minimum. Your ${dscr.toFixed(2)}x may affect financing options.`,
+          recommendation: 'Consider increasing rent or down payment to improve DSCR above 1.25x.'
+        });
+      }
+      
+      // LTV Analysis
+      const ltv = (calculations.loanAmount / propertyData.purchasePrice) * 100;
+      if (ltv > 80) {
+        insights.push({
+          type: 'caution',
+          category: 'Financing',
+          title: 'High Leverage Position',
+          message: `An ${formatPercent(ltv)} LTV means you have limited equity cushion if property values decline.`,
+          recommendation: 'Consider a larger down payment to reduce risk and potentially eliminate PMI.'
+        });
+      }
+      
+      // ROI Analysis
+      if (calculations.totalROI > 20) {
+        insights.push({
+          type: 'positive',
+          category: 'Returns',
+          title: 'Exceptional Total ROI',
+          message: `A ${formatPercent(calculations.totalROI)} total ROI significantly outperforms stock market averages (7-10%).`,
+          recommendation: 'Double-check all assumptions. If accurate, this is an excellent opportunity.'
+        });
+      } else if (calculations.totalROI < 8) {
+        insights.push({
+          type: 'caution',
+          category: 'Returns',
+          title: 'Below-Average Total ROI',
+          message: `A ${formatPercent(calculations.totalROI)} total ROI is below the typical 12-15% target for real estate investments.`,
+          recommendation: 'Consider whether the low return justifies the effort and risk of owning rental property.'
+        });
+      }
+      
+      // Expense Ratio Analysis
+      const expenseRatio = (calculations.totalOperatingExpenses / calculations.grossPotentialIncome) * 100;
+      if (expenseRatio > 50) {
+        insights.push({
+          type: 'caution',
+          category: 'Expenses',
+          title: 'High Operating Expense Ratio',
+          message: `Operating expenses consume ${formatPercent(expenseRatio)} of gross income, above the typical 35-45% range.`,
+          recommendation: 'Review expense categories for potential savings, especially property taxes and insurance.'
+        });
+      }
+      
+      // Appreciation Assumption
+      if (propertyData.annualAppreciation > 5) {
+        insights.push({
+          type: 'caution',
+          category: 'Assumptions',
+          title: 'Aggressive Appreciation Assumption',
+          message: `${propertyData.annualAppreciation}% annual appreciation exceeds historical averages (3-4% nationally).`,
+          recommendation: 'Consider using more conservative appreciation estimates for risk analysis.'
+        });
+      }
+      
+      // True Cash Flow Impact
+      if (calculations.trueCashFlow > calculations.annualCashFlow * 1.5) {
+        insights.push({
+          type: 'positive',
+          category: 'Tax Benefits',
+          title: 'Strong Tax Advantage',
+          message: `Depreciation adds ${formatCurrency(calculations.cashFlowFromDepreciation)}/year in tax benefits, significantly boosting your true returns.`,
+          recommendation: 'Consult a tax professional to maximize depreciation benefits and explore cost segregation.'
+        });
+      }
+      
+      return insights;
+    };
+    
+    const insights = generateInsights();
+    const positiveCount = insights.filter(i => i.type === 'positive').length;
+    const cautionCount = insights.filter(i => i.type === 'caution').length;
+    const warningCount = insights.filter(i => i.type === 'warning' || i.type === 'critical').length;
+    
+    // Industry Benchmarks
+    const benchmarks = [
+      { metric: 'Cap Rate', yours: calculations.capRate, industry: '5-8%', status: calculations.capRate >= 5 ? 'good' : 'low' },
+      { metric: 'Cash on Cash', yours: calculations.cashOnCashReturn, industry: '8-12%', status: calculations.cashOnCashReturn >= 8 ? 'good' : 'low' },
+      { metric: 'DSCR', yours: calculations.noi / calculations.annualPI, industry: '1.25-1.5x', status: (calculations.noi / calculations.annualPI) >= 1.25 ? 'good' : 'low' },
+      { metric: 'Expense Ratio', yours: (calculations.totalOperatingExpenses / calculations.grossPotentialIncome) * 100, industry: '35-45%', status: (calculations.totalOperatingExpenses / calculations.grossPotentialIncome) * 100 <= 45 ? 'good' : 'high' },
+      { metric: 'Total ROI', yours: calculations.totalROI, industry: '12-20%', status: calculations.totalROI >= 12 ? 'good' : 'low' }
+    ];
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {/* Penny Header */}
+        <div style={{ 
+          ...cardStyle, 
+          background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(244, 114, 182, 0.15)' : 'rgba(244, 114, 182, 0.08)'}, ${theme.mode === 'dark' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(236, 72, 153, 0.05)'})`,
+          border: '2px solid rgba(244, 114, 182, 0.3)',
+          padding: '32px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '24px' }}>
+            {/* Penny Avatar */}
+            <div style={{
+              width: '80px',
+              height: '80px',
+              borderRadius: '20px',
+              background: 'linear-gradient(135deg, #EC4899, #F472B6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '40px',
+              boxShadow: '0 8px 32px rgba(236, 72, 153, 0.4)',
+              flexShrink: 0
+            }}>
+              🪙
+            </div>
+            
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
+                <h2 style={{ fontSize: '24px', fontWeight: '800', color: theme.textPrimary, margin: 0 }}>
+                  Penny's Deal Analysis
+                </h2>
+                <span style={{ 
+                  padding: '4px 12px', 
+                  background: 'linear-gradient(135deg, #EC4899, #F472B6)', 
+                  borderRadius: '20px', 
+                  fontSize: '11px', 
+                  fontWeight: '700', 
+                  color: 'white',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>AI Powered</span>
+              </div>
+              <p style={{ fontSize: '15px', color: theme.textSecondary, margin: 0, lineHeight: 1.6 }}>
+                Hi there! 👋 I've analyzed your investment property at <strong>{propertyData.propertyAddress}</strong> and 
+                here's what I found. I'll highlight the strengths, flag potential concerns, and give you actionable 
+                recommendations to maximize your returns!
+              </p>
+            </div>
+          </div>
+          
+          {/* Quick Stats */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '24px' }}>
+            {[
+              { label: 'Positive Signals', value: positiveCount, icon: '✅', color: '#10B981' },
+              { label: 'Caution Areas', value: cautionCount, icon: '⚠️', color: '#F59E0B' },
+              { label: 'Warnings', value: warningCount, icon: '🚨', color: '#EF4444' },
+              { label: 'Total Insights', value: insights.length, icon: '💡', color: '#8B5CF6' }
+            ].map((stat, i) => (
+              <div key={i} style={{ 
+                textAlign: 'center', 
+                padding: '16px', 
+                background: theme.bgCard, 
+                borderRadius: '12px',
+                border: `1px solid ${theme.borderLight}`
+              }}>
+                <div style={{ fontSize: '24px', marginBottom: '8px' }}>{stat.icon}</div>
+                <div style={{ fontSize: '28px', fontWeight: '800', color: stat.color }}>{stat.value}</div>
+                <div style={{ fontSize: '12px', color: theme.textMuted }}>{stat.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Executive Summary */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EC4899, #8B5CF6)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>📊</span> Executive Summary
+          </h3>
+          
+          <div style={{ 
+            padding: '24px', 
+            background: theme.bgMain, 
+            borderRadius: '16px',
+            border: `1px solid ${theme.borderLight}`,
+            lineHeight: 1.8
+          }}>
+            <p style={{ fontSize: '15px', color: theme.textPrimary, margin: 0 }}>
+              This <strong>{formatCurrency(propertyData.purchasePrice)}</strong> property with <strong>{formatCurrency(propertyData.monthlyRent)}/month</strong> rent 
+              {calculations.monthlyCashFlow >= 0 
+                ? ` generates positive cash flow of ${formatCurrency(calculations.monthlyCashFlow)}/month (${formatCurrency(calculations.annualCashFlow)}/year).`
+                : ` has negative cash flow of ${formatCurrency(Math.abs(calculations.monthlyCashFlow))}/month.`}
+            </p>
+            <p style={{ fontSize: '15px', color: theme.textPrimary, margin: '16px 0 0 0' }}>
+              With a <strong>{formatPercent(calculations.capRate)} cap rate</strong> and <strong>{formatPercent(calculations.cashOnCashReturn)} cash-on-cash return</strong>, 
+              this deal {calculations.cashOnCashReturn >= 8 ? 'meets' : 'falls below'} typical investor thresholds. 
+              Your total Year 1 ROI including appreciation, debt paydown, and tax benefits is <strong>{formatPercent(calculations.totalROI)}</strong>.
+            </p>
+            <p style={{ fontSize: '15px', color: theme.textPrimary, margin: '16px 0 0 0' }}>
+              After 5 years, you're projected to have <strong>{formatCurrency(calculations.projections[4]?.equity || 0)}</strong> in equity, 
+              and if held for 18 years, <strong>{formatCurrency(calculations.projections[17]?.equity || 0)}</strong>. 
+              True Cash Flow™ (including depreciation benefits) is <strong>{formatCurrency(calculations.trueCashFlow)}/year</strong>.
+            </p>
+          </div>
+        </div>
+        
+        {/* Industry Benchmarks */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3B82F6, #10B981)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>📈</span> Industry Benchmark Comparison
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '16px' }}>
+            {benchmarks.map((b, i) => (
+              <div key={i} style={{ 
+                padding: '20px', 
+                background: theme.bgMain, 
+                borderRadius: '12px',
+                textAlign: 'center',
+                border: `1px solid ${b.status === 'good' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`
+              }}>
+                <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '8px' }}>{b.metric}</div>
+                <div style={{ fontSize: '24px', fontWeight: '800', color: b.status === 'good' ? '#10B981' : '#EF4444', marginBottom: '4px' }}>
+                  {typeof b.yours === 'number' ? (b.metric.includes('Ratio') || b.metric.includes('Rate') || b.metric.includes('ROI') || b.metric.includes('Cash') ? formatPercent(b.yours) : b.yours.toFixed(2) + 'x') : b.yours}
+                </div>
+                <div style={{ fontSize: '11px', color: theme.textMuted }}>Industry: {b.industry}</div>
+                <div style={{ 
+                  marginTop: '8px',
+                  padding: '4px 10px',
+                  borderRadius: '6px',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  background: b.status === 'good' ? '#10B98120' : '#EF444420',
+                  color: b.status === 'good' ? '#10B981' : '#EF4444'
+                }}>
+                  {b.status === 'good' ? '✓ MEETS STANDARD' : '✗ BELOW STANDARD'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Detailed Insights */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #F59E0B, #EF4444)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>💡</span> Detailed Analysis & Recommendations
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {insights.map((insight, i) => {
+              const typeStyles = {
+                positive: { bg: 'rgba(16, 185, 129, 0.08)', border: 'rgba(16, 185, 129, 0.3)', icon: '✅', color: '#10B981' },
+                caution: { bg: 'rgba(245, 158, 11, 0.08)', border: 'rgba(245, 158, 11, 0.3)', icon: '⚠️', color: '#F59E0B' },
+                warning: { bg: 'rgba(239, 68, 68, 0.08)', border: 'rgba(239, 68, 68, 0.3)', icon: '🚨', color: '#EF4444' },
+                critical: { bg: 'rgba(220, 38, 38, 0.1)', border: 'rgba(220, 38, 38, 0.4)', icon: '🔴', color: '#DC2626' }
+              };
+              const style = typeStyles[insight.type];
+              
+              return (
+                <div key={i} style={{
+                  padding: '20px',
+                  background: theme.mode === 'dark' ? style.bg : style.bg.replace('0.08', '0.04'),
+                  borderRadius: '12px',
+                  border: `1px solid ${style.border}`
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px' }}>
+                    <div style={{ fontSize: '24px', marginTop: '2px' }}>{style.icon}</div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <span style={{ fontWeight: '700', color: style.color, fontSize: '16px' }}>{insight.title}</span>
+                        <span style={{ 
+                          padding: '2px 8px', 
+                          background: theme.bgMain, 
+                          borderRadius: '6px', 
+                          fontSize: '10px', 
+                          color: theme.textMuted,
+                          fontWeight: '600'
+                        }}>{insight.category}</span>
+                      </div>
+                      <p style={{ fontSize: '14px', color: theme.textSecondary, margin: '0 0 12px 0', lineHeight: 1.6 }}>
+                        {insight.message}
+                      </p>
+                      <div style={{ 
+                        padding: '12px 16px', 
+                        background: theme.bgCard, 
+                        borderRadius: '8px',
+                        border: `1px solid ${theme.borderLight}`
+                      }}>
+                        <div style={{ fontSize: '11px', color: theme.textMuted, marginBottom: '4px', fontWeight: '600', textTransform: 'uppercase' }}>
+                          💡 Penny's Recommendation
+                        </div>
+                        <div style={{ fontSize: '13px', color: theme.textPrimary, lineHeight: 1.5 }}>
+                          {insight.recommendation}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Action Items */}
+        <div style={cardStyle}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+          <h3 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>✅</span> Next Steps Checklist
+          </h3>
+          
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+            {[
+              { task: 'Verify rental income with current market comps', priority: 'high' },
+              { task: 'Get property inspection and estimate repairs', priority: 'high' },
+              { task: 'Confirm property taxes with county assessor', priority: 'medium' },
+              { task: 'Shop for best mortgage rates (compare 3+ lenders)', priority: 'high' },
+              { task: 'Review HOA rules and financial health', priority: 'medium' },
+              { task: 'Calculate reserves (6 months expenses minimum)', priority: 'high' },
+              { task: 'Consult with CPA on tax implications', priority: 'medium' },
+              { task: 'Run worst-case scenario (10% vacancy, 20% expense increase)', priority: 'medium' }
+            ].map((item, i) => (
+              <div key={i} style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px',
+                padding: '14px 16px',
+                background: theme.bgMain,
+                borderRadius: '10px',
+                border: `1px solid ${theme.borderLight}`
+              }}>
+                <div style={{
+                  width: '24px',
+                  height: '24px',
+                  borderRadius: '6px',
+                  border: `2px solid ${theme.border}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  cursor: 'pointer'
+                }}>
+                </div>
+                <span style={{ fontSize: '13px', color: theme.textPrimary, flex: 1 }}>{item.task}</span>
+                <span style={{
+                  padding: '3px 8px',
+                  borderRadius: '4px',
+                  fontSize: '10px',
+                  fontWeight: '600',
+                  background: item.priority === 'high' ? '#EF444420' : '#F59E0B20',
+                  color: item.priority === 'high' ? '#EF4444' : '#F59E0B'
+                }}>
+                  {item.priority.toUpperCase()}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+        
+        {/* Final Verdict */}
+        <div style={{ 
+          ...cardStyle, 
+          background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.15)' : 'rgba(139, 92, 246, 0.08)'}, ${theme.mode === 'dark' ? 'rgba(236, 72, 153, 0.1)' : 'rgba(236, 72, 153, 0.05)'})`,
+          border: '2px solid rgba(139, 92, 246, 0.3)',
+          textAlign: 'center',
+          padding: '40px'
+        }}>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>
+            {calculations.cashOnCashReturn >= 8 && calculations.monthlyCashFlow > 0 ? '🎉' : calculations.monthlyCashFlow > 0 ? '🤔' : '⚠️'}
+          </div>
+          <h3 style={{ fontSize: '24px', fontWeight: '800', color: theme.textPrimary, marginBottom: '12px' }}>
+            Penny's Final Verdict
+          </h3>
+          <p style={{ fontSize: '18px', color: theme.textSecondary, maxWidth: '700px', margin: '0 auto', lineHeight: 1.6 }}>
+            {calculations.cashOnCashReturn >= 10 && calculations.monthlyCashFlow > 200
+              ? "This looks like a solid deal! Strong cash flow and returns make this an attractive investment opportunity. Do your due diligence and move forward with confidence."
+              : calculations.cashOnCashReturn >= 6 && calculations.monthlyCashFlow > 0
+                ? "This deal has potential but isn't a home run. Consider negotiating better terms or increasing rent to improve returns before committing."
+                : "I'd recommend passing on this deal in its current form. The numbers don't support a strong investment case. Look for opportunities with better cash flow or negotiate significantly better terms."}
+          </p>
+          <div style={{ 
+            marginTop: '24px', 
+            display: 'inline-flex', 
+            alignItems: 'center', 
+            gap: '8px',
+            padding: '12px 24px',
+            background: theme.bgCard,
+            borderRadius: '12px',
+            border: `1px solid ${theme.borderLight}`
+          }}>
+            <span style={{ fontSize: '20px' }}>🪙</span>
+            <span style={{ fontSize: '14px', color: theme.textMuted }}>Analysis generated by Penny AI • ProsperNest</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <div style={{ padding: '24px', minHeight: '100vh' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '8px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '14px',
+            background: 'linear-gradient(135deg, #10B981, #3B82F6)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '24px',
+            boxShadow: '0 8px 24px rgba(16, 185, 129, 0.3)'
+          }}>
+            🏠
+          </div>
+          <div>
+            <h1 style={{ fontSize: '28px', fontWeight: '800', color: theme.textPrimary, margin: 0 }}>
+              RE Budget Hub
+            </h1>
+            <p style={{ fontSize: '14px', color: theme.textMuted, margin: 0 }}>
+              Real Estate Investment Analysis & Deal Calculator
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      {/* Sub-tabs */}
+      <div style={{ 
+        display: 'flex', 
+        gap: '8px', 
+        marginBottom: '24px',
+        padding: '6px',
+        background: theme.bgCard,
+        borderRadius: '16px',
+        boxShadow: theme.cardShadow,
+        border: `1px solid ${theme.borderLight}`
+      }}>
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            style={{
+              flex: 1,
+              padding: '14px 20px',
+              borderRadius: '12px',
+              border: 'none',
+              background: activeTab === tab.id 
+                ? `linear-gradient(135deg, ${tab.color}15, ${tab.color}08)`
+                : 'transparent',
+              color: activeTab === tab.id ? tab.color : theme.textSecondary,
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'all 0.2s ease',
+              boxShadow: activeTab === tab.id ? `0 4px 12px ${tab.color}20` : 'none'
+            }}
+          >
+            <span style={{ fontSize: '18px' }}>{tab.icon}</span>
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      
+      {/* Tab Content */}
+      {activeTab === 'analyzer' && renderAnalyzerTab()}
+      {activeTab === 'cashflow' && renderCashFlowTab()}
+      {activeTab === 'roi' && renderROITab()}
+      {activeTab === 'equity' && renderEquityTab()}
+      {activeTab === 'sale' && renderSaleTab()}
+      {activeTab === 'simulation' && renderSimulationTab()}
+      {activeTab === 'aianalysis' && renderAIAnalysisTab()}
+    </div>
+  );
+};
+
+export default REBudgetHub;
