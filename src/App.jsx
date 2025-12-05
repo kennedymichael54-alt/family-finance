@@ -4892,7 +4892,7 @@ function Dashboard({
                                 </div>
                                 <div style={{ flex: 1 }}>
                                   <div style={{ fontWeight: '500', color: theme.textPrimary }}>{goal.name}</div>
-                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>{Math.round((goal.currentAmount / goal.targetAmount) * 100)}% complete</div>
+                                  <div style={{ fontSize: '12px', color: theme.textMuted }}>{Math.round(((goal.currentAmount || goal.saved || 0) / (goal.targetAmount || goal.target || 1)) * 100)}% complete</div>
                                 </div>
                               </div>
                             ))}
@@ -5104,7 +5104,7 @@ function Dashboard({
                         <div style={{ flex: 1 }}>
                           <div style={{ fontWeight: '600', fontSize: '14px', color: theme.textPrimary }}>{goal.name}</div>
                           <div style={{ fontSize: '12px', color: theme.textMuted }}>
-                            Goal • {Math.round((goal.currentAmount / goal.targetAmount) * 100)}% complete
+                            Goal • {Math.round(((goal.currentAmount || goal.saved || 0) / (goal.targetAmount || goal.target || 1)) * 100)}% complete
                           </div>
                         </div>
                       </div>
@@ -7861,12 +7861,12 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </div>
           <div style={{ display: 'grid', gap: '10px' }}>
             {displayGoals.slice(0, 3).map((goal, i) => {
-              const progress = (goal.currentAmount / goal.targetAmount) * 100;
+              const progress = ((goal.currentAmount || goal.saved || 0) / (goal.targetAmount || goal.target || 1)) * 100;
               return (
                 <div key={i} style={{ padding: '10px 12px', background: theme.bgMain, borderRadius: '10px', border: `1px solid ${theme.borderLight}` }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
                     <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: `${goal.color}20`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px' }}>{goal.icon}</div>
-                    <div style={{ flex: 1 }}><div style={{ fontSize: '13px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div><div style={{ fontSize: '11px', color: theme.textMuted }}>{formatCurrency(goal.currentAmount)} of {formatCurrency(goal.targetAmount)}</div></div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: '13px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div><div style={{ fontSize: '11px', color: theme.textMuted }}>{formatCurrency(goal.currentAmount || goal.saved || 0)} of {formatCurrency(goal.targetAmount || goal.target || 0)}</div></div>
                     <span style={{ fontSize: '13px', fontWeight: '700', color: goal.color }}>{progress.toFixed(0)}%</span>
                   </div>
                   <div style={{ height: '6px', background: theme.borderLight, borderRadius: '3px', overflow: 'hidden' }}><div style={{ height: '100%', width: `${progress}%`, background: `linear-gradient(90deg, ${goal.color} 0%, ${goal.color}CC 100%)`, borderRadius: '3px', transition: 'width 0.5s ease' }} /></div>
@@ -7884,7 +7884,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {(() => {
         const savingsRateAch = activeTotals.income > 0 ? ((activeTotals.income - activeTotals.expenses) / activeTotals.income) * 100 : 0;
-        const completedGoalsCount = goals.filter(g => (g.currentAmount / g.targetAmount) >= 1).length;
+        const completedGoalsCount = goals.filter(g => ((g.currentAmount || g.saved || 0) / (g.targetAmount || g.target || 1)) >= 1).length;
         
         const achievements = [
           { icon: '💰', title: 'Super Saver', desc: 'Saving 20%+ of income', color: '#10B981', earned: savingsRateAch >= 20 },
@@ -7893,7 +7893,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           { icon: '🎯', title: 'Goal Crusher', desc: 'Completed a goal', color: '#EC4899', earned: completedGoalsCount >= 1 },
           { icon: '✅', title: 'Under Budget', desc: 'Spend less than earn', color: '#10B981', earned: activeTotals.expenses < activeTotals.income },
           { icon: '🔥', title: 'Consistency King', desc: 'Track for 30+ days', color: '#F59E0B', earned: activeTransactions.length >= 30 },
-          { icon: '🛡️', title: 'Safety Net', desc: 'Emergency fund started', color: '#3B82F6', earned: goals.some(g => g.name?.toLowerCase().includes('emergency') && g.currentAmount > 0) },
+          { icon: '🛡️', title: 'Safety Net', desc: 'Emergency fund started', color: '#3B82F6', earned: goals.some(g => g.name?.toLowerCase().includes('emergency') && (g.currentAmount || g.saved || 0) > 0) },
           { icon: '📈', title: 'Wealth Builder', desc: 'Positive net worth', color: '#10B981', earned: (activeTotals.income - activeTotals.expenses) > 0 }
         ];
         
