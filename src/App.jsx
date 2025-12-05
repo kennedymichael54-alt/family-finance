@@ -2040,8 +2040,9 @@ function App() {
   const [userPreferences, setUserPreferences] = useState(() => {
     try {
       const savedAvatar = localStorage.getItem('pn_userAvatar');
+      const savedTheme = localStorage.getItem('pn_darkMode');
       return {
-        theme: 'light',
+        theme: savedTheme === 'true' ? 'dark' : 'light',
         language: 'en',
         avatar: savedAvatar || '👨‍💼'
       };
@@ -4705,7 +4706,8 @@ function Dashboard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-          minHeight: '80px'
+          minHeight: '80px',
+          position: 'relative'
         }}>
           {/* Logo */}
           <div 
@@ -4806,11 +4808,23 @@ function Dashboard({
                       flexShrink: 0
                     }}>Owner</span>
                   )}
-                  <SiteStatusIndicator showLabel={false} darkMode={true} />
                 </div>
               </div>
             )}
           </div>
+          
+          {/* Status Indicator - Always visible, separate from collapse button */}
+          {!sidebarCollapsed && (
+            <div style={{ 
+              position: 'absolute', 
+              right: '52px', 
+              top: '50%', 
+              transform: 'translateY(-50%)',
+              zIndex: 10
+            }}>
+              <SiteStatusIndicator showLabel={false} darkMode={true} />
+            </div>
+          )}
           
           {/* Collapse Toggle Button */}
           {!sidebarCollapsed && (
