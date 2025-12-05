@@ -4292,8 +4292,8 @@ function Dashboard({
             const isActive = hub.items.some(item => item.id === activeTab);
             
             // Check permission-based access
-            const requiresBizBudget = hub.requiresBizBudgetAccess && !userPermissions.canAccessBizBudget;
-            const requiresREBudget = hub.requiresREBudgetAccess && !userPermissions.canAccessREBudget;
+            const requiresBizBudget = hub.requiresBizBudgetAccess && !permissions.canAccessBizBudget;
+            const requiresREBudget = hub.requiresREBudgetAccess && !permissions.canAccessREBudget;
             const isPermissionLocked = requiresBizBudget || requiresREBudget;
             
             const isLocked = hub.status === 'coming_soon' || isPermissionLocked || (!subscriptionAccess.hasAccess && hub.status === 'active');
