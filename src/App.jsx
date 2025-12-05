@@ -11,8 +11,10 @@ import TransactionsTab from './components/TransactionsTab';
 import ReportsTab from './components/ReportsTab';
 import RetirementTab from './components/RetirementTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
+import RealEstateCommandCenter from './components/RealEstateCommandCenter';
 import BizBudgetHub from './components/BizBudgetHub';
 import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
+import { InfoTooltip, MetricLabel, ProjectionBadge, ActualDataBadge, FINANCIAL_TOOLTIPS } from './components/InfoTooltip';
 // Default data - baked in from real bank/retirement imports
 import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultData';
 
@@ -3607,6 +3609,10 @@ function Dashboard({
       case 'home':
         return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
       case 'sales':
+        // Show specialized command center for real estate professionals
+        if (profile?.sideHustle === 'realtor') {
+          return <GradientSection tab="sales"><RealEstateCommandCenter theme={theme} lastImportDate={lastImportDate} userId={user?.id} userEmail={user?.email} isDarkMode={theme.mode === 'dark'} /></GradientSection>;
+        }
         return <GradientSection tab="sales"><SalesTrackerTab theme={theme} lastImportDate={lastImportDate} userId={user?.id} userEmail={user?.email} /></GradientSection>;
       case 'budget':
         return <GradientSection tab="budget"><BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} /></GradientSection>;
@@ -5981,7 +5987,13 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
   
   // Collapsible sections
   const [collapsedSections, setCollapsedSections] = useState({
+    healthScore: false,
+    netWorth: false,
+    cashFlow: false,
+    spending: false,
+    recurring: false,
     quickActions: false,
+    milestones: false,
     financialOverview: false,
     spendingAnalysis: false,
     transactions: false
@@ -6070,6 +6082,110 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
   const savingsRate = activeTotals.income > 0 ? ((activeTotals.net) / activeTotals.income) * 100 : 0;
   const budgetAdherence = totalBudget > 0 ? Math.max(0, 100 - ((totalSpentOnBudgeted - totalBudget) / totalBudget) * 100) : 100;
   const healthScore = Math.round(Math.min(100, Math.max(0, (savingsRate * 0.5 + budgetAdherence * 0.5))));
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // MONTH-OVER-MONTH CALCULATIONS - Using real transaction data
+  // ═══════════════════════════════════════════════════════════════════════════
+  const currentMonth = new Date().getMonth();
+  const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const currentMonthData = monthlyData[currentMonth] || { income: 0, expenses: 0 };
+  const lastMonthData = monthlyData[lastMonth] || { income: 0, expenses: 0 };
+  
+  const calcPercentChange = (current, previous) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return ((current - previous) / previous) * 100;
+  };
+  
+  const monthOverMonth = {
+    income: {
+      current: currentMonthData.income,
+      previous: lastMonthData.income,
+      change: calcPercentChange(currentMonthData.income, lastMonthData.income),
+      isUp: currentMonthData.income >= lastMonthData.income
+    },
+    expenses: {
+      current: currentMonthData.expenses,
+      previous: lastMonthData.expenses,
+      change: calcPercentChange(currentMonthData.expenses, lastMonthData.expenses),
+      isUp: currentMonthData.expenses >= lastMonthData.expenses
+    },
+    savings: {
+      current: currentMonthData.income - currentMonthData.expenses,
+      previous: lastMonthData.income - lastMonthData.expenses,
+      change: calcPercentChange(
+        currentMonthData.income - currentMonthData.expenses,
+        lastMonthData.income - lastMonthData.expenses
+      ),
+      isUp: (currentMonthData.income - currentMonthData.expenses) >= (lastMonthData.income - lastMonthData.expenses)
+    }
+  };
+  
+  // Transaction count by month
+  const currentMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+  const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+  const lastMonthStr = `${lastMonthYear}-${String(lastMonth + 1).padStart(2, '0')}`;
+  
+  const currentMonthTxnCount = activeTransactions.filter(t => t.date?.startsWith(currentMonthStr)).length;
+  const lastMonthTxnCount = activeTransactions.filter(t => t.date?.startsWith(lastMonthStr)).length;
+  
+  monthOverMonth.transactions = {
+    current: currentMonthTxnCount,
+    previous: lastMonthTxnCount,
+    change: calcPercentChange(currentMonthTxnCount, lastMonthTxnCount),
+    isUp: currentMonthTxnCount >= lastMonthTxnCount
+  };
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // DEBT DETECTION - From actual transaction categories
+  // ═══════════════════════════════════════════════════════════════════════════
+  const debtKeywords = ['loan', 'debt', 'credit', 'mortgage', 'payment', 'finance', 'lending'];
+  const debtTransactions = activeTransactions.filter(t => {
+    const category = (t.category || '').toLowerCase();
+    const description = (t.description || '').toLowerCase();
+    return debtKeywords.some(keyword => category.includes(keyword) || description.includes(keyword)) &&
+           parseFloat(t.amount) < 0;
+  });
+  const totalDebtPayments = debtTransactions.reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+  const monthlyDebtPayments = totalDebtPayments / Math.max(1, new Set(debtTransactions.map(t => t.date?.slice(0, 7))).size);
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // NET WORTH CALCULATION - Real data estimation
+  // ═══════════════════════════════════════════════════════════════════════════
+  const savingsFromGoals = goals.reduce((sum, g) => sum + (g.saved || g.currentAmount || 0), 0);
+  const recentPositiveFlow = monthlyData.slice(-3).reduce((sum, m) => sum + Math.max(0, m.income - m.expenses), 0);
+  const totalAssets = savingsFromGoals + recentPositiveFlow;
+  
+  // Estimate liabilities from detected debt payments
+  const estimatedDebtPrincipal = monthlyDebtPayments * 12 * 5; // Rough 5-year estimate
+  const creditCardSpending = activeTransactions.filter(t => {
+    const desc = (t.description || '').toLowerCase();
+    return desc.includes('credit') || desc.includes('card');
+  }).reduce((sum, t) => sum + Math.abs(parseFloat(t.amount)), 0);
+  const totalLiabilities = estimatedDebtPrincipal + (creditCardSpending * 0.3);
+  
+  const netWorth = totalAssets - totalLiabilities;
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // RECURRING TRANSACTION DETECTION
+  // ═══════════════════════════════════════════════════════════════════════════
+  const merchantCounts = {};
+  activeTransactions.forEach(t => {
+    const merchant = t.description?.slice(0, 20) || 'Unknown';
+    if (!merchantCounts[merchant]) merchantCounts[merchant] = { count: 0, amounts: [], category: t.category };
+    merchantCounts[merchant].count++;
+    merchantCounts[merchant].amounts.push(Math.abs(parseFloat(t.amount)));
+  });
+  
+  const recurringTransactions = Object.entries(merchantCounts)
+    .filter(([_, data]) => data.count >= 2)
+    .map(([merchant, data]) => ({
+      merchant,
+      count: data.count,
+      avgAmount: data.amounts.reduce((a, b) => a + b, 0) / data.amounts.length,
+      category: data.category
+    }))
+    .sort((a, b) => b.avgAmount - a.avgAmount)
+    .slice(0, 6);
 
   const recentTransactions = [...activeTransactions].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
 
@@ -6499,8 +6615,8 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#67E8F9' : '#00695C' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 25%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.income.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.income.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.income.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.income)} color="#00BCD4" width={70} height={40} />
@@ -6529,8 +6645,8 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#FDBA74' : '#E65100' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 5%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.expenses.isUp ? '#EF4444' : '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.expenses.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.expenses.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.expenses)} color="#FF9800" width={70} height={40} />
@@ -6559,8 +6675,8 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#86EFAC' : '#2E7D32' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: activeTotals.net >= 0 ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                {activeTotals.net >= 0 ? '↗' : '↘'} 15%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.savings.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.savings.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.savings.change).toFixed(0)}%
               </span>
             </div>
             <Sparkline data={monthlyData.map(m => m.income - m.expenses)} color="#4CAF50" width={70} height={40} />
@@ -6589,13 +6705,456 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span style={{ fontSize: '12px', color: theme.mode === 'dark' ? '#D8B4FE' : '#7B1FA2' }}>vs last month</span>
-              <span style={{ fontSize: '12px', fontWeight: '600', color: '#10B981', display: 'flex', alignItems: 'center', gap: '2px' }}>
-                ↗ 10%
+              <span style={{ fontSize: '12px', fontWeight: '600', color: monthOverMonth.transactions.isUp ? '#10B981' : '#EF4444', display: 'flex', alignItems: 'center', gap: '2px' }}>
+                {monthOverMonth.transactions.isUp ? '↗' : '↘'} {Math.abs(monthOverMonth.transactions.change).toFixed(0)}%
               </span>
             </div>
-            <Sparkline data={[30, 45, 35, 50, 40, 55, 60]} color="#9C27B0" width={70} height={40} />
+            <Sparkline data={monthlyData.map(m => activeTransactions.filter(t => t.date?.startsWith(`${currentYear}-${String(monthlyData.indexOf(m) + 1).padStart(2, '0')}`)).length || 1)} color="#9C27B0" width={70} height={40} />
           </div>
         </div>
+      </div>
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 🏆 FINANCIAL HEALTH SCORE - Premium Feature */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        // Enhanced health score calculation
+        const savingsRateCalc = activeTotals.income > 0 
+          ? Math.min(100, Math.max(0, (activeTotals.net / activeTotals.income) * 100))
+          : 0;
+        const budgetAdherenceCalc = totalBudget > 0 
+          ? Math.min(100, Math.max(0, 100 - ((totalSpentOnBudgeted - totalBudget) / totalBudget) * 100))
+          : 100;
+        const emergencySavings = goals.find(g => g.name?.toLowerCase().includes('emergency'))?.saved || 0;
+        const monthlyExpensesAvg = activeTotals.expenses / Math.max(1, monthlyData.filter(m => m.expenses > 0).length);
+        const emergencyMonthsCovered = monthlyExpensesAvg > 0 ? emergencySavings / monthlyExpensesAvg : 0;
+        
+        const debtPaymentsCalc = monthlyDebtPayments;
+        const debtToIncomeRatio = activeTotals.income > 0 ? (debtPaymentsCalc / activeTotals.income) * 100 : 0;
+        
+        const paidBillsCount = bills.filter(b => b.status === 'paid' || b.isPaid).length;
+        const billsOnTimeRate = bills.length > 0 ? (paidBillsCount / bills.length) * 100 : 100;
+        
+        const avgGoalProgress = goals.length > 0 
+          ? goals.reduce((sum, g) => sum + ((g.saved || 0) / (g.target || 1) * 100), 0) / goals.length
+          : 0;
+        
+        const overallHealthScore = Math.round(Math.min(100, Math.max(0,
+          savingsRateCalc * 0.25 +
+          budgetAdherenceCalc * 0.25 +
+          Math.min(emergencyMonthsCovered * 8, 20) +
+          (100 - Math.min(debtToIncomeRatio, 100)) * 0.15 +
+          billsOnTimeRate * 0.10 +
+          avgGoalProgress * 0.05
+        )));
+        
+        const getScoreColor = (score) => {
+          if (score >= 80) return '#10B981';
+          if (score >= 60) return '#F59E0B';
+          if (score >= 40) return '#F97316';
+          return '#EF4444';
+        };
+        
+        const getScoreLabel = (score) => {
+          if (score >= 80) return { label: 'Excellent', emoji: '🌟' };
+          if (score >= 60) return { label: 'Good', emoji: '👍' };
+          if (score >= 40) return { label: 'Fair', emoji: '📊' };
+          return { label: 'Needs Work', emoji: '💪' };
+        };
+        
+        const scoreColor = getScoreColor(overallHealthScore);
+        const scoreLabel = getScoreLabel(overallHealthScore);
+        
+        return (
+          <div style={{ marginBottom: '24px' }}>
+            <div 
+              onClick={() => toggleSection('healthScore')}
+              style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '12px', 
+                marginBottom: collapsedSections.healthScore ? '0px' : '16px',
+                cursor: 'pointer',
+                userSelect: 'none'
+              }}
+            >
+              <div style={{ 
+                width: '4px', 
+                height: '24px', 
+                background: `linear-gradient(180deg, ${scoreColor}, #8B5CF6)`, 
+                borderRadius: '2px' 
+              }} />
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                Financial Health Score
+              </h2>
+              <span style={{ 
+                background: `${scoreColor}20`,
+                color: scoreColor,
+                padding: '4px 12px',
+                borderRadius: '20px',
+                fontSize: '12px',
+                fontWeight: '600'
+              }}>
+                {scoreLabel.emoji} {overallHealthScore}/100
+              </span>
+              <span style={{ 
+                fontSize: '12px', 
+                color: theme.textMuted,
+                marginLeft: 'auto',
+                transition: 'transform 0.2s',
+                transform: collapsedSections.healthScore ? 'rotate(-90deg)' : 'rotate(0deg)'
+              }}>▼</span>
+            </div>
+            
+            {!collapsedSections.healthScore && (
+              <div style={{
+                background: theme.bgCard,
+                borderRadius: '20px',
+                padding: '28px',
+                boxShadow: theme.cardShadow,
+                border: `1px solid ${theme.borderLight}`,
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                <div style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: '4px',
+                  background: `linear-gradient(90deg, ${scoreColor}, #8B5CF6, #EC4899)`
+                }} />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: '40px', alignItems: 'start' }}>
+                  {/* Left: Gauge */}
+                  <div style={{ textAlign: 'center' }}>
+                    <svg width="220" height="140" viewBox="0 0 220 140">
+                      <defs>
+                        <linearGradient id="healthGaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stopColor="#EF4444" />
+                          <stop offset="33%" stopColor="#F59E0B" />
+                          <stop offset="66%" stopColor="#10B981" />
+                          <stop offset="100%" stopColor="#059669" />
+                        </linearGradient>
+                        <filter id="glow">
+                          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                          <feMerge>
+                            <feMergeNode in="coloredBlur"/>
+                            <feMergeNode in="SourceGraphic"/>
+                          </feMerge>
+                        </filter>
+                      </defs>
+                      
+                      {/* Background arc */}
+                      <path
+                        d="M 20 120 A 90 90 0 0 1 200 120"
+                        fill="none"
+                        stroke={theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'}
+                        strokeWidth="16"
+                        strokeLinecap="round"
+                      />
+                      
+                      {/* Colored arc */}
+                      <path
+                        d="M 20 120 A 90 90 0 0 1 200 120"
+                        fill="none"
+                        stroke="url(#healthGaugeGrad)"
+                        strokeWidth="16"
+                        strokeLinecap="round"
+                        strokeDasharray={`${(overallHealthScore / 100) * 283} 283`}
+                        filter="url(#glow)"
+                        style={{ transition: 'stroke-dasharray 1.5s ease-out' }}
+                      />
+                      
+                      {/* Score display */}
+                      <text x="110" y="95" textAnchor="middle" fontSize="48" fontWeight="800" fill={scoreColor}>
+                        {overallHealthScore}
+                      </text>
+                      <text x="110" y="118" textAnchor="middle" fontSize="13" fill={theme.textMuted} fontWeight="500">
+                        out of 100
+                      </text>
+                    </svg>
+                    
+                    <div style={{ 
+                      marginTop: '12px',
+                      padding: '10px 20px',
+                      background: `${scoreColor}10`,
+                      borderRadius: '12px',
+                      display: 'inline-block'
+                    }}>
+                      <span style={{ fontSize: '14px', fontWeight: '600', color: scoreColor }}>
+                        {scoreLabel.emoji} {scoreLabel.label} Financial Health
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* Right: Metrics Grid */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+                    {/* Savings Rate */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.08)' : 'rgba(16, 185, 129, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(16, 185, 129, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>💰</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Savings Rate</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: savingsRateCalc >= 20 ? '#10B981' : savingsRateCalc >= 10 ? '#F59E0B' : '#EF4444',
+                        marginBottom: '6px'
+                      }}>
+                        {savingsRateCalc.toFixed(0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        of income saved
+                      </div>
+                    </div>
+                    
+                    {/* Budget Adherence */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : 'rgba(59, 130, 246, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>📊</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Budget Adherence</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: budgetAdherenceCalc >= 90 ? '#10B981' : budgetAdherenceCalc >= 70 ? '#F59E0B' : '#EF4444',
+                        marginBottom: '6px'
+                      }}>
+                        {budgetAdherenceCalc.toFixed(0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        within budget
+                      </div>
+                    </div>
+                    
+                    {/* Emergency Fund */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(6, 182, 212, 0.08)' : 'rgba(6, 182, 212, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(6, 182, 212, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>🛡️</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Emergency Fund</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: emergencyMonthsCovered >= 3 ? '#10B981' : emergencyMonthsCovered >= 1 ? '#F59E0B' : '#EF4444',
+                        marginBottom: '6px'
+                      }}>
+                        {emergencyMonthsCovered.toFixed(1)}mo
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        of expenses covered
+                      </div>
+                    </div>
+                    
+                    {/* Debt-to-Income */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(236, 72, 153, 0.08)' : 'rgba(236, 72, 153, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(236, 72, 153, 0.2)' : 'rgba(236, 72, 153, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>💳</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Debt-to-Income</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: debtToIncomeRatio <= 30 ? '#10B981' : debtToIncomeRatio <= 40 ? '#F59E0B' : '#EF4444',
+                        marginBottom: '6px'
+                      }}>
+                        {debtToIncomeRatio.toFixed(0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        of income to debt
+                      </div>
+                    </div>
+                    
+                    {/* Bills On Time */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(245, 158, 11, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>📅</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Bills On Time</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: billsOnTimeRate >= 95 ? '#10B981' : billsOnTimeRate >= 80 ? '#F59E0B' : '#EF4444',
+                        marginBottom: '6px'
+                      }}>
+                        {billsOnTimeRate.toFixed(0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        paid on time
+                      </div>
+                    </div>
+                    
+                    {/* Goal Progress */}
+                    <div style={{
+                      background: theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.08)' : 'rgba(139, 92, 246, 0.04)',
+                      borderRadius: '16px',
+                      padding: '18px',
+                      border: `1px solid ${theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.2)' : 'rgba(139, 92, 246, 0.15)'}`
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>🎯</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, fontWeight: '500' }}>Goal Progress</span>
+                      </div>
+                      <div style={{ 
+                        fontSize: '26px', 
+                        fontWeight: '700', 
+                        color: '#8B5CF6',
+                        marginBottom: '6px'
+                      }}>
+                        {avgGoalProgress.toFixed(0)}%
+                      </div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>
+                        avg completion
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 💰 NET WORTH TRACKER */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      <div style={{ marginBottom: '24px' }}>
+        <div 
+          onClick={() => toggleSection('netWorth')}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '12px', 
+            marginBottom: collapsedSections.netWorth ? '0px' : '16px',
+            cursor: 'pointer',
+            userSelect: 'none'
+          }}
+        >
+          <div style={{ 
+            width: '4px', 
+            height: '24px', 
+            background: 'linear-gradient(180deg, #10B981, #3B82F6)', 
+            borderRadius: '2px' 
+          }} />
+          <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>
+            Net Worth
+          </h2>
+          <span style={{ 
+            background: netWorth >= 0 ? '#10B98120' : '#EF444420',
+            color: netWorth >= 0 ? '#10B981' : '#EF4444',
+            padding: '4px 12px',
+            borderRadius: '20px',
+            fontSize: '12px',
+            fontWeight: '600'
+          }}>
+            {netWorth >= 0 ? '+' : ''}{formatCurrency(monthOverMonth.savings.current)} this month
+          </span>
+          <span style={{ 
+            fontSize: '12px', 
+            color: theme.textMuted,
+            marginLeft: 'auto',
+            transition: 'transform 0.2s',
+            transform: collapsedSections.netWorth ? 'rotate(-90deg)' : 'rotate(0deg)'
+          }}>▼</span>
+        </div>
+        
+        {!collapsedSections.netWorth && (
+          <div style={{
+            background: theme.bgCard,
+            borderRadius: '20px',
+            padding: '28px',
+            boxShadow: theme.cardShadow,
+            border: `1px solid ${theme.borderLight}`,
+            position: 'relative',
+            overflow: 'hidden'
+          }}>
+            <div style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '4px',
+              background: 'linear-gradient(90deg, #10B981, #3B82F6, #8B5CF6)'
+            }} />
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '24px' }}>
+              {/* Net Worth */}
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '8px' }}>Total Net Worth</div>
+                <div style={{ 
+                  fontSize: '36px', 
+                  fontWeight: '800', 
+                  color: netWorth >= 0 ? '#10B981' : '#EF4444',
+                  letterSpacing: '-1px'
+                }}>
+                  {formatCurrency(netWorth)}
+                </div>
+              </div>
+              
+              {/* Assets */}
+              <div style={{
+                background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)',
+                borderRadius: '14px',
+                padding: '18px 20px',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '22px' }}>📈</span>
+                    <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500' }}>Total Assets</span>
+                  </div>
+                  <span style={{ fontSize: '20px', fontWeight: '700', color: '#10B981' }}>
+                    {formatCurrency(totalAssets)}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Liabilities */}
+              <div style={{
+                background: theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+                borderRadius: '14px',
+                padding: '18px 20px',
+                border: '1px solid rgba(239, 68, 68, 0.2)'
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <span style={{ fontSize: '22px' }}>📉</span>
+                    <span style={{ fontSize: '14px', color: theme.textSecondary, fontWeight: '500' }}>Total Liabilities</span>
+                  </div>
+                  <span style={{ fontSize: '20px', fontWeight: '700', color: '#EF4444' }}>
+                    {formatCurrency(totalLiabilities)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
@@ -9312,3 +9871,4 @@ export default function AppWrapper() {
     </ErrorBoundary>
   );
 }
+
