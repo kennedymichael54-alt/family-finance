@@ -353,16 +353,18 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
   // FORMATTERS
   // ═══════════════════════════════════════════════════════════════════════════
   const formatCurrency = (value) => {
+    const safeValue = (typeof value === 'number' && isFinite(value)) ? value : 0;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
-    }).format(value);
+    }).format(safeValue);
   };
 
   const formatPercent = (value, decimals = 2) => {
-    return `${value.toFixed(decimals)}%`;
+    const safeValue = (typeof value === 'number' && isFinite(value)) ? value : 0;
+    return `${safeValue.toFixed(decimals)}%`;
   };
 
   // ═══════════════════════════════════════════════════════════════════════════
