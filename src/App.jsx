@@ -1041,22 +1041,40 @@ class ErrorBoundary extends React.Component {
             padding: '16px 0'
           }}>
             <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Penny Logo - Pink rounded square with Penny face */}
               <div style={{ 
-                width: '40px', 
-                height: '40px', 
-                borderRadius: '10px', 
-                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
+                width: '44px', 
+                height: '44px', 
+                borderRadius: '12px', 
+                background: 'linear-gradient(135deg, #EC4899 0%, #F472B6 100%)', 
                 display: 'flex', 
                 alignItems: 'center', 
                 justifyContent: 'center',
-                color: 'white',
-                fontWeight: '700',
-                fontSize: '14px'
+                boxShadow: '0 4px 12px rgba(236, 72, 153, 0.3)'
               }}>
-                PN
+                {/* Penny Face SVG */}
+                <svg width="28" height="28" viewBox="0 0 64 64" fill="none">
+                  <defs>
+                    <linearGradient id="pennyGradError" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stopColor="#FFE135" />
+                      <stop offset="50%" stopColor="#FFEC8B" />
+                      <stop offset="100%" stopColor="#FFD700" />
+                    </linearGradient>
+                  </defs>
+                  <circle cx="32" cy="32" r="28" fill="url(#pennyGradError)" />
+                  <circle cx="32" cy="32" r="24" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="1.5"/>
+                  <text x="32" y="18" textAnchor="middle" fill="#1a1a1a" fontSize="12" fontWeight="bold" fontFamily="Arial">$</text>
+                  <ellipse cx="24" cy="28" rx="3" ry="3.5" fill="#1a1a1a"/>
+                  <ellipse cx="40" cy="28" rx="3" ry="3.5" fill="#1a1a1a"/>
+                  <ellipse cx="25" cy="27" rx="1.2" ry="1.2" fill="#FFFFFF"/>
+                  <ellipse cx="41" cy="27" rx="1.2" ry="1.2" fill="#FFFFFF"/>
+                  <path d="M24 40 Q32 46 40 40" stroke="#1a1a1a" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                  <ellipse cx="17" cy="34" rx="3.5" ry="2.5" fill="#FFCCCB" opacity="0.5"/>
+                  <ellipse cx="47" cy="34" rx="3.5" ry="2.5" fill="#FFCCCB" opacity="0.5"/>
+                </svg>
               </div>
-              <span style={{ fontSize: '20px', fontWeight: '700', color: '#1E293B' }}>
-                Prosper<span style={{ color: '#8B5CF6' }}>Nest</span> Status
+              <span style={{ fontSize: '22px', fontWeight: '700', color: '#1F2937' }}>
+                Prosper<span style={{ color: '#EC4899' }}>Nest</span>
               </span>
             </div>
           </header>
@@ -11209,4 +11227,3 @@ export default function AppWrapper() {
     </ErrorBoundary>
   );
 }
-
