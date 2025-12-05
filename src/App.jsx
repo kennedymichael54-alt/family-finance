@@ -61,20 +61,22 @@ function SiteStatusIndicator({ showLabel = true, darkMode = true }) {
         style={{
           display: 'inline-flex',
           alignItems: 'center',
-          gap: '6px',
-          padding: showLabel ? '6px 12px' : '6px 8px',
-          background: darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
-          border: `1px solid ${darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}`,
+          gap: showLabel ? '6px' : '0',
+          padding: showLabel ? '6px 12px' : '0',
+          background: showLabel ? (darkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)') : 'transparent',
+          border: showLabel ? `1px solid ${darkMode ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)'}` : 'none',
           borderRadius: '20px',
           cursor: isClickable ? 'pointer' : 'default',
-          transition: 'all 0.2s'
+          transition: 'all 0.2s',
+          flexShrink: 0
         }}
         title={`Site Status: ${config.label}`}
       >
         <span style={{ 
           color: config.color, 
-          fontSize: '10px',
-          lineHeight: 1
+          fontSize: showLabel ? '10px' : '7px',
+          lineHeight: 1,
+          flexShrink: 0
         }}>
           {config.dot}
         </span>
@@ -1363,6 +1365,12 @@ const dbToAppProfile = (p) => {
   try {
     if (p?.account_labels) {
       accountLabels = typeof p.account_labels === 'string' ? JSON.parse(p.account_labels) : p.account_labels;
+    } else {
+      // Check localStorage as fallback
+      const savedLabels = localStorage.getItem('pn_accountLabels');
+      if (savedLabels) {
+        accountLabels = JSON.parse(savedLabels);
+      }
     }
   } catch (e) {
     console.log('Failed to parse account_labels:', e);
@@ -1732,10 +1740,20 @@ function App() {
       
       // Load user preferences/settings
       if (dbData.settings) {
+        // Get saved avatar from localStorage (user's last explicit choice)
+        const savedLocalAvatar = localStorage.getItem('pn_userAvatar');
+        const dbAvatar = dbData.settings.avatar;
+        
+        // Prefer localStorage avatar if DB has default or no value
+        // This preserves user's choice even if DB sync failed
+        const finalAvatar = (savedLocalAvatar && savedLocalAvatar !== '👨‍💼') 
+          ? savedLocalAvatar 
+          : (dbAvatar || savedLocalAvatar || '👨‍💼');
+        
         const prefs = {
           theme: dbData.settings.theme || 'light',
           language: dbData.settings.language || 'en',
-          avatar: dbData.settings.avatar || '👨‍💼'
+          avatar: finalAvatar
         };
         setUserPreferences(prefs);
         
@@ -3224,10 +3242,30 @@ function Dashboard({
   // Sync accountLabels from profile when it loads
   useEffect(() => {
     if (profile?.accountLabels) {
-      setAccountLabels(profile.accountLabels);
-      // Also update localStorage as fallback
-      localStorage.setItem('pn_accountLabels', JSON.stringify(profile.accountLabels));
-      console.log('📥 Account labels synced from database:', profile.accountLabels);
+      // Check if profile has non-default labels
+      const profileHasCustomLabels = profile.accountLabels.personal !== 'Personal' || 
+                                      profile.accountLabels.sidehustle !== 'Side Hustle';
+      
+      // Get current localStorage labels
+      const savedLabels = localStorage.getItem('pn_accountLabels');
+      const localLabels = savedLabels ? JSON.parse(savedLabels) : null;
+      const localHasCustomLabels = localLabels && 
+        (localLabels.personal !== 'Personal' || localLabels.sidehustle !== 'Side Hustle');
+      
+      // Prefer localStorage if it has custom labels and profile doesn't
+      if (localHasCustomLabels && !profileHasCustomLabels) {
+        console.log('🛡️ Preserving localStorage account labels:', localLabels);
+        setAccountLabels(localLabels);
+        // Push localStorage labels to database to fix sync
+        if (user?.id) {
+          const newProfile = { ...profile, accountLabels: localLabels };
+          saveProfileToDB(user.id, newProfile, true);
+        }
+      } else if (profileHasCustomLabels) {
+        setAccountLabels(profile.accountLabels);
+        localStorage.setItem('pn_accountLabels', JSON.stringify(profile.accountLabels));
+        console.log('📥 Account labels synced from database:', profile.accountLabels);
+      }
     }
   }, [profile?.accountLabels]);
   
@@ -3924,12 +3962,12 @@ function Dashboard({
       }}>
         {/* Logo Area with Collapse Button */}
         <div style={{ 
-          padding: sidebarCollapsed ? '20px 16px' : '20px 20px', 
+          padding: sidebarCollapsed ? '16px 12px' : '20px 20px', 
           borderBottom: `1px solid ${theme.mode === 'light' ? 'rgba(255, 255, 255, 0.1)' : theme.borderLight}`, 
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-          minHeight: '80px'
+          minHeight: sidebarCollapsed ? '70px' : '80px'
         }}>
           {/* Logo */}
           <div 
@@ -3940,15 +3978,15 @@ function Dashboard({
               gap: '12px',
               cursor: 'pointer',
               overflow: 'hidden',
-              flex: 1,
+              flex: sidebarCollapsed ? 'none' : 1,
               minWidth: 0,
-              marginRight: '12px'
+              marginRight: sidebarCollapsed ? '0' : '12px'
             }}
           >
             <div style={{
-              width: '42px',
-              height: '42px',
-              minWidth: '42px',
+              width: sidebarCollapsed ? '44px' : '42px',
+              height: sidebarCollapsed ? '44px' : '42px',
+              minWidth: sidebarCollapsed ? '44px' : '42px',
               flexShrink: 0,
               borderRadius: '12px',
               background: 'linear-gradient(135deg, #EC4899 0%, #F472B6 100%)',
@@ -3957,7 +3995,7 @@ function Dashboard({
               justifyContent: 'center',
               boxShadow: '0 4px 16px rgba(236, 72, 153, 0.4)'
             }}>
-              <PennyLogo size={28} />
+              <PennyLogo size={sidebarCollapsed ? 30 : 28} />
             </div>
             {!sidebarCollapsed && (
               <div style={{ minWidth: 0, overflow: 'hidden' }}>
@@ -3974,58 +4012,58 @@ function Dashboard({
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
+                  gap: '4px',
                   marginTop: '2px',
-                  flexWrap: 'wrap'
+                  flexWrap: 'nowrap'
                 }}>
                   <span style={{ 
                     background: 'linear-gradient(135deg, #F59E0B, #D97706)', 
-                    padding: '2px 8px', 
-                    borderRadius: '6px', 
-                    fontSize: '9px', 
+                    padding: '1px 5px', 
+                    borderRadius: '4px', 
+                    fontSize: '8px', 
                     fontWeight: '700', 
                     color: 'white',
                     textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
+                    letterSpacing: '0.3px',
                     flexShrink: 0
                   }}>Beta</span>
                   {/* Role Badge for Admin/Tester */}
                   {userRole === USER_ROLES.ADMIN && (
                     <span style={{ 
                       background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '9px', 
+                      padding: '1px 5px', 
+                      borderRadius: '4px', 
+                      fontSize: '8px', 
                       fontWeight: '700', 
                       color: 'white',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
+                      letterSpacing: '0.3px',
                       flexShrink: 0
                     }}>Admin</span>
                   )}
                   {userRole === USER_ROLES.TESTER && (
                     <span style={{ 
                       background: 'linear-gradient(135deg, #EF4444, #DC2626)', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '9px', 
+                      padding: '1px 5px', 
+                      borderRadius: '4px', 
+                      fontSize: '8px', 
                       fontWeight: '700', 
                       color: 'white',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
+                      letterSpacing: '0.3px',
                       flexShrink: 0
                     }}>Tester</span>
                   )}
                   {userRole === USER_ROLES.OWNER && (
                     <span style={{ 
                       background: 'linear-gradient(135deg, #10B981, #059669)', 
-                      padding: '2px 8px', 
-                      borderRadius: '6px', 
-                      fontSize: '9px', 
+                      padding: '1px 5px', 
+                      borderRadius: '4px', 
+                      fontSize: '8px', 
                       fontWeight: '700', 
                       color: 'white',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.5px',
+                      letterSpacing: '0.3px',
                       flexShrink: 0
                     }}>Owner</span>
                   )}
@@ -4571,71 +4609,6 @@ function Dashboard({
             )
           ))}
         </nav>
-
-        {/* Spacer for better logout visibility */}
-        <div style={{ height: '48px' }} />
-
-        {/* Logout Button - Dark Sidebar Style */}
-        <div style={{ 
-          padding: sidebarCollapsed ? '12px 8px' : '16px', 
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-        }}>
-          {sidebarCollapsed ? (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div
-                onClick={handleSignOut}
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#F87171',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                title="Logout"
-              >
-                <Icons.SignOut />
-              </div>
-            </div>
-          ) : (
-            <div
-              onClick={handleSignOut}
-              className="logout-btn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                color: '#F87171',
-                fontSize: '14px',
-                fontWeight: '600',
-                background: 'rgba(239, 68, 68, 0.12)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Icons.SignOut />
-              </div>
-              <span>Logout</span>
-            </div>
-          )}
-        </div>
       </aside>
 
       {/* Main Content */}
@@ -5295,6 +5268,29 @@ function Dashboard({
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'settings' ? theme.primary : theme.textMuted} strokeWidth="2" strokeLinecap="round">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleSignOut}
+                title="Logout"
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
+                }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EF4444" strokeWidth="2" strokeLinecap="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
             </div>
