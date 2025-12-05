@@ -161,13 +161,52 @@ const ClientList = ({ clients, theme, emptyMessage }) => {
   );
 };
 
-export default function RealEstateCommandCenter({ user, isDarkMode: isDarkModeProp, theme: propTheme, lastImportDate, userId, userEmail, profile, onUpdateProfile }) {
+export default function RealEstateCommandCenter({ user, isDarkMode: isDarkModeProp, theme: propTheme, lastImportDate, userId, userEmail, profile, onUpdateProfile, showDemoData = false }) {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const [listings, setListings] = useState(DEMO_LISTINGS);
-  const [expenses, setExpenses] = useState(DEMO_EXPENSES);
-  const [clients] = useState(DEMO_CLIENTS);
+  
+  // Only load demo data for owner/admin/tester - everyone else starts with empty data
+  const getInitialData = (key, demoData) => {
+    // Try to load from localStorage first
+    const saved = localStorage.getItem(`${STORAGE_KEY_PREFIX}${key}_${userId}`);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        console.error(`Error parsing ${key} from localStorage:`, e);
+      }
+    }
+    // Only use demo data for owner/admin/tester accounts
+    if (showDemoData) {
+      return demoData;
+    }
+    // Non-demo users start with empty data
+    return [];
+  };
+  
+  const [listings, setListings] = useState(() => getInitialData('listings', DEMO_LISTINGS));
+  const [expenses, setExpenses] = useState(() => getInitialData('expenses', DEMO_EXPENSES));
+  const [clients, setClients] = useState(() => getInitialData('clients', DEMO_CLIENTS));
   const [showAddListing, setShowAddListing] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+  
+  // Save data to localStorage when it changes
+  React.useEffect(() => {
+    if (userId && listings.length > 0) {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}listings_${userId}`, JSON.stringify(listings));
+    }
+  }, [listings, userId]);
+  
+  React.useEffect(() => {
+    if (userId && expenses.length > 0) {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}expenses_${userId}`, JSON.stringify(expenses));
+    }
+  }, [expenses, userId]);
+  
+  React.useEffect(() => {
+    if (userId && clients.length > 0) {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}clients_${userId}`, JSON.stringify(clients));
+    }
+  }, [clients, userId]);
   
   // Filter state for dashboard and commissions
   const [filterMonth, setFilterMonth] = useState('all');
