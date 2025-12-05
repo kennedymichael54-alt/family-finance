@@ -3952,30 +3952,15 @@ function Dashboard({
     }
   }, [activeTab, user?.id]);
   
-  // Restore tab based on subscription tier after subscription loads
+  // Restore tab after subscription loads - for ALL users
   useEffect(() => {
-    if (!subscriptionLoading && subscription && user?.id && !tabRestored) {
+    if (!subscriptionLoading && user?.id && !tabRestored) {
       const savedTab = localStorage.getItem(`pn_activeTab_${user.id}`);
       
-      // Check subscription tier
-      const planType = subscription.plan_type?.toLowerCase() || '';
-      const subscriptionStatus = subscription.subscription_status?.toLowerCase() || '';
-      
-      // Users who get tab persistence (PAID users only):
-      // 1. Paid users with active subscription (Family, Pro, Bundle)
-      // 2. Perpetual license users (Owner, Admin, Tester, HomeVestors team)
-      // 
-      // Users who DON'T get tab persistence:
-      // - Free tier users
-      // - Trial users (haven't paid yet - encourages exploration)
-      // - Expired trial users
-      const isPaidUser = (planType.includes('family') || planType.includes('pro') || planType.includes('bundle')) 
-                         && subscriptionStatus === 'active';
-      const isPerpetualUser = PERPETUAL_LICENSE_USERS.includes(user?.email?.toLowerCase());
-      
-      // Restore tab only for paid or perpetual users
-      if ((isPaidUser || isPerpetualUser) && savedTab && savedTab !== 'home') {
-        console.log('🔄 [Tab] Restoring tab for paid/perpetual user:', savedTab);
+      // Restore tab for ALL users who have a saved tab
+      // This ensures consistent UX - everyone stays where they were
+      if (savedTab) {
+        console.log('🔄 [Tab] Restoring saved tab:', savedTab);
         setActiveTab(savedTab);
         
         // Also expand the correct hub based on the saved tab
@@ -3983,16 +3968,21 @@ function Dashboard({
           setExpandedHubs(prev => ({ ...prev, bizbudget: true }));
         } else if (savedTab.startsWith('rebudget-')) {
           setExpandedHubs(prev => ({ ...prev, rebudget: true }));
+        } else if (savedTab === 'import' || savedTab === 'plaid') {
+          setExpandedHubs(prev => ({ ...prev, dataimport: true }));
+        } else if (savedTab === 'newsfeed') {
+          // Newsfeed doesn't need hub expansion
         } else {
           setExpandedHubs(prev => ({ ...prev, homebudget: true }));
         }
       } else {
-        console.log('🏠 [Tab] Free/trial user - starting at HomeBudget Dashboard');
+        console.log('🏠 [Tab] No saved tab - starting at Newsfeed');
+        setActiveTab('newsfeed');
       }
       
       setTabRestored(true);
     }
-  }, [subscriptionLoading, subscription, user?.id, user?.email, tabRestored]);
+  }, [subscriptionLoading, user?.id, tabRestored]);
   
   // Sync accountLabels from profile when it loads
   useEffect(() => {
@@ -4457,6 +4447,16 @@ function Dashboard({
     // Wrap all content in Suspense for lazy-loaded components
     const content = (() => {
       switch (activeTab) {
+      case 'newsfeed':
+        return <GradientSection tab="newsfeed"><NewsfeedHome 
+          theme={theme} 
+          user={user} 
+          profile={profile}
+          subscription={subscription}
+          subscriptionAccess={subscriptionAccess}
+          onNavigate={setActiveTab}
+          onShowUpgrade={() => setShowUpgradeModal(true)}
+        /></GradientSection>;
       case 'home':
         return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
       case 'sales':
@@ -4940,6 +4940,8 @@ function Dashboard({
         {/* Navigation - Hub Based */}
         <nav className="sidebar-nav" style={{ 
           flex: 1, 
+          display: 'flex',
+          flexDirection: 'column',
           padding: sidebarCollapsed ? '12px 8px' : '20px 14px', 
           overflowY: 'auto',
           overflowX: 'hidden'
@@ -5055,7 +5057,7 @@ function Dashboard({
             </div>
           )}
 
-          {/* FINANCIAL DATA IMPORT SECTION */}
+          {/* HOME & NEWSFEED SECTION */}
           {!sidebarCollapsed && (
             <div style={{ 
               padding: '0 8px 12px', 
@@ -5068,152 +5070,298 @@ function Dashboard({
               alignItems: 'center',
               gap: '8px'
             }}>
-              <span>📥</span> Financial Data Import
+              <span>🏠</span> Home
             </div>
           )}
 
-          {/* Manual Import Option */}
+          {/* Newsfeed Button */}
           {sidebarCollapsed ? (
             <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
               <div
-                onClick={() => setActiveTab('import')}
+                onClick={() => setActiveTab('newsfeed')}
                 style={{
                   width: '48px',
                   height: '48px',
                   borderRadius: '12px',
-                  background: activeTab === 'import' ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' : 'rgba(255, 255, 255, 0.05)',
-                  border: activeTab === 'import' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                  background: activeTab === 'newsfeed' ? 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' : 'rgba(255, 255, 255, 0.05)',
+                  border: activeTab === 'newsfeed' ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  color: activeTab === 'import' ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                  color: activeTab === 'newsfeed' ? 'white' : 'rgba(255, 255, 255, 0.6)',
                   cursor: 'pointer',
-                  boxShadow: activeTab === 'import' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                  boxShadow: activeTab === 'newsfeed' ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none',
                   transition: 'all 0.2s ease'
                 }}
-                title="Manual Import"
+                title="Home & Newsfeed"
               >
-                <Icons.Import />
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Manual Import */}
-              <div
-                onClick={() => setActiveTab('import')}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  cursor: 'pointer',
-                  color: activeTab === 'import' ? 'white' : 'rgba(255, 255, 255, 0.7)',
-                  background: activeTab === 'import' 
-                    ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' 
-                    : 'rgba(255, 255, 255, 0.03)',
-                  transition: 'all 0.2s ease',
-                  marginBottom: '6px',
-                  fontSize: '14px',
-                  fontWeight: activeTab === 'import' ? '600' : '500',
-                  border: activeTab === 'import' 
-                    ? 'none' 
-                    : '1px solid rgba(255, 255, 255, 0.06)',
-                  boxShadow: activeTab === 'import' ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none'
-                }}
-              >
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: activeTab === 'import' 
-                    ? 'rgba(255,255,255,0.2)' 
-                    : 'rgba(255, 255, 255, 0.06)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <Icons.Import />
-                </div>
-                <span>Manual Import</span>
-              </div>
-
-              {/* Plaid Integration - Coming Soon */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '12px 14px',
-                  borderRadius: '12px',
-                  cursor: 'not-allowed',
-                  color: 'rgba(255, 255, 255, 0.35)',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  transition: 'all 0.2s ease',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  border: '1px solid rgba(255, 255, 255, 0.04)',
-                  opacity: 0.6
-                }}
-                title="Plaid Integration - Coming Soon"
-              >
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
-                  background: 'rgba(255, 255, 255, 0.04)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-                    <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-                    <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
-                  </svg>
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  <span>Plaid Integration</span>
-                  <span style={{ 
-                    fontSize: '10px', 
-                    color: 'rgba(251, 191, 36, 0.7)',
-                    fontWeight: '600',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
-                  }}>Coming Soon</span>
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Collapsed Plaid indicator */}
-          {sidebarCollapsed && (
-            <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
-              <div
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid rgba(255, 255, 255, 0.04)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'rgba(255, 255, 255, 0.25)',
-                  cursor: 'not-allowed',
-                  opacity: 0.5
-                }}
-                title="Plaid Integration - Coming Soon"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
-                  <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
-                  <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
               </div>
             </div>
+          ) : (
+            <div
+              onClick={() => setActiveTab('newsfeed')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px',
+                padding: '12px 14px',
+                borderRadius: '12px',
+                cursor: 'pointer',
+                color: activeTab === 'newsfeed' ? 'white' : 'rgba(255, 255, 255, 0.7)',
+                background: activeTab === 'newsfeed' 
+                  ? 'linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%)' 
+                  : 'rgba(255, 255, 255, 0.03)',
+                transition: 'all 0.2s ease',
+                marginBottom: '16px',
+                fontSize: '14px',
+                fontWeight: activeTab === 'newsfeed' ? '600' : '500',
+                border: activeTab === 'newsfeed' 
+                  ? 'none' 
+                  : '1px solid rgba(255, 255, 255, 0.06)',
+                boxShadow: activeTab === 'newsfeed' ? '0 4px 12px rgba(59, 130, 246, 0.3)' : 'none'
+              }}
+            >
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '8px',
+                background: activeTab === 'newsfeed' 
+                  ? 'rgba(255,255,255,0.2)' 
+                  : 'rgba(255, 255, 255, 0.06)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+              <span>Home & Newsfeed</span>
+            </div>
           )}
+
+          {/* DATA CONNECT SECTION - Collapsible Hub */}
+          {!sidebarCollapsed && (
+            <div style={{ 
+              padding: '0 8px 12px', 
+              color: 'rgba(255, 255, 255, 0.5)', 
+              fontSize: '11px', 
+              fontWeight: '700', 
+              textTransform: 'uppercase', 
+              letterSpacing: '1px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span>🔗</span> Data Connect
+            </div>
+          )}
+
+          {/* Data Connect Hub - Collapsible like other hubs */}
+          {(() => {
+            const isDataConnectExpanded = expandedHubs.dataimport;
+            const isDataConnectActive = activeTab === 'import' || activeTab === 'plaid';
+            
+            return sidebarCollapsed ? (
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'center' }}>
+                <div
+                  onClick={() => {
+                    setExpandedHubs(prev => ({ ...prev, dataimport: !prev.dataimport }));
+                    if (!isDataConnectActive) setActiveTab('import');
+                  }}
+                  style={{
+                    width: '48px',
+                    height: '48px',
+                    borderRadius: '12px',
+                    background: isDataConnectActive ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' : 'rgba(255, 255, 255, 0.05)',
+                    border: isDataConnectActive ? 'none' : '1px solid rgba(255, 255, 255, 0.08)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: isDataConnectActive ? 'white' : 'rgba(255, 255, 255, 0.6)',
+                    cursor: 'pointer',
+                    boxShadow: isDataConnectActive ? '0 4px 12px rgba(16, 185, 129, 0.3)' : 'none',
+                    transition: 'all 0.2s ease'
+                  }}
+                  title="Data Connect"
+                >
+                  <Icons.Import />
+                </div>
+              </div>
+            ) : (
+              <div style={{ marginBottom: '16px' }}>
+                {/* Data Connect Hub Header */}
+                <div
+                  onClick={() => setExpandedHubs(prev => ({ ...prev, dataimport: !prev.dataimport }))}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    padding: '14px 14px',
+                    borderRadius: isDataConnectExpanded ? '16px 16px 0 0' : '16px',
+                    cursor: 'pointer',
+                    color: isDataConnectActive ? 'white' : 'rgba(255, 255, 255, 0.85)',
+                    background: isDataConnectActive 
+                      ? 'linear-gradient(135deg, #10B981 0%, #34D399 100%)' 
+                      : 'rgba(255, 255, 255, 0.05)',
+                    transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                    border: isDataConnectActive 
+                      ? 'none' 
+                      : '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: isDataConnectActive ? '0 8px 20px rgba(16, 185, 129, 0.3)' : 'none',
+                    position: 'relative',
+                    overflow: 'hidden'
+                  }}
+                >
+                  {/* Subtle shine effect */}
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '-100%',
+                    width: '100%',
+                    height: '100%',
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+                    transition: 'left 0.5s ease',
+                    pointerEvents: 'none'
+                  }} />
+                  
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '10px',
+                    background: isDataConnectActive 
+                      ? 'rgba(255,255,255,0.2)' 
+                      : 'rgba(16, 185, 129, 0.15)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.25s ease'
+                  }}>
+                    <Icons.Import />
+                  </div>
+                  
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '14px', fontWeight: '600', marginBottom: '2px' }}>
+                      Data Connect
+                    </div>
+                    <div style={{ 
+                      fontSize: '11px', 
+                      color: isDataConnectActive ? 'rgba(255,255,255,0.8)' : 'rgba(255, 255, 255, 0.4)',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: '120px'
+                    }}>
+                      Import Your Data
+                    </div>
+                  </div>
+                  
+                  {/* Expand Arrow */}
+                  <div style={{
+                    width: '24px',
+                    height: '24px',
+                    borderRadius: '6px',
+                    background: isDataConnectActive ? 'rgba(255,255,255,0.2)' : 'rgba(255, 255, 255, 0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'transform 0.3s ease'
+                  }}>
+                    <svg 
+                      width="14" 
+                      height="14" 
+                      viewBox="0 0 24 24" 
+                      fill="none" 
+                      stroke="currentColor" 
+                      strokeWidth="2.5" 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round"
+                      style={{ 
+                        transform: isDataConnectExpanded ? 'rotate(180deg)' : 'rotate(0deg)',
+                        transition: 'transform 0.3s ease'
+                      }}
+                    >
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Expanded Sub-items */}
+                {isDataConnectExpanded && (
+                  <div style={{
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    borderRadius: '0 0 16px 16px',
+                    border: '1px solid rgba(255, 255, 255, 0.05)',
+                    borderTop: 'none',
+                    padding: '8px',
+                    marginTop: '-1px'
+                  }}>
+                    {/* Manual Import */}
+                    <div
+                      onClick={() => setActiveTab('import')}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        cursor: 'pointer',
+                        color: activeTab === 'import' ? 'white' : 'rgba(255, 255, 255, 0.65)',
+                        background: activeTab === 'import' ? 'rgba(16, 185, 129, 0.3)' : 'transparent',
+                        transition: 'all 0.2s ease',
+                        marginBottom: '4px',
+                        fontSize: '13px',
+                        fontWeight: activeTab === 'import' ? '600' : '400'
+                      }}
+                    >
+                      <Icons.Import />
+                      <span>Manual Import</span>
+                    </div>
+                    
+                    {/* Plaid Integration - Coming Soon */}
+                    <div
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        padding: '10px 12px',
+                        borderRadius: '10px',
+                        cursor: 'not-allowed',
+                        color: 'rgba(255, 255, 255, 0.35)',
+                        background: 'transparent',
+                        transition: 'all 0.2s ease',
+                        fontSize: '13px',
+                        fontWeight: '400',
+                        opacity: 0.6
+                      }}
+                      title="Plaid Integration - Coming Soon"
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+                        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+                        <path d="M18 12a2 2 0 0 0 0 4h4v-4h-4z"/>
+                      </svg>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+                        <span>Plaid Integration</span>
+                        <span style={{ 
+                          fontSize: '9px', 
+                          color: 'rgba(251, 191, 36, 0.7)',
+                          fontWeight: '600',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.5px'
+                        }}>Coming Soon</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {!sidebarCollapsed && (
             <div style={{ 
@@ -5579,6 +5727,187 @@ function Dashboard({
               </div>
             )
           ))}
+          
+          {/* FOLLOW US ON SOCIAL - Bottom Section */}
+          <div style={{ 
+            marginTop: 'auto', 
+            padding: sidebarCollapsed ? '16px 8px' : '16px',
+            borderTop: '1px solid rgba(255, 255, 255, 0.08)'
+          }}>
+            {!sidebarCollapsed && (
+              <div style={{ 
+                color: 'rgba(255, 255, 255, 0.4)', 
+                fontSize: '10px', 
+                fontWeight: '600', 
+                textTransform: 'uppercase', 
+                letterSpacing: '1px',
+                textAlign: 'center',
+                marginBottom: '12px'
+              }}>
+                Follow Us
+              </div>
+            )}
+            
+            <div style={{ 
+              display: 'flex', 
+              justifyContent: 'center', 
+              gap: sidebarCollapsed ? '8px' : '10px',
+              flexWrap: 'wrap'
+            }}>
+              {/* Twitter/X */}
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  width: sidebarCollapsed ? '36px' : '38px',
+                  height: sidebarCollapsed ? '36px' : '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textDecoration: 'none'
+                }}
+                title="Follow us on X (Twitter) - Coming Soon"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(29, 161, 242, 0.2)';
+                  e.currentTarget.style.color = '#1DA1F2';
+                  e.currentTarget.style.borderColor = 'rgba(29, 161, 242, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </a>
+              
+              {/* Instagram */}
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  width: sidebarCollapsed ? '36px' : '38px',
+                  height: sidebarCollapsed ? '36px' : '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textDecoration: 'none'
+                }}
+                title="Follow us on Instagram - Coming Soon"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(45deg, rgba(64, 93, 230, 0.2), rgba(225, 48, 108, 0.2))';
+                  e.currentTarget.style.color = '#E1306C';
+                  e.currentTarget.style.borderColor = 'rgba(225, 48, 108, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5"/>
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/>
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/>
+                </svg>
+              </a>
+              
+              {/* LinkedIn */}
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  width: sidebarCollapsed ? '36px' : '38px',
+                  height: sidebarCollapsed ? '36px' : '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textDecoration: 'none'
+                }}
+                title="Follow us on LinkedIn - Coming Soon"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(0, 119, 181, 0.2)';
+                  e.currentTarget.style.color = '#0077B5';
+                  e.currentTarget.style.borderColor = 'rgba(0, 119, 181, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+                </svg>
+              </a>
+              
+              {/* TikTok */}
+              <a
+                href="#"
+                onClick={(e) => e.preventDefault()}
+                style={{
+                  width: sidebarCollapsed ? '36px' : '38px',
+                  height: sidebarCollapsed ? '36px' : '38px',
+                  borderRadius: '10px',
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'rgba(255, 255, 255, 0.5)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  textDecoration: 'none'
+                }}
+                title="Follow us on TikTok - Coming Soon"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 0, 80, 0.2)';
+                  e.currentTarget.style.color = '#FF0050';
+                  e.currentTarget.style.borderColor = 'rgba(255, 0, 80, 0.4)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)';
+                  e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)';
+                  e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-5.2 1.74 2.89 2.89 0 0 1 2.31-4.64 2.93 2.93 0 0 1 .88.13V9.4a6.84 6.84 0 0 0-1-.05A6.33 6.33 0 0 0 5 20.1a6.34 6.34 0 0 0 10.86-4.43v-7a8.16 8.16 0 0 0 4.77 1.52v-3.4a4.85 4.85 0 0 1-1-.1z"/>
+                </svg>
+              </a>
+            </div>
+            
+            {!sidebarCollapsed && (
+              <div style={{ 
+                textAlign: 'center', 
+                marginTop: '12px',
+                fontSize: '10px',
+                color: 'rgba(255, 255, 255, 0.3)'
+              }}>
+                © 2024 ProsperNest
+              </div>
+            )}
+          </div>
         </nav>
       </aside>
 
@@ -5721,7 +6050,9 @@ function Dashboard({
                     
                     // Navigation items
                     const navMatches = [
+                      { id: 'newsfeed', label: 'Home & Newsfeed', icon: '🏠', keywords: ['home', 'newsfeed', 'news', 'welcome', 'start', 'landing'] },
                       { id: 'home', label: 'Dashboard', icon: '📊', keywords: ['dashboard', 'home', 'overview'] },
+                      { id: 'import', label: 'Data Connect', icon: '🔗', keywords: ['import', 'upload', 'csv', 'data', 'connect', 'plaid'] },
                       { id: 'sales', label: 'Side Hustle Hub', icon: '📈', keywords: ['sales', 'revenue', 'income tracking', 'side hustle', 'business'] },
                       { id: 'budget', label: 'Budget', icon: '💰', keywords: ['budget', 'spending', 'allocation'] },
                       { id: 'transactions', label: 'Transactions', icon: '💳', keywords: ['transactions', 'payments', 'history'] },
@@ -5730,8 +6061,7 @@ function Dashboard({
                       { id: 'tasks', label: 'Tasks', icon: '✅', keywords: ['tasks', 'todo', 'to-do'] },
                       { id: 'retirement', label: 'Retirement', icon: '🏖️', keywords: ['retirement', '401k', 'pension'] },
                       { id: 'reports', label: 'Reports', icon: '📋', keywords: ['reports', 'analytics', 'summary'] },
-                      { id: 'settings', label: 'Settings', icon: '⚙️', keywords: ['settings', 'preferences', 'account'] },
-                      { id: 'import', label: 'Import Data', icon: '📥', keywords: ['import', 'upload', 'csv'] }
+                      { id: 'settings', label: 'Settings', icon: '⚙️', keywords: ['settings', 'preferences', 'account'] }
                     ].filter(nav => 
                       nav.label.toLowerCase().includes(query) ||
                       nav.keywords.some(k => k.includes(query))
@@ -6992,6 +7322,670 @@ function Dashboard({
     </>
   );
 }
+
+// ============================================================================
+// NEWSFEED HOME - LANDING PAGE & NEWS HUB
+// ============================================================================
+// Modern, intuitive landing page that introduces users to ProsperNest
+// Features: Product walkthrough, news articles, upgrade prompts
+// ============================================================================
+
+function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, onNavigate, onShowUpgrade }) {
+  const [activeSection, setActiveSection] = useState('welcome');
+  const [newsLoading, setNewsLoading] = useState(false);
+  
+  // Sample news articles (would be fetched from API in production)
+  const newsArticles = [
+    {
+      id: 1,
+      category: 'Tax Tips',
+      title: '5 Year-End Tax Moves That Could Save You Thousands',
+      summary: 'From maximizing retirement contributions to harvesting tax losses, these strategies can significantly reduce your tax bill.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '💰',
+      color: '#10B981',
+      url: '#'
+    },
+    {
+      id: 2,
+      category: 'Budgeting',
+      title: 'The 50/30/20 Rule: Is It Right for You?',
+      summary: 'Learn how this popular budgeting framework can help you balance needs, wants, and savings goals.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '📊',
+      color: '#3B82F6',
+      url: '#'
+    },
+    {
+      id: 3,
+      category: 'Investing',
+      title: 'Building Wealth Through Real Estate: A Beginner Guide',
+      summary: 'Discover how real estate investing can diversify your portfolio and generate passive income.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '🏠',
+      color: '#8B5CF6',
+      url: '#'
+    },
+    {
+      id: 4,
+      category: 'Personal Finance',
+      title: 'Emergency Fund Essentials: How Much Do You Really Need?',
+      summary: 'Financial experts weigh in on the right amount to save for unexpected expenses.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '🛡️',
+      color: '#F59E0B',
+      url: '#'
+    },
+    {
+      id: 5,
+      category: 'Side Hustles',
+      title: 'Turn Your Passion Into Profit: Side Hustle Ideas for 2024',
+      summary: 'From freelancing to e-commerce, explore the most lucrative side hustles trending this year.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '🚀',
+      color: '#EC4899',
+      url: '#'
+    },
+    {
+      id: 6,
+      category: 'Savings',
+      title: 'High-Yield Savings Accounts: Maximize Your Money',
+      summary: 'Compare top high-yield savings accounts and learn how to make your emergency fund work harder.',
+      source: 'ProsperNest Insights',
+      date: new Date().toLocaleDateString(),
+      icon: '💎',
+      color: '#06B6D4',
+      url: '#'
+    }
+  ];
+  
+  // Product features for walkthrough
+  const productFeatures = [
+    {
+      id: 'import',
+      title: 'Data Connect',
+      subtitle: 'Import Your Financial Data',
+      description: 'Start your journey by importing your bank transactions. Use our Manual Import tool to upload CSV files from your bank, or wait for our upcoming Plaid integration for automatic syncing.',
+      icon: '🔗',
+      color: '#10B981',
+      gradient: 'linear-gradient(135deg, #10B981, #34D399)',
+      image: '/images/import-preview.png',
+      action: () => onNavigate('import'),
+      buttonText: 'Start Importing'
+    },
+    {
+      id: 'homebudget',
+      title: 'HomeBudget Hub',
+      subtitle: 'Personal & Family Finance',
+      description: 'Track your personal income and expenses, set budgets, monitor bills, achieve savings goals, and get AI-powered insights. Perfect for managing household finances.',
+      icon: '🏠',
+      color: '#EC4899',
+      gradient: 'linear-gradient(135deg, #EC4899, #F472B6)',
+      features: ['Dashboard Overview', 'Transaction Tracking', 'Bill Calendar', 'Savings Goals', 'Budget Planning', 'Reports & Analytics'],
+      action: () => onNavigate('home'),
+      buttonText: 'Explore HomeBudget'
+    },
+    {
+      id: 'bizbudget',
+      title: 'BizBudget Hub',
+      subtitle: 'Business Command Center',
+      description: 'Manage your side hustle or small business finances. Track revenue, monitor expenses, forecast earnings, prepare for taxes, and make smarter business decisions.',
+      icon: '💼',
+      color: '#8B5CF6',
+      gradient: 'linear-gradient(135deg, #8B5CF6, #A78BFA)',
+      features: ['Business Dashboard', 'Sales Pipeline', 'Revenue Forecast', 'Tax Preparation', 'Profit/Loss Statements', 'Expense Tracking'],
+      action: () => onNavigate('bizbudget-dashboard'),
+      buttonText: 'Explore BizBudget',
+      premium: true
+    },
+    {
+      id: 'rebudget',
+      title: 'REBudget Hub',
+      subtitle: 'Real Estate Investment Analysis',
+      description: 'Analyze real estate deals like a pro. Calculate cash flow, ROI, equity growth, and compare properties. Perfect for investors and real estate professionals.',
+      icon: '🏢',
+      color: '#06B6D4',
+      gradient: 'linear-gradient(135deg, #06B6D4, #22D3EE)',
+      features: ['Deal Analyzer', 'Cash Flow Calculator', 'ROI Analysis', 'Equity Tracker', 'Sale Projections', 'AI Deal Analysis'],
+      action: () => onNavigate('rebudget-analyzer'),
+      buttonText: 'Explore REBudget',
+      premium: true
+    }
+  ];
+  
+  // Subscription tier benefits
+  const tierBenefits = {
+    starter: { hubs: ['HomeBudget'], features: 'Basic features' },
+    family: { hubs: ['HomeBudget', 'BizBudget'], features: 'Advanced features + Reports' },
+    pro: { hubs: ['HomeBudget', 'BizBudget', 'REBudget'], features: 'All features + Priority Support' },
+    bundle: { hubs: ['All Hubs'], features: 'Everything + Team Access' }
+  };
+  
+  const cardStyle = {
+    background: theme.bgCard,
+    borderRadius: '20px',
+    padding: '24px',
+    border: `1px solid ${theme.borderLight}`,
+    boxShadow: theme.cardShadow
+  };
+
+  return (
+    <div style={{ 
+      padding: '24px',
+      maxWidth: '1400px',
+      margin: '0 auto'
+    }}>
+      {/* Welcome Hero Section */}
+      <div style={{
+        ...cardStyle,
+        background: 'linear-gradient(135deg, #1E293B 0%, #0F172A 100%)',
+        marginBottom: '24px',
+        padding: '40px',
+        position: 'relative',
+        overflow: 'hidden'
+      }}>
+        {/* Background decoration */}
+        <div style={{
+          position: 'absolute',
+          top: '-50%',
+          right: '-10%',
+          width: '500px',
+          height: '500px',
+          background: 'radial-gradient(circle, rgba(236, 72, 153, 0.15) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        <div style={{
+          position: 'absolute',
+          bottom: '-30%',
+          left: '-5%',
+          width: '400px',
+          height: '400px',
+          background: 'radial-gradient(circle, rgba(59, 130, 246, 0.1) 0%, transparent 70%)',
+          pointerEvents: 'none'
+        }} />
+        
+        <div style={{ position: 'relative', zIndex: 1 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '16px' }}>
+            <div style={{
+              width: '64px',
+              height: '64px',
+              borderRadius: '16px',
+              background: 'linear-gradient(135deg, #EC4899, #F472B6)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '32px',
+              boxShadow: '0 8px 24px rgba(236, 72, 153, 0.3)'
+            }}>
+              🪙
+            </div>
+            <div>
+              <h1 style={{ 
+                fontSize: '32px', 
+                fontWeight: '800', 
+                color: 'white',
+                marginBottom: '4px'
+              }}>
+                Welcome to ProsperNest{profile?.firstName ? `, ${profile.firstName}` : ''}! 
+              </h1>
+              <p style={{ fontSize: '16px', color: 'rgba(255,255,255,0.7)' }}>
+                Your all-in-one financial command center
+              </p>
+            </div>
+          </div>
+          
+          <p style={{ 
+            fontSize: '18px', 
+            color: 'rgba(255,255,255,0.8)', 
+            maxWidth: '700px',
+            lineHeight: '1.6',
+            marginBottom: '24px'
+          }}>
+            Track personal finances, manage your business, and analyze real estate investments—all in one beautiful app. 
+            Let's get you started on your path to financial prosperity! 🚀
+          </p>
+          
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            <button
+              onClick={() => onNavigate('import')}
+              style={{
+                padding: '14px 28px',
+                borderRadius: '12px',
+                background: 'linear-gradient(135deg, #10B981, #34D399)',
+                border: 'none',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                boxShadow: '0 4px 16px rgba(16, 185, 129, 0.3)',
+                transition: 'transform 0.2s'
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-2px)'}
+              onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+            >
+              <span>🚀</span> Get Started - Import Data
+            </button>
+            
+            <button
+              onClick={() => onNavigate('home')}
+              style={{
+                padding: '14px 28px',
+                borderRadius: '12px',
+                background: 'rgba(255,255,255,0.1)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: 'white',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+              }}
+            >
+              <span>📊</span> Go to Dashboard
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      {/* Quick Stats Row */}
+      <div style={{ 
+        display: 'grid', 
+        gridTemplateColumns: 'repeat(4, 1fr)', 
+        gap: '16px',
+        marginBottom: '24px'
+      }}>
+        {[
+          { label: 'Your Plan', value: subscription?.plan_type?.replace('_', ' ')?.toUpperCase() || 'FREE', icon: '⭐', color: '#F59E0B' },
+          { label: 'Status', value: subscriptionAccess?.hasAccess ? 'Active' : 'Inactive', icon: '✅', color: '#10B981' },
+          { label: 'Available Hubs', value: subscriptionAccess?.perpetualLicense ? '3' : '1-3', icon: '🎯', color: '#3B82F6' },
+          { label: 'AI Features', value: 'Enabled', icon: '🤖', color: '#8B5CF6' }
+        ].map((stat, i) => (
+          <div key={i} style={{
+            ...cardStyle,
+            padding: '20px',
+            textAlign: 'center'
+          }}>
+            <div style={{ fontSize: '28px', marginBottom: '8px' }}>{stat.icon}</div>
+            <div style={{ fontSize: '20px', fontWeight: '700', color: stat.color, marginBottom: '4px' }}>{stat.value}</div>
+            <div style={{ fontSize: '12px', color: theme.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{stat.label}</div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Product Walkthrough Section */}
+      <div style={{ marginBottom: '32px' }}>
+        <h2 style={{ 
+          fontSize: '22px', 
+          fontWeight: '700', 
+          color: theme.textPrimary,
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span>🎯</span> Explore ProsperNest Features
+        </h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '20px' }}>
+          {productFeatures.map((feature, i) => (
+            <div 
+              key={feature.id}
+              style={{
+                ...cardStyle,
+                padding: '28px',
+                position: 'relative',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s'
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = `0 12px 40px ${feature.color}20`;
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = theme.cardShadow;
+              }}
+            >
+              {/* Premium badge */}
+              {feature.premium && (
+                <div style={{
+                  position: 'absolute',
+                  top: '16px',
+                  right: '16px',
+                  background: 'linear-gradient(135deg, #F59E0B, #FBBF24)',
+                  color: 'white',
+                  fontSize: '10px',
+                  fontWeight: '700',
+                  padding: '4px 10px',
+                  borderRadius: '20px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  Premium
+                </div>
+              )}
+              
+              {/* Top gradient bar */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '4px',
+                background: feature.gradient
+              }} />
+              
+              <div style={{ display: 'flex', gap: '20px' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '16px',
+                  background: feature.gradient,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '28px',
+                  flexShrink: 0,
+                  boxShadow: `0 8px 20px ${feature.color}30`
+                }}>
+                  {feature.icon}
+                </div>
+                
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ 
+                    fontSize: '18px', 
+                    fontWeight: '700', 
+                    color: theme.textPrimary,
+                    marginBottom: '4px'
+                  }}>
+                    {feature.title}
+                  </h3>
+                  <p style={{ 
+                    fontSize: '13px', 
+                    color: feature.color,
+                    fontWeight: '600',
+                    marginBottom: '10px'
+                  }}>
+                    {feature.subtitle}
+                  </p>
+                  <p style={{ 
+                    fontSize: '14px', 
+                    color: theme.textSecondary,
+                    lineHeight: '1.5',
+                    marginBottom: '16px'
+                  }}>
+                    {feature.description}
+                  </p>
+                  
+                  {/* Feature list */}
+                  {feature.features && (
+                    <div style={{ 
+                      display: 'flex', 
+                      flexWrap: 'wrap', 
+                      gap: '8px',
+                      marginBottom: '16px'
+                    }}>
+                      {feature.features.map((f, j) => (
+                        <span 
+                          key={j}
+                          style={{
+                            fontSize: '11px',
+                            padding: '4px 10px',
+                            borderRadius: '20px',
+                            background: `${feature.color}15`,
+                            color: feature.color,
+                            fontWeight: '500'
+                          }}
+                        >
+                          {f}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  
+                  <button
+                    onClick={feature.action}
+                    style={{
+                      padding: '10px 20px',
+                      borderRadius: '10px',
+                      background: feature.gradient,
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '13px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      boxShadow: `0 4px 12px ${feature.color}30`,
+                      transition: 'transform 0.2s'
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+                    onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+                  >
+                    {feature.buttonText}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="9 18 15 12 9 6"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      
+      {/* Upgrade Banner (for non-premium users) */}
+      {subscriptionAccess?.reason !== 'perpetual' && subscription?.plan_type !== 'pro' && subscription?.plan_type !== 'bundle' && (
+        <div style={{
+          ...cardStyle,
+          background: 'linear-gradient(135deg, #6366F1 0%, #8B5CF6 100%)',
+          marginBottom: '32px',
+          padding: '32px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '24px'
+        }}>
+          <div>
+            <h3 style={{ fontSize: '22px', fontWeight: '700', color: 'white', marginBottom: '8px' }}>
+              🚀 Unlock All Features
+            </h3>
+            <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.85)', maxWidth: '500px' }}>
+              Upgrade to Pro or Bundle to access BizBudget Hub, REBudget Hub, advanced reports, priority support, and more!
+            </p>
+          </div>
+          <button
+            onClick={onShowUpgrade}
+            style={{
+              padding: '14px 32px',
+              borderRadius: '12px',
+              background: 'white',
+              border: 'none',
+              color: '#6366F1',
+              fontSize: '15px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.2)',
+              transition: 'transform 0.2s',
+              whiteSpace: 'nowrap'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            View Plans <span>→</span>
+          </button>
+        </div>
+      )}
+      
+      {/* Financial News & Tips Section */}
+      <div>
+        <h2 style={{ 
+          fontSize: '22px', 
+          fontWeight: '700', 
+          color: theme.textPrimary,
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px'
+        }}>
+          <span>📰</span> Financial News & Tips
+        </h2>
+        
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
+          {newsArticles.map((article) => (
+            <div 
+              key={article.id}
+              style={{
+                ...cardStyle,
+                padding: '24px',
+                cursor: 'pointer',
+                transition: 'transform 0.2s, box-shadow 0.2s',
+                position: 'relative',
+                overflow: 'hidden'
+              }}
+              onClick={() => {
+                // In production, this would open the article URL
+                console.log('Opening article:', article.title);
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.12)';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = theme.cardShadow;
+              }}
+            >
+              {/* Top accent */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                height: '3px',
+                background: article.color
+              }} />
+              
+              {/* Category badge */}
+              <div style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 12px',
+                borderRadius: '20px',
+                background: `${article.color}15`,
+                marginBottom: '14px'
+              }}>
+                <span style={{ fontSize: '14px' }}>{article.icon}</span>
+                <span style={{ 
+                  fontSize: '11px', 
+                  fontWeight: '600', 
+                  color: article.color,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px'
+                }}>
+                  {article.category}
+                </span>
+              </div>
+              
+              <h4 style={{ 
+                fontSize: '16px', 
+                fontWeight: '700', 
+                color: theme.textPrimary,
+                marginBottom: '10px',
+                lineHeight: '1.4'
+              }}>
+                {article.title}
+              </h4>
+              
+              <p style={{ 
+                fontSize: '13px', 
+                color: theme.textSecondary,
+                lineHeight: '1.5',
+                marginBottom: '16px'
+              }}>
+                {article.summary}
+              </p>
+              
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'space-between',
+                paddingTop: '14px',
+                borderTop: `1px solid ${theme.borderLight}`
+              }}>
+                <span style={{ fontSize: '11px', color: theme.textMuted }}>
+                  {article.source}
+                </span>
+                <span style={{ fontSize: '11px', color: theme.textMuted }}>
+                  {article.date}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        <div style={{ 
+          textAlign: 'center', 
+          marginTop: '24px' 
+        }}>
+          <button
+            onClick={() => console.log('View all articles')}
+            style={{
+              padding: '12px 28px',
+              borderRadius: '10px',
+              background: 'transparent',
+              border: `2px solid ${theme.borderLight}`,
+              color: theme.textSecondary,
+              fontSize: '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              transition: 'all 0.2s'
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = theme.primary;
+              e.currentTarget.style.color = theme.primary;
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = theme.borderLight;
+              e.currentTarget.style.color = theme.textSecondary;
+            }}
+          >
+            View All Articles
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="9 18 15 12 9 6"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // DASHBOARD HOME - DASHSTACK STYLE
 // ============================================================================
