@@ -13,6 +13,7 @@ import RetirementTab from './components/RetirementTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
 import RealEstateCommandCenter from './components/RealEstateCommandCenter';
 import BizBudgetHub from './components/BizBudgetHub';
+import REBudgetHub from './components/REBudgetHub';
 import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
 import { InfoTooltip, MetricLabel, ProjectionBadge, ActualDataBadge, FINANCIAL_TOOLTIPS } from './components/InfoTooltip';
 // Default data - baked in from real bank/retirement imports
@@ -649,6 +650,34 @@ const BIZBUDGET_ACCESS_USERS = [
   'tucker.pate@homevestors.com',
 ];
 
+// Users with REBudget Hub access (Real Estate Investment Analysis)
+// Perpetual license holders get automatic access
+const REBUDGET_ACCESS_USERS = [
+  'kennedymichael54@gmail.com',
+  'admin@prospernest.app',
+  'tester@prospernest.app',
+  'michael.kennedy@homevestors.com',
+  'anthony.montgomery@homevestors.com',
+  'tucker.pate@homevestors.com',
+];
+
+// Helper function to check REBudget Hub access
+// Access granted to: Owner, Admin, Tester, Perpetual License holders, Paid users
+const checkREBudgetAccess = (userEmail, userRole, subscriptionStatus) => {
+  const email = userEmail?.toLowerCase();
+  
+  // 1. Check if user is in perpetual license list
+  if (REBUDGET_ACCESS_USERS.includes(email)) return true;
+  
+  // 2. Check if user has privileged role (Owner, Admin, Tester)
+  if ([USER_ROLES.OWNER, USER_ROLES.ADMIN, USER_ROLES.TESTER, USER_ROLES.HOMEVESTORS].includes(userRole)) return true;
+  
+  // 3. Check if user has paid subscription (Pro or Family plan)
+  if (subscriptionStatus?.isPaid || subscriptionStatus?.plan === 'pro' || subscriptionStatus?.plan === 'family') return true;
+  
+  return false;
+};
+
 // Feature permissions by role
 const ROLE_PERMISSIONS = {
   [USER_ROLES.OWNER]: {
@@ -664,6 +693,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: true,
     canAccessReports: true,
     canAccessBizBudget: true,
+    canAccessREBudget: true,
     canModifySettings: true,
     showDemoData: true,
     watermark: false,
@@ -685,6 +715,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: true,
     canAccessReports: true,
     canAccessBizBudget: true,
+    canAccessREBudget: true,
     canModifySettings: true,
     showDemoData: false,
     watermark: false,
@@ -706,6 +737,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: true,
     canAccessReports: true,
     canAccessBizBudget: true,
+    canAccessREBudget: true,
     canModifySettings: false,  // Cannot change settings
     showDemoData: false,
     watermark: true,           // Shows "TEST MODE" watermark
@@ -727,6 +759,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: true,
     canAccessReports: true,
     canAccessBizBudget: true,  // Full BizBudget Hub access
+    canAccessREBudget: true,   // Full REBudget Hub access
     canModifySettings: true,
     showDemoData: false,
     watermark: false,
@@ -748,6 +781,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: true,
     canAccessReports: true,
     canAccessBizBudget: false, // No BizBudget access
+    canAccessREBudget: false,  // No REBudget access - requires paid upgrade
     canModifySettings: true,
     showDemoData: false,
     watermark: false,
@@ -769,6 +803,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: false,  // Sales tracker is Family only
     canAccessReports: true,
     canAccessBizBudget: false,     // BizBudget is for authorized users only
+    canAccessREBudget: false,      // REBudget requires paid upgrade
     canModifySettings: true,
     showDemoData: false,
     watermark: false,
@@ -790,6 +825,7 @@ const ROLE_PERMISSIONS = {
     canAccessSalesTracker: false,
     canAccessReports: false,   // Reports is Pro+
     canAccessBizBudget: false, // BizBudget is for authorized users only
+    canAccessREBudget: false,  // REBudget requires paid upgrade
     canModifySettings: true,
     showDemoData: false,
     watermark: false,
@@ -3233,6 +3269,12 @@ function Dashboard({
       ? { hasAccess: true, reason: 'perpetual', perpetualLicense: true }
       : { hasAccess: false, reason: 'loading' });
   
+  // Check REBudget Hub access (Owner, Admin, Tester, Perpetual License, or Paid users)
+  const hasREBudgetAccess = checkREBudgetAccess(user?.email, userRole, {
+    isPaid: subscriptionAccess.reason === 'paid',
+    plan: subscription?.plan_type
+  });
+  
   // Show welcome modal for VIP/perpetual users on first visit of session
   useEffect(() => {
     const isPerpetualUser = PERPETUAL_LICENSE_USERS.includes(user?.email?.toLowerCase());
@@ -3500,8 +3542,17 @@ function Dashboard({
       subtitle: 'Real Estate Toolkit',
       icon: Icons.REBudgetHub,
       color: '#818CF8', // Indigo
-      status: 'coming_soon',
-      items: []
+      status: hasREBudgetAccess ? 'active' : 'coming_soon',
+      requiresREBudgetAccess: true,
+      items: hasREBudgetAccess ? [
+        { id: 'rebudget-analyzer', label: 'Deal Analyzer', icon: Icons.HomeBudgetHub },
+        { id: 'rebudget-cashflow', label: 'Cash Flow', icon: Icons.Budget },
+        { id: 'rebudget-roi', label: 'ROI Analysis', icon: Icons.Reports },
+        { id: 'rebudget-equity', label: 'Equity Tracker', icon: Icons.Goals },
+        { id: 'rebudget-sale', label: 'Sale Projections', icon: Icons.Calendar },
+        { id: 'rebudget-simulation', label: 'Deal Simulation', icon: Icons.Tasks },
+        { id: 'rebudget-ai', label: 'AI Analysis', icon: Icons.Dashboard }
+      ] : []
     }
   ];
 
@@ -3523,6 +3574,7 @@ function Dashboard({
       'retirement': theme.gradients?.retirement,
       'reports': theme.gradients?.reports,
       'bizbudget': theme.gradients?.bizbudget || theme.gradients?.dashboard,
+      'rebudget': theme.gradients?.rebudget || theme.gradients?.dashboard,
       'settings': theme.gradients?.settings,
       'import': theme.gradients?.import
     };
@@ -3660,6 +3712,20 @@ function Dashboard({
           return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
         }
         return <GradientSection tab="bizbudget"><BizBudgetHub theme={theme} lastImportDate={lastImportDate} userEmail={user?.email} initialTab={activeTab.replace('bizbudget-', '')} profile={profile} onUpdateProfile={saveProfileToDB} /></GradientSection>;
+      
+      // REBudget Hub tabs - Real Estate Investment Analysis (authorized users only)
+      case 'rebudget-analyzer':
+      case 'rebudget-cashflow':
+      case 'rebudget-roi':
+      case 'rebudget-equity':
+      case 'rebudget-sale':
+      case 'rebudget-simulation':
+      case 'rebudget-ai':
+        if (!hasREBudgetAccess) {
+          return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
+        }
+        return <GradientSection tab="rebudget"><REBudgetHub theme={theme} profile={profile} initialTab={activeTab.replace('rebudget-', '')} /></GradientSection>;
+      
       case 'settings':
         return <GradientSection tab="settings"><SettingsTabDS 
           theme={theme} 
@@ -4229,7 +4295,13 @@ function Dashboard({
           {hubs.map(hub => {
             const isExpanded = expandedHubs[hub.id];
             const isActive = hub.items.some(item => item.id === activeTab);
-            const isLocked = hub.status === 'coming_soon' || (!subscriptionAccess.hasAccess && hub.status === 'active');
+            
+            // Check permission-based access
+            const requiresBizBudget = hub.requiresBizBudgetAccess && !userPermissions.canAccessBizBudget;
+            const requiresREBudget = hub.requiresREBudgetAccess && !userPermissions.canAccessREBudget;
+            const isPermissionLocked = requiresBizBudget || requiresREBudget;
+            
+            const isLocked = hub.status === 'coming_soon' || isPermissionLocked || (!subscriptionAccess.hasAccess && hub.status === 'active');
             const isComingSoon = hub.status === 'coming_soon';
 
             // Hub-specific gradient backgrounds - adapted for dark sidebar in light mode
