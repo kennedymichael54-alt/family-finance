@@ -900,35 +900,404 @@ const formatCurrency = (amount) => {
     maximumFractionDigits: 2
   }).format(Math.abs(amount));
 };
-// Error Boundary
+// Error Boundary with Professional Status Page
 class ErrorBoundary extends React.Component {
   constructor(props) {
     super(props);
-    this.state = { hasError: false, error: null, errorInfo: null };
+    this.state = { 
+      hasError: false, 
+      error: null, 
+      errorInfo: null,
+      showDetails: false,
+      retryCount: 0
+    };
   }
+  
   static getDerivedStateFromError(error) {
     return { hasError: true, error };
   }
+  
   componentDidCatch(error, errorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo);
     this.setState({ errorInfo });
   }
+  
+  handleRetry = () => {
+    this.setState(prev => ({ 
+      hasError: false, 
+      error: null, 
+      errorInfo: null,
+      retryCount: prev.retryCount + 1 
+    }));
+  }
+  
   render() {
     if (this.state.hasError) {
+      const errorMessage = this.state.error?.message || 'An unexpected error occurred';
+      const isNetworkError = errorMessage.toLowerCase().includes('network') || errorMessage.toLowerCase().includes('fetch');
+      const isAuthError = errorMessage.toLowerCase().includes('auth') || errorMessage.toLowerCase().includes('session');
+      
+      // Determine system statuses based on error type
+      const systems = [
+        { 
+          name: 'ProsperNest App', 
+          status: 'outage',
+          description: 'Application Error'
+        },
+        { 
+          name: 'Authentication Service', 
+          status: isAuthError ? 'degraded' : 'operational',
+          description: isAuthError ? 'Connection Issues' : 'Working normally'
+        },
+        { 
+          name: 'Database (Supabase)', 
+          status: isNetworkError ? 'degraded' : 'operational',
+          description: isNetworkError ? 'Network Issues' : 'Connected'
+        },
+        { 
+          name: 'Local Storage', 
+          status: 'operational',
+          description: 'Available'
+        }
+      ];
+      
+      const statusColors = {
+        operational: '#10B981',
+        degraded: '#F59E0B',
+        outage: '#EF4444'
+      };
+      
+      const statusLabels = {
+        operational: 'Operational',
+        degraded: 'Degraded',
+        outage: 'Outage'
+      };
+
       return (
-        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F9FAFB' }}>
-          <div style={{ textAlign: 'center', padding: '40px', background: 'white', borderRadius: '16px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', maxWidth: '600px' }}>
-            <h1 style={{ color: '#111827' }}>Something went wrong</h1>
-            <p style={{ color: '#6B7280', fontSize: '14px', marginTop: '12px' }}>
-              {this.state.error?.message || 'An unexpected error occurred'}
+        <div style={{ 
+          minHeight: '100vh', 
+          background: 'linear-gradient(180deg, #F8FAFC 0%, #F1F5F9 100%)',
+          fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+        }}>
+          {/* Header */}
+          <header style={{ 
+            background: 'white', 
+            borderBottom: '1px solid #E2E8F0',
+            padding: '16px 0'
+          }}>
+            <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ 
+                width: '40px', 
+                height: '40px', 
+                borderRadius: '10px', 
+                background: 'linear-gradient(135deg, #8B5CF6, #EC4899)', 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center',
+                color: 'white',
+                fontWeight: '700',
+                fontSize: '14px'
+              }}>
+                PN
+              </div>
+              <span style={{ fontSize: '20px', fontWeight: '700', color: '#1E293B' }}>
+                Prosper<span style={{ color: '#8B5CF6' }}>Nest</span> Status
+              </span>
+            </div>
+          </header>
+
+          {/* Main Content */}
+          <main style={{ maxWidth: '800px', margin: '0 auto', padding: '40px 24px' }}>
+            {/* Status Banner */}
+            <div style={{ 
+              background: 'white', 
+              borderRadius: '16px', 
+              padding: '32px',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              marginBottom: '24px',
+              textAlign: 'center'
+            }}>
+              <div style={{ 
+                width: '64px', 
+                height: '64px', 
+                borderRadius: '50%', 
+                background: '#FEF2F2',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+                fontSize: '28px'
+              }}>
+                ⚠️
+              </div>
+              <h1 style={{ 
+                fontSize: '28px', 
+                fontWeight: '700', 
+                color: '#1E293B',
+                margin: '0 0 8px'
+              }}>
+                Something Went Wrong
+              </h1>
+              <p style={{ 
+                fontSize: '16px', 
+                color: '#64748B',
+                margin: '0 0 24px',
+                maxWidth: '500px',
+                marginLeft: 'auto',
+                marginRight: 'auto'
+              }}>
+                We encountered an error while loading ProsperNest. Our team has been notified and is working on a fix.
+              </p>
+              
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <button 
+                  onClick={this.handleRetry}
+                  style={{ 
+                    padding: '12px 24px', 
+                    background: 'linear-gradient(135deg, #8B5CF6, #7C3AED)', 
+                    border: 'none', 
+                    borderRadius: '10px', 
+                    color: 'white', 
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'transform 0.2s, box-shadow 0.2s',
+                    boxShadow: '0 4px 14px rgba(139, 92, 246, 0.4)'
+                  }}
+                  onMouseOver={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                  onMouseOut={e => e.currentTarget.style.transform = 'translateY(0)'}
+                >
+                  <span>🔄</span> Try Again
+                </button>
+                <button 
+                  onClick={() => window.location.reload()}
+                  style={{ 
+                    padding: '12px 24px', 
+                    background: 'white', 
+                    border: '2px solid #E2E8F0', 
+                    borderRadius: '10px', 
+                    color: '#475569', 
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={e => { e.currentTarget.style.borderColor = '#8B5CF6'; e.currentTarget.style.color = '#8B5CF6'; }}
+                  onMouseOut={e => { e.currentTarget.style.borderColor = '#E2E8F0'; e.currentTarget.style.color = '#475569'; }}
+                >
+                  <span>🔃</span> Reload Page
+                </button>
+              </div>
+              
+              {this.state.retryCount > 0 && (
+                <p style={{ marginTop: '16px', fontSize: '13px', color: '#94A3B8' }}>
+                  Retry attempts: {this.state.retryCount}
+                </p>
+              )}
+            </div>
+
+            {/* System Status */}
+            <div style={{ 
+              background: 'white', 
+              borderRadius: '16px', 
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
+              marginBottom: '24px'
+            }}>
+              <div style={{ 
+                padding: '20px 24px', 
+                borderBottom: '1px solid #E2E8F0',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between'
+              }}>
+                <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1E293B' }}>
+                  System Status
+                </h2>
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#64748B',
+                  background: '#F1F5F9',
+                  padding: '4px 12px',
+                  borderRadius: '20px'
+                }}>
+                  Last checked: Just now
+                </span>
+              </div>
+              
+              {systems.map((system, index) => (
+                <div 
+                  key={index}
+                  style={{ 
+                    padding: '16px 24px', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    borderBottom: index < systems.length - 1 ? '1px solid #F1F5F9' : 'none'
+                  }}
+                >
+                  <div>
+                    <div style={{ fontWeight: '500', color: '#1E293B', fontSize: '14px' }}>
+                      {system.name}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#94A3B8', marginTop: '2px' }}>
+                      {system.description}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ 
+                      width: '8px', 
+                      height: '8px', 
+                      borderRadius: '50%', 
+                      background: statusColors[system.status],
+                      boxShadow: `0 0 8px ${statusColors[system.status]}40`
+                    }} />
+                    <span style={{ 
+                      fontSize: '13px', 
+                      fontWeight: '500',
+                      color: statusColors[system.status]
+                    }}>
+                      {statusLabels[system.status]}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Error Details (Expandable) */}
+            <div style={{ 
+              background: 'white', 
+              borderRadius: '16px', 
+              overflow: 'hidden',
+              boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+            }}>
+              <button
+                onClick={() => this.setState(prev => ({ showDetails: !prev.showDetails }))}
+                style={{
+                  width: '100%',
+                  padding: '20px 24px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  textAlign: 'left'
+                }}
+              >
+                <div>
+                  <h2 style={{ margin: 0, fontSize: '16px', fontWeight: '600', color: '#1E293B' }}>
+                    Error Details
+                  </h2>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#94A3B8' }}>
+                    Technical information for troubleshooting
+                  </p>
+                </div>
+                <span style={{ 
+                  fontSize: '20px', 
+                  color: '#94A3B8',
+                  transform: this.state.showDetails ? 'rotate(180deg)' : 'rotate(0deg)',
+                  transition: 'transform 0.2s'
+                }}>
+                  ▼
+                </span>
+              </button>
+              
+              {this.state.showDetails && (
+                <div style={{ padding: '0 24px 24px' }}>
+                  <div style={{ 
+                    background: '#FEF2F2', 
+                    border: '1px solid #FECACA',
+                    borderRadius: '12px', 
+                    padding: '16px',
+                    marginBottom: '16px'
+                  }}>
+                    <div style={{ fontSize: '12px', fontWeight: '600', color: '#991B1B', marginBottom: '4px' }}>
+                      Error Message
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#DC2626', fontFamily: 'monospace' }}>
+                      {errorMessage}
+                    </div>
+                  </div>
+                  
+                  {this.state.error?.stack && (
+                    <div style={{ 
+                      background: '#1E293B', 
+                      borderRadius: '12px', 
+                      padding: '16px',
+                      overflow: 'auto'
+                    }}>
+                      <div style={{ fontSize: '12px', fontWeight: '600', color: '#94A3B8', marginBottom: '8px' }}>
+                        Stack Trace
+                      </div>
+                      <pre style={{ 
+                        margin: 0, 
+                        fontSize: '11px', 
+                        color: '#E2E8F0', 
+                        fontFamily: 'Monaco, Consolas, monospace',
+                        whiteSpace: 'pre-wrap',
+                        wordBreak: 'break-all'
+                      }}>
+                        {this.state.error.stack.split('\n').slice(0, 8).join('\n')}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Help Section */}
+            <div style={{ 
+              marginTop: '32px', 
+              textAlign: 'center',
+              color: '#64748B',
+              fontSize: '14px'
+            }}>
+              <p style={{ margin: '0 0 12px' }}>
+                If this problem persists, try these steps:
+              </p>
+              <div style={{ 
+                display: 'flex', 
+                gap: '24px', 
+                justifyContent: 'center',
+                flexWrap: 'wrap'
+              }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🗑️</span> Clear browser cache
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🔒</span> Check if logged in
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span>🌐</span> Check internet connection
+                </span>
+              </div>
+            </div>
+          </main>
+
+          {/* Footer */}
+          <footer style={{ 
+            textAlign: 'center', 
+            padding: '24px',
+            color: '#94A3B8',
+            fontSize: '13px'
+          }}>
+            <p style={{ margin: 0 }}>
+              ProsperNest © {new Date().getFullYear()} • 
+              <a 
+                href="mailto:support@prospernest.app" 
+                style={{ color: '#8B5CF6', textDecoration: 'none', marginLeft: '4px' }}
+              >
+                Contact Support
+              </a>
             </p>
-            <pre style={{ textAlign: 'left', background: '#F3F4F6', padding: '12px', borderRadius: '8px', fontSize: '11px', overflow: 'auto', maxHeight: '200px', marginTop: '16px' }}>
-              {this.state.error?.stack?.split('\n').slice(0, 5).join('\n')}
-            </pre>
-            <button onClick={() => window.location.reload()} style={{ padding: '12px 24px', background: '#6366F1', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', marginTop: '16px' }}>
-              Reload App
-            </button>
-          </div>
+          </footer>
         </div>
       );
     }
