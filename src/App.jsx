@@ -1346,6 +1346,7 @@ const saveProfileToDB = async (userId, profile, forceUpdate = false) => {
       gender: profile.gender,
       photo_url: profile.photoUrl,
       sidehustle_name: profile.sidehustleName,
+      side_hustle: profile.sideHustle,
       account_labels: profile.accountLabels ? JSON.stringify(profile.accountLabels) : null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
@@ -1376,6 +1377,7 @@ const dbToAppProfile = (p) => {
     gender: p?.gender || '',
     photoUrl: p?.photo_url || '',
     sidehustleName: p?.sidehustle_name || '',
+    sideHustle: p?.side_hustle || '',
     accountLabels
   };
 };
@@ -1579,7 +1581,8 @@ function App() {
     dateOfBirth: '',
     gender: '',
     photoUrl: '',
-    sidehustleName: ''
+    sidehustleName: '',
+    sideHustle: ''
   });
   const [userPreferences, setUserPreferences] = useState(() => {
     try {
@@ -1817,7 +1820,8 @@ function App() {
         dateOfBirth: newProfile.dateOfBirth || profile.dateOfBirth,
         gender: newProfile.gender || profile.gender,
         photoUrl: newProfile.photoUrl || profile.photoUrl,
-        sidehustleName: newProfile.sidehustleName || profile.sidehustleName
+        sidehustleName: newProfile.sidehustleName || profile.sidehustleName,
+        sideHustle: newProfile.sideHustle || profile.sideHustle
       };
       
       console.log('🛡️ [Profile] Merged profile to preserve data:', mergedProfile.firstName, mergedProfile.lastName);
@@ -3267,7 +3271,8 @@ function Dashboard({
     dateOfBirth: '',
     gender: '',
     photoUrl: '',
-    sidehustleName: ''
+    sidehustleName: '',
+    sideHustle: ''
   });
   
   // Update editProfile when modal opens or profile props change
@@ -3281,7 +3286,8 @@ function Dashboard({
         dateOfBirth: profile.dateOfBirth || '',
         gender: profile.gender || '',
         photoUrl: profile.photoUrl || '',
-        sidehustleName: profile.sidehustleName || ''
+        sidehustleName: profile.sidehustleName || '',
+        sideHustle: profile.sideHustle || ''
       });
     }
   }, [showManageAccountModal, profile, user?.email]);
@@ -3426,7 +3432,8 @@ function Dashboard({
         dateOfBirth: '',
         gender: '',
         photoUrl: '',
-        sidehustleName: ''
+        sidehustleName: '',
+        sideHustle: ''
       });
       
       console.log('✅ [Auth] State cleared, navigating to landing');
@@ -3929,9 +3936,10 @@ function Dashboard({
               gap: '12px',
               cursor: 'pointer',
               overflow: 'hidden',
-              flex: 1,
+              flex: sidebarCollapsed ? 'none' : 1,
               minWidth: 0,
-              marginRight: '12px'
+              marginRight: sidebarCollapsed ? '0' : '12px',
+              justifyContent: sidebarCollapsed ? 'center' : 'flex-start'
             }}
           >
             <div style={{
@@ -3965,7 +3973,7 @@ function Dashboard({
                   alignItems: 'center',
                   gap: '6px',
                   marginTop: '2px',
-                  flexWrap: 'wrap'
+                  flexWrap: 'nowrap'
                 }}>
                   <span style={{ 
                     background: 'linear-gradient(135deg, #F59E0B, #D97706)', 
@@ -4560,71 +4568,6 @@ function Dashboard({
             )
           ))}
         </nav>
-
-        {/* Spacer for better logout visibility */}
-        <div style={{ height: '48px' }} />
-
-        {/* Logout Button - Dark Sidebar Style */}
-        <div style={{ 
-          padding: sidebarCollapsed ? '12px 8px' : '16px', 
-          borderTop: '1px solid rgba(255, 255, 255, 0.08)'
-        }}>
-          {sidebarCollapsed ? (
-            <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div
-                onClick={handleSignOut}
-                style={{
-                  width: '48px',
-                  height: '48px',
-                  borderRadius: '12px',
-                  background: 'rgba(239, 68, 68, 0.15)',
-                  border: '1px solid rgba(239, 68, 68, 0.25)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#F87171',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-                title="Logout"
-              >
-                <Icons.SignOut />
-              </div>
-            </div>
-          ) : (
-            <div
-              onClick={handleSignOut}
-              className="logout-btn"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-                padding: '12px 16px',
-                borderRadius: '12px',
-                cursor: 'pointer',
-                color: '#F87171',
-                fontSize: '14px',
-                fontWeight: '600',
-                background: 'rgba(239, 68, 68, 0.12)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                transition: 'all 0.2s ease'
-              }}
-            >
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '8px',
-                background: 'rgba(239, 68, 68, 0.15)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}>
-                <Icons.SignOut />
-              </div>
-              <span>Logout</span>
-            </div>
-          )}
-        </div>
       </aside>
 
       {/* Main Content */}
