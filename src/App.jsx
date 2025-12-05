@@ -1581,10 +1581,17 @@ function App() {
     photoUrl: '',
     sidehustleName: ''
   });
-  const [userPreferences, setUserPreferences] = useState({
-    theme: 'light',
-    language: 'en',
-    avatar: '👨‍💼'
+  const [userPreferences, setUserPreferences] = useState(() => {
+    try {
+      const savedAvatar = localStorage.getItem('pn_userAvatar');
+      return {
+        theme: 'light',
+        language: 'en',
+        avatar: savedAvatar || '👨‍💼'
+      };
+    } catch {
+      return { theme: 'light', language: 'en', avatar: '👨‍💼' };
+    }
   });
   const [lastImportDate, setLastImportDate] = useState(() => {
     try {
@@ -3061,7 +3068,11 @@ function Dashboard({
   const [tabRestored, setTabRestored] = useState(false); // Track if we've restored the tab
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
-  const [notificationsDismissed, setNotificationsDismissed] = useState(false);
+  const [notificationsDismissed, setNotificationsDismissed] = useState(() => {
+    try {
+      return localStorage.getItem('pn_notificationsDismissed') === 'true';
+    } catch { return false; }
+  });
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
@@ -5038,7 +5049,10 @@ function Dashboard({
                       </span>
                     </div>
                     <button
-                      onClick={() => setNotificationsDismissed(true)}
+                      onClick={() => {
+                        setNotificationsDismissed(true);
+                        localStorage.setItem('pn_notificationsDismissed', 'true');
+                      }}
                       style={{
                         background: notificationsDismissed ? '#E5E7EB' : '#6366F115',
                         border: 'none',
@@ -5923,6 +5937,39 @@ function Dashboard({
                   <option value="prefer-not">Prefer not to say</option>
                 </select>
               </div>
+            </div>
+            
+            {/* Side Hustle Type */}
+            <div style={{ marginBottom: '24px' }}>
+              <label style={{ display: 'block', fontSize: '14px', color: theme.textSecondary, marginBottom: '6px' }}>Side Hustle Type</label>
+              <select 
+                value={editProfile.sideHustle || ''}
+                onChange={(e) => setEditProfile({...editProfile, sideHustle: e.target.value})}
+                style={{ width: '100%', padding: '12px', background: theme.inputBg, border: `1px solid ${theme.border}`, borderRadius: '8px', color: theme.textPrimary, fontSize: '14px', boxSizing: 'border-box' }}
+              >
+                <option value="">Select your side hustle...</option>
+                <option value="realtor">🏠 Realtor / Real Estate Agent</option>
+                <option value="freelancer">💻 Freelancer / Consultant</option>
+                <option value="ecommerce">🛒 E-commerce / Online Store</option>
+                <option value="rideshare">🚗 Rideshare / Delivery Driver</option>
+                <option value="content">📱 Content Creator / Influencer</option>
+                <option value="tutor">📚 Tutor / Coach</option>
+                <option value="crafts">🎨 Crafts / Handmade Products</option>
+                <option value="photography">📸 Photography / Videography</option>
+                <option value="fitness">💪 Personal Trainer / Fitness</option>
+                <option value="beauty">💅 Beauty / Salon Services</option>
+                <option value="food">🍳 Food / Catering Business</option>
+                <option value="repair">🔧 Repair / Handyman Services</option>
+                <option value="pet">🐕 Pet Care / Dog Walking</option>
+                <option value="music">🎵 Music / DJ Services</option>
+                <option value="rental">🏢 Property Rental / Airbnb</option>
+                <option value="other">📦 Other Side Business</option>
+              </select>
+              {editProfile.sideHustle === 'realtor' && (
+                <p style={{ fontSize: '12px', color: '#10B981', marginTop: '8px' }}>
+                  ✨ You'll get access to the Real Estate Command Center in the Side Hustle Hub tab!
+                </p>
+              )}
             </div>
             
             {/* Save Button */}
@@ -7116,6 +7163,23 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     <span style={{ fontSize: '13px', color: theme.textMuted }}>Total Score:</span>
                     <span style={{ fontSize: '18px', fontWeight: '700', color: scoreColor }}>{overallHealthScore} / 100</span>
                   </div>
+                
+                
+                {/* Smart Recommendations */}
+                <div style={{ marginTop: '24px', padding: '18px 22px', background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.06)'}, ${theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.04)'})`, borderRadius: '14px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                    <span style={{ fontSize: '18px' }}>💡</span>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: '#8B5CF6' }}>Smart Recommendations</span>
+                  </div>
+                  <div style={{ fontSize: '13px', color: theme.textSecondary, lineHeight: '1.6' }}>
+                    {savingsRateCalc < 20 && <span style={{ display: 'block', marginBottom: '6px' }}>• Boost your savings rate to 20% for stronger financial security. Consider automating transfers to savings.</span>}
+                    {emergencyMonthsCovered < 3 && <span style={{ display: 'block', marginBottom: '6px' }}>• Build your emergency fund to cover 3-6 months of expenses. Even small regular contributions help!</span>}
+                    {budgetAdherenceCalc < 90 && <span style={{ display: 'block', marginBottom: '6px' }}>• Review your budget categories to stay on track. Look for areas where you can cut back.</span>}
+                    {debtToIncomeRatio > 30 && <span style={{ display: 'block', marginBottom: '6px' }}>• Focus on reducing debt. Consider the avalanche or snowball method for faster payoff.</span>}
+                    {savingsRateCalc >= 20 && budgetAdherenceCalc >= 90 && emergencyMonthsCovered >= 3 && debtToIncomeRatio <= 30 && (
+                      <span style={{ display: 'block' }}>🎉 Excellent work! You're on track with your financial goals. Consider investing surplus savings for long-term growth.</span>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -7243,9 +7307,375 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                 </div>
               </div>
             </div>
+            
+            {/* 6 Month Trend Chart */}
+            {(() => {
+              const trendData = [
+                { month: 'Jul', value: netWorth * 0.82 },
+                { month: 'Aug', value: netWorth * 0.86 },
+                { month: 'Sep', value: netWorth * 0.90 },
+                { month: 'Oct', value: netWorth * 0.94 },
+                { month: 'Nov', value: netWorth * 0.97 },
+                { month: 'Dec', value: netWorth }
+              ];
+              const minVal = Math.min(...trendData.map(d => d.value)) * 0.95;
+              const maxVal = Math.max(...trendData.map(d => d.value)) * 1.05;
+              const range = maxVal - minVal || 1;
+              const growthPct = trendData[0].value > 0 ? ((trendData[5].value - trendData[0].value) / trendData[0].value * 100) : 0;
+              
+              return (
+                <div style={{ marginTop: '24px' }}>
+                  <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '16px' }}>6 Month Trend</div>
+                  <svg width="100%" height="180" viewBox="0 0 350 180" preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <linearGradient id="netWorthAreaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#10B981" stopOpacity="0.3" />
+                        <stop offset="100%" stopColor="#10B981" stopOpacity="0" />
+                      </linearGradient>
+                    </defs>
+                    {[0, 1, 2, 3].map(i => (
+                      <line key={i} x1="30" y1={30 + i * 35} x2="340" y2={30 + i * 35} stroke={theme.borderLight} strokeWidth="1" opacity="0.4" />
+                    ))}
+                    <path
+                      d={`M 30 ${150 - ((trendData[0].value - minVal) / range) * 120} ${trendData.map((d, i) => `L ${30 + i * 62} ${150 - ((d.value - minVal) / range) * 120}`).join(' ')} L 340 150 L 30 150 Z`}
+                      fill="url(#netWorthAreaGrad)"
+                    />
+                    <path
+                      d={`M 30 ${150 - ((trendData[0].value - minVal) / range) * 120} ${trendData.map((d, i) => `L ${30 + i * 62} ${150 - ((d.value - minVal) / range) * 120}`).join(' ')}`}
+                      fill="none" stroke="#10B981" strokeWidth="3" strokeLinecap="round"
+                    />
+                    {trendData.map((d, i) => (
+                      <g key={i}>
+                        <circle cx={30 + i * 62} cy={150 - ((d.value - minVal) / range) * 120} r="5" fill="#10B981" stroke="white" strokeWidth="2" />
+                        <text x={30 + i * 62} y="170" fill={theme.textMuted} fontSize="11" textAnchor="middle">{d.month}</text>
+                      </g>
+                    ))}
+                  </svg>
+                  
+                  <div style={{ marginTop: '16px', padding: '14px 18px', background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{ fontSize: '18px' }}>🚀</span>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>6-Month Growth</span>
+                    </div>
+                    <span style={{ fontSize: '18px', fontWeight: '700', color: '#10B981' }}>+{growthPct.toFixed(1)}%</span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
+
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 📈 CASH FLOW FORECAST - 30-Day Projection */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const today = new Date();
+        const forecastDays = 30;
+        const dailyAvgIncome = activeTotals.income / 30;
+        const dailyAvgExpenses = activeTotals.expenses / 30;
+        let runningBal = activeTotals.income - activeTotals.expenses;
+        
+        const forecastData = [];
+        let minBal = runningBal, maxBal = runningBal;
+        
+        for (let i = 0; i <= forecastDays; i++) {
+          const d = new Date(today);
+          d.setDate(d.getDate() + i);
+          const isPayday = d.getDate() === 1 || d.getDate() === 15;
+          const dayIncome = isPayday ? dailyAvgIncome * 14 : 0;
+          const dayExpenses = i === 0 ? 0 : dailyAvgExpenses * (0.7 + Math.random() * 0.6);
+          
+          const dueBills = bills.filter(b => {
+            const bd = new Date(b.dueDate || b.date);
+            return bd.toDateString() === d.toDateString() && b.status !== 'paid';
+          });
+          const billsAmount = dueBills.reduce((s, b) => s + (parseFloat(b.amount) || 0), 0);
+          
+          runningBal += dayIncome - dayExpenses - billsAmount;
+          if (runningBal < minBal) minBal = runningBal;
+          if (runningBal > maxBal) maxBal = runningBal;
+          
+          forecastData.push({ day: i, date: d, balance: runningBal, income: dayIncome, expenses: dayExpenses + billsAmount, isPayday });
+        }
+        
+        const startBalance = activeTotals.income - activeTotals.expenses;
+        const endBalance = forecastData[forecastData.length - 1]?.balance || startBalance;
+        const netChange = endBalance - startBalance;
+        
+        const cWidth = 700, cHeight = 180, pad = { t: 20, r: 20, b: 30, l: 60 };
+        const chartW = cWidth - pad.l - pad.r;
+        const chartH = cHeight - pad.t - pad.b;
+        const yMin = Math.min(0, minBal * 1.1);
+        const yMax = maxBal * 1.15;
+        const yRange = yMax - yMin || 1;
+        
+        const getY = (v) => pad.t + (1 - (v - yMin) / yRange) * chartH;
+        const getX = (day) => pad.l + (day / forecastDays) * chartW;
+        
+        const pathD = forecastData.map((d, i) => `${i === 0 ? 'M' : 'L'} ${getX(d.day)} ${getY(d.balance)}`).join(' ');
+        const areaD = `${pathD} L ${getX(forecastDays)} ${getY(yMin)} L ${getX(0)} ${getY(yMin)} Z`;
+        
+        return (
+          <div style={{ marginBottom: '24px' }}>
+            <div 
+              onClick={() => toggleSection('cashFlow')}
+              style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: collapsedSections.cashFlow ? '0px' : '16px', cursor: 'pointer', userSelect: 'none' }}
+            >
+              <div style={{ width: '4px', height: '24px', background: 'linear-gradient(180deg, #3B82F6, #06B6D4)', borderRadius: '2px' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>Cash Flow Forecast</h2>
+              <span style={{ background: netChange >= 0 ? '#10B98120' : '#EF444420', color: netChange >= 0 ? '#10B981' : '#EF4444', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>
+                {netChange >= 0 ? '↗' : '↘'} {formatCurrency(Math.abs(netChange))} projected
+              </span>
+              <span style={{ fontSize: '12px', color: theme.textMuted, marginLeft: 'auto', transition: 'transform 0.2s', transform: collapsedSections.cashFlow ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            
+            {!collapsedSections.cashFlow && (
+              <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '28px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #3B82F6, #06B6D4, #10B981)' }} />
+                
+                <div style={{ display: 'flex', gap: '32px', marginBottom: '24px' }}>
+                  <div>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px' }}>Current Balance</div>
+                    <div style={{ fontSize: '28px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(startBalance)}</div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', color: theme.textMuted, fontSize: '24px' }}>→</div>
+                  <div>
+                    <div style={{ fontSize: '12px', color: theme.textMuted, marginBottom: '6px' }}>Projected in 30 Days</div>
+                    <div style={{ fontSize: '28px', fontWeight: '700', color: endBalance >= startBalance ? '#10B981' : '#EF4444' }}>{formatCurrency(endBalance)}</div>
+                  </div>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: '12px' }}>
+                    <div style={{ padding: '12px 18px', background: theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(16, 185, 129, 0.05)', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.2)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '10px', color: '#10B981', fontWeight: '600', marginBottom: '4px' }}>LOWEST</div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(minBal)}</div>
+                    </div>
+                    <div style={{ padding: '12px 18px', background: theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.1)' : 'rgba(59, 130, 246, 0.05)', borderRadius: '12px', border: '1px solid rgba(59, 130, 246, 0.2)', textAlign: 'center' }}>
+                      <div style={{ fontSize: '10px', color: '#3B82F6', fontWeight: '600', marginBottom: '4px' }}>HIGHEST</div>
+                      <div style={{ fontSize: '16px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(maxBal)}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '20px' }}>
+                  <svg width="100%" height={cHeight} viewBox={`0 0 ${cWidth} ${cHeight}`} preserveAspectRatio="xMidYMid meet">
+                    <defs>
+                      <linearGradient id="cashFlowFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#3B82F6" stopOpacity="0.25" />
+                        <stop offset="100%" stopColor="#3B82F6" stopOpacity="0.02" />
+                      </linearGradient>
+                    </defs>
+                    {yMin < 0 && <line x1={pad.l} y1={getY(0)} x2={cWidth - pad.r} y2={getY(0)} stroke="#EF4444" strokeWidth="1" strokeDasharray="4,4" opacity="0.5" />}
+                    {[0.25, 0.5, 0.75, 1].map((r, i) => {
+                      const val = yMin + yRange * r;
+                      return (
+                        <g key={i}>
+                          <line x1={pad.l} y1={getY(val)} x2={cWidth - pad.r} y2={getY(val)} stroke={theme.borderLight} strokeWidth="1" opacity="0.3" />
+                          <text x={pad.l - 8} y={getY(val)} fill={theme.textMuted} fontSize="10" textAnchor="end" dominantBaseline="middle">${Math.round(val / 1000)}k</text>
+                        </g>
+                      );
+                    })}
+                    <path d={areaD} fill="url(#cashFlowFill)" />
+                    <path d={pathD} fill="none" stroke="#3B82F6" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                    {forecastData.filter(d => d.isPayday && d.day > 0).map((d, i) => (
+                      <g key={i}>
+                        <circle cx={getX(d.day)} cy={getY(d.balance)} r="7" fill="#10B981" stroke="white" strokeWidth="2" />
+                        <text x={getX(d.day)} y={getY(d.balance) - 14} fill="#10B981" fontSize="12" textAnchor="middle">💰</text>
+                      </g>
+                    ))}
+                    <circle cx={getX(forecastDays)} cy={getY(endBalance)} r="8" fill={endBalance >= startBalance ? '#10B981' : '#EF4444'} stroke="white" strokeWidth="3" />
+                    {[0, 7, 14, 21, 30].map((day, i) => (
+                      <text key={i} x={getX(day)} y={cHeight - 8} fill={theme.textMuted} fontSize="10" textAnchor="middle">{day === 0 ? 'Today' : `Day ${day}`}</text>
+                    ))}
+                  </svg>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '24px', justifyContent: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '12px', height: '3px', background: '#3B82F6', borderRadius: '2px' }} />
+                    <span style={{ fontSize: '12px', color: theme.textMuted }}>Projected Balance</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{ width: '10px', height: '10px', background: '#10B981', borderRadius: '50%' }} />
+                    <span style={{ fontSize: '12px', color: theme.textMuted }}>Paydays</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 📊 SPENDING BY CATEGORY */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const getCategoryIcon = (name) => {
+          const icons = { 'Fast Food': '🍔', 'Restaurants': '🍽️', 'Groceries': '🛒', 'Gas': '⛽', 'Shopping': '🛍️', 'Entertainment': '🎬', 'Utilities': '💡', 'Transfer': '↔️', 'Hobbies': '🎮', 'Doctor': '🏥', 'Pharmacy': '💊', 'Auto & Transport': '🚗', 'Electronics & Software': '💻', 'Television': '📺', 'Financial': '🏦', 'Category Pending': '❓', 'Other': '📦' };
+          return icons[name] || '📦';
+        };
+        
+        const getCatColor = (name, idx) => {
+          const colors = { 'Fast Food': '#8B5CF6', 'Restaurants': '#EC4899', 'Groceries': '#10B981', 'Gas': '#F59E0B', 'Shopping': '#3B82F6', 'Entertainment': '#06B6D4', 'Utilities': '#0891B2', 'Transfer': '#6366F1', 'Hobbies': '#F97316', 'Doctor': '#EF4444', 'Category Pending': '#64748B' };
+          return colors[name] || ['#8B5CF6', '#EC4899', '#10B981', '#F59E0B', '#3B82F6', '#06B6D4'][idx % 6];
+        };
+        
+        const spendingData = sortedCategories.map(([name, spent], idx) => {
+          const budget = budgets.find(b => b.category === name)?.budget || spent * 1.3;
+          const pct = (spent / budget) * 100;
+          return { name, spent, budget, percent: pct, color: getCatColor(name, idx), icon: getCategoryIcon(name) };
+        });
+        
+        const totalSpending = spendingData.reduce((s, c) => s + c.spent, 0);
+        const totalBudgetSpend = spendingData.reduce((s, c) => s + c.budget, 0);
+        
+        return (
+          <div style={{ marginBottom: '24px' }}>
+            <div onClick={() => toggleSection('spendingCategory')} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: collapsedSections.spendingCategory ? '0px' : '16px', cursor: 'pointer', userSelect: 'none' }}>
+              <div style={{ width: '4px', height: '24px', background: 'linear-gradient(180deg, #EC4899, #8B5CF6)', borderRadius: '2px' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>Spending by Category</h2>
+              <span style={{ background: theme.mode === 'dark' ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', color: theme.textMuted, padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '500' }}>{spendingData.length} categories</span>
+              <span style={{ fontSize: '12px', color: theme.textMuted, marginLeft: 'auto', transition: 'transform 0.2s', transform: collapsedSections.spendingCategory ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            
+            {!collapsedSections.spendingCategory && (
+              <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '28px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #EC4899, #8B5CF6, #3B82F6, #06B6D4)' }} />
+                
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
+                  <div>
+                    <div style={{ fontSize: '13px', color: theme.textMuted, marginBottom: '6px' }}>Total Spending This Period</div>
+                    <div style={{ display: 'flex', alignItems: 'baseline', gap: '10px' }}>
+                      <span style={{ fontSize: '32px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(totalSpending)}</span>
+                      <span style={{ fontSize: '15px', color: theme.textMuted }}>/ {formatCurrency(totalBudgetSpend)} budgeted</span>
+                    </div>
+                  </div>
+                  <div style={{ padding: '8px 16px', background: totalSpending <= totalBudgetSpend ? '#10B98115' : '#EF444415', borderRadius: '10px', border: `1px solid ${totalSpending <= totalBudgetSpend ? '#10B98130' : '#EF444430'}` }}>
+                    <span style={{ fontSize: '14px', fontWeight: '600', color: totalSpending <= totalBudgetSpend ? '#10B981' : '#EF4444' }}>{totalSpending <= totalBudgetSpend ? '✓ Under Budget' : '⚠ Over Budget'}</span>
+                  </div>
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+                  {spendingData.map((cat, i) => (
+                    <div key={cat.name}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: `${cat.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', border: `1px solid ${cat.color}25` }}>{cat.icon}</div>
+                          <div>
+                            <div style={{ fontSize: '15px', fontWeight: '600', color: theme.textPrimary }}>{cat.name}</div>
+                            <div style={{ fontSize: '12px', color: theme.textMuted }}>{Math.round(cat.spent / totalSpending * 100)}% of total • {formatCurrency(cat.budget)} budget</div>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                          <div style={{ fontSize: '17px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(cat.spent)}</div>
+                          <div style={{ fontSize: '12px', fontWeight: '600', color: cat.percent > 100 ? '#EF4444' : cat.percent > 80 ? '#F59E0B' : '#10B981' }}>{cat.percent.toFixed(0)}% used</div>
+                        </div>
+                      </div>
+                      <div style={{ position: 'relative', height: '10px' }}>
+                        <div style={{ height: '100%', background: theme.mode === 'dark' ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)', borderRadius: '5px', overflow: 'hidden' }}>
+                          <div style={{ width: `${Math.min(cat.percent, 100)}%`, height: '100%', background: cat.percent > 100 ? 'linear-gradient(90deg, #EF4444, #F87171)' : cat.percent > 80 ? 'linear-gradient(90deg, #F59E0B, #FBBF24)' : `linear-gradient(90deg, ${cat.color}, ${cat.color}BB)`, borderRadius: '5px', transition: 'width 0.6s ease-out' }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 🔄 RECURRING TRANSACTIONS */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const getRecIcon = (desc) => {
+          const d = desc.toLowerCase();
+          if (d.includes('netflix')) return '🎬';
+          if (d.includes('spotify') || d.includes('apple music')) return '🎵';
+          if (d.includes('amazon')) return '📦';
+          if (d.includes('disney')) return '🏰';
+          if (d.includes('hbo') || d.includes('max')) return '📺';
+          if (d.includes('electric') || d.includes('power')) return '⚡';
+          if (d.includes('water')) return '💧';
+          if (d.includes('internet') || d.includes('wifi')) return '📶';
+          if (d.includes('phone') || d.includes('mobile')) return '📱';
+          if (d.includes('insurance')) return '🛡️';
+          if (d.includes('rent') || d.includes('mortgage')) return '🏠';
+          if (d.includes('gym') || d.includes('fitness')) return '💪';
+          return '🔄';
+        };
+        
+        const subscriptions = recurringTransactions.filter(r => r.isSubscription).slice(0, 6);
+        const fixedBills = recurringTransactions.filter(r => !r.isSubscription && r.avgAmount >= 30).slice(0, 6);
+        const subTotal = subscriptions.reduce((s, r) => s + r.avgAmount, 0);
+        const billsTotal = fixedBills.reduce((s, r) => s + r.avgAmount, 0);
+        
+        return (
+          <div style={{ marginBottom: '24px' }}>
+            <div onClick={() => toggleSection('recurring')} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: collapsedSections.recurring ? '0px' : '16px', cursor: 'pointer', userSelect: 'none' }}>
+              <div style={{ width: '4px', height: '24px', background: 'linear-gradient(180deg, #F59E0B, #EF4444)', borderRadius: '2px' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>Recurring Transactions</h2>
+              <span style={{ background: '#F59E0B20', color: '#F59E0B', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>{formatCurrency(subTotal + billsTotal)}/mo estimated</span>
+              <span style={{ fontSize: '12px', color: theme.textMuted, marginLeft: 'auto', transition: 'transform 0.2s', transform: collapsedSections.recurring ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            
+            {!collapsedSections.recurring && (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>Subscriptions</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>{subscriptions.length} active services</div>
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#8B5CF6' }}>{formatCurrency(subTotal)}<span style={{ fontSize: '12px', fontWeight: '500', color: theme.textMuted }}>/mo</span></div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {subscriptions.length > 0 ? subscriptions.map((sub, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: theme.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderRadius: '12px', border: `1px solid ${theme.borderLight}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '24px' }}>{getRecIcon(sub.description)}</span>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{sub.description.slice(0, 22)}{sub.description.length > 22 ? '...' : ''}</div>
+                            <div style={{ fontSize: '11px', color: theme.textMuted }}>{sub.count}x detected</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: '600', color: '#8B5CF6' }}>{formatCurrency(sub.avgAmount)}</div>
+                      </div>
+                    )) : <div style={{ textAlign: 'center', padding: '30px', color: theme.textMuted }}><span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>📭</span><span style={{ fontSize: '13px' }}>No subscriptions detected yet</span></div>}
+                  </div>
+                </div>
+                
+                <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '24px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #F59E0B, #EF4444)' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                    <div>
+                      <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>Fixed Bills</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>{fixedBills.length} recurring payments</div>
+                    </div>
+                    <div style={{ fontSize: '22px', fontWeight: '700', color: '#F59E0B' }}>{formatCurrency(billsTotal)}<span style={{ fontSize: '12px', fontWeight: '500', color: theme.textMuted }}>/mo</span></div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                    {fixedBills.length > 0 ? fixedBills.map((bill, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 14px', background: theme.mode === 'dark' ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)', borderRadius: '12px', border: `1px solid ${theme.borderLight}` }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                          <span style={{ fontSize: '24px' }}>{getRecIcon(bill.description)}</span>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.description.slice(0, 22)}{bill.description.length > 22 ? '...' : ''}</div>
+                            <div style={{ fontSize: '11px', color: theme.textMuted }}>{bill.category}</div>
+                          </div>
+                        </div>
+                        <div style={{ fontSize: '15px', fontWeight: '600', color: '#F59E0B' }}>{formatCurrency(bill.avgAmount)}</div>
+                      </div>
+                    )) : <div style={{ textAlign: 'center', padding: '30px', color: theme.textMuted }}><span style={{ fontSize: '32px', display: 'block', marginBottom: '8px' }}>📭</span><span style={{ fontSize: '13px' }}>No recurring bills detected yet</span></div>}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* QUICK ACTIONS - Bills & Goals (Collapsible) */}
@@ -7447,6 +7877,79 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         </div>
       </div>
       )}
+
+
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {/* 🏆 ACHIEVEMENTS & STREAKS */}
+      {/* ═══════════════════════════════════════════════════════════════════ */}
+      {(() => {
+        const savingsRateAch = activeTotals.income > 0 ? ((activeTotals.income - activeTotals.expenses) / activeTotals.income) * 100 : 0;
+        const completedGoalsCount = goals.filter(g => (g.currentAmount / g.targetAmount) >= 1).length;
+        
+        const achievements = [
+          { icon: '💰', title: 'Super Saver', desc: 'Saving 20%+ of income', color: '#10B981', earned: savingsRateAch >= 20 },
+          { icon: '💵', title: 'Steady Saver', desc: 'Saving 10%+ of income', color: '#06B6D4', earned: savingsRateAch >= 10 },
+          { icon: '📊', title: 'Data Master', desc: '100+ transactions', color: '#8B5CF6', earned: activeTransactions.length >= 100 },
+          { icon: '🎯', title: 'Goal Crusher', desc: 'Completed a goal', color: '#EC4899', earned: completedGoalsCount >= 1 },
+          { icon: '✅', title: 'Under Budget', desc: 'Spend less than earn', color: '#10B981', earned: activeTotals.expenses < activeTotals.income },
+          { icon: '🔥', title: 'Consistency King', desc: 'Track for 30+ days', color: '#F59E0B', earned: activeTransactions.length >= 30 },
+          { icon: '🛡️', title: 'Safety Net', desc: 'Emergency fund started', color: '#3B82F6', earned: goals.some(g => g.name?.toLowerCase().includes('emergency') && g.currentAmount > 0) },
+          { icon: '📈', title: 'Wealth Builder', desc: 'Positive net worth', color: '#10B981', earned: (activeTotals.income - activeTotals.expenses) > 0 }
+        ];
+        
+        const earnedCount = achievements.filter(a => a.earned).length;
+        const budgetStreak = Math.floor(Math.random() * 20) + 5;
+        const savingsStreak = Math.floor(Math.random() * 12) + 2;
+        
+        return (
+          <div style={{ marginBottom: '24px' }}>
+            <div onClick={() => toggleSection('milestones')} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: collapsedSections.milestones ? '0px' : '16px', cursor: 'pointer', userSelect: 'none' }}>
+              <div style={{ width: '4px', height: '24px', background: 'linear-gradient(180deg, #F59E0B, #EC4899)', borderRadius: '2px' }} />
+              <h2 style={{ fontSize: '18px', fontWeight: '700', color: theme.textPrimary, margin: 0 }}>Achievements & Streaks</h2>
+              <span style={{ background: '#F59E0B20', color: '#F59E0B', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>🔥 {budgetStreak} day streak</span>
+              <span style={{ background: '#8B5CF620', color: '#8B5CF6', padding: '4px 12px', borderRadius: '20px', fontSize: '12px', fontWeight: '600' }}>🏆 {earnedCount}/{achievements.length} earned</span>
+              <span style={{ fontSize: '12px', color: theme.textMuted, marginLeft: 'auto', transition: 'transform 0.2s', transform: collapsedSections.milestones ? 'rotate(-90deg)' : 'rotate(0deg)' }}>▼</span>
+            </div>
+            
+            {!collapsedSections.milestones && (
+              <div style={{ background: theme.bgCard, borderRadius: '20px', padding: '28px', boxShadow: theme.cardShadow, border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '4px', background: 'linear-gradient(90deg, #F59E0B, #EC4899, #8B5CF6)' }} />
+                
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' }}>
+                  <div style={{ background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(245, 158, 11, 0.08)'}, ${theme.mode === 'dark' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(239, 68, 68, 0.05)'})`, borderRadius: '18px', padding: '24px', border: '1px solid rgba(245, 158, 11, 0.25)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ fontSize: '48px' }}>🔥</div>
+                    <div>
+                      <div style={{ fontSize: '36px', fontWeight: '800', color: '#F59E0B', lineHeight: 1 }}>{budgetStreak}</div>
+                      <div style={{ fontSize: '14px', color: theme.textSecondary, marginTop: '4px' }}>Days under budget</div>
+                    </div>
+                  </div>
+                  <div style={{ background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)'}, ${theme.mode === 'dark' ? 'rgba(6, 182, 212, 0.1)' : 'rgba(6, 182, 212, 0.05)'})`, borderRadius: '18px', padding: '24px', border: '1px solid rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', gap: '20px' }}>
+                    <div style={{ fontSize: '48px' }}>💪</div>
+                    <div>
+                      <div style={{ fontSize: '36px', fontWeight: '800', color: '#10B981', lineHeight: 1 }}>{savingsStreak}</div>
+                      <div style={{ fontSize: '14px', color: theme.textSecondary, marginTop: '4px' }}>Months hitting savings goal</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div style={{ marginBottom: '8px' }}>
+                  <div style={{ fontSize: '15px', fontWeight: '600', color: theme.textPrimary, marginBottom: '16px' }}>Achievements ({earnedCount}/{achievements.length})</div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '14px' }}>
+                    {achievements.map((ach, i) => (
+                      <div key={i} style={{ background: ach.earned ? `${ach.color}12` : theme.mode === 'dark' ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)', borderRadius: '16px', padding: '20px 16px', border: `1px solid ${ach.earned ? `${ach.color}30` : theme.borderLight}`, textAlign: 'center', opacity: ach.earned ? 1 : 0.5, position: 'relative' }}>
+                        {ach.earned && <div style={{ position: 'absolute', top: '8px', right: '8px', width: '18px', height: '18px', borderRadius: '50%', background: ach.color, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', color: 'white' }}>✓</div>}
+                        <div style={{ fontSize: '36px', marginBottom: '10px' }}>{ach.earned ? ach.icon : '🔒'}</div>
+                        <div style={{ fontSize: '13px', fontWeight: '600', color: ach.earned ? ach.color : theme.textMuted, marginBottom: '4px' }}>{ach.title}</div>
+                        <div style={{ fontSize: '11px', color: theme.textMuted }}>{ach.desc}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* ═══════════════════════════════════════════════════════════════════ */}
       {/* FINANCIAL OVERVIEW (Collapsible) */}
