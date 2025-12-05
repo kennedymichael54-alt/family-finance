@@ -1616,7 +1616,7 @@ function App() {
       const savedProfile = localStorage.getItem(`pn_profile_${userId}`);
       if (savedProfile) {
         localProfile = JSON.parse(savedProfile);
-        localHasRealData = !!(localProfile.firstName || localProfile.lastName || localProfile.phone);
+        localHasRealData = !!(localProfile.firstName || localProfile.lastName || localProfile.phone || localProfile.sideHustle);
         console.log('📦 [Data] Found localStorage profile:', localProfile.firstName, localProfile.lastName, '| hasRealData:', localHasRealData);
       }
     } catch (e) {
@@ -1659,7 +1659,7 @@ function App() {
         }
         
         // Check if DB profile has actual meaningful data
-        const dbHasRealData = !!(loadedProfile.firstName || loadedProfile.lastName || loadedProfile.phone || loadedProfile.dateOfBirth);
+        const dbHasRealData = !!(loadedProfile.firstName || loadedProfile.lastName || loadedProfile.phone || loadedProfile.dateOfBirth || loadedProfile.sideHustle);
         
         console.log('🔍 [Data] DB profile check - hasRealData:', dbHasRealData, '| firstName:', loadedProfile.firstName, '| lastName:', loadedProfile.lastName);
         
@@ -1791,10 +1791,10 @@ function App() {
     console.log('💾 [Profile] handleUpdateProfile called:', newProfile);
     
     // VALIDATION: Check if the new profile has any meaningful data
-    const hasNewData = !!(newProfile.firstName || newProfile.lastName || newProfile.phone || newProfile.dateOfBirth || newProfile.gender);
+    const hasNewData = !!(newProfile.firstName || newProfile.lastName || newProfile.phone || newProfile.dateOfBirth || newProfile.gender || newProfile.sideHustle || newProfile.sidehustleName);
     
     // Check if current profile has data
-    const currentHasData = !!(profile.firstName || profile.lastName || profile.phone);
+    const currentHasData = !!(profile.firstName || profile.lastName || profile.phone || profile.sideHustle);
     
     // PROTECTION: Don't overwrite existing data with empty data unless user explicitly provided empty values
     if (!hasNewData && currentHasData && forceUpdate) {
