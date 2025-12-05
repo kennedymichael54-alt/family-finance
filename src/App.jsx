@@ -12,6 +12,7 @@ import ReportsTab from './components/ReportsTab';
 import RetirementTab from './components/RetirementTab';
 import SalesTrackerTab from './components/SalesTrackerTab';
 import BizBudgetHub from './components/BizBudgetHub';
+import RealEstateCommandCenter from './components/RealEstateCommandCenter';
 import ProsperNestLandingV4 from './components/ProsperNestLandingV4';
 // Default data - baked in from real bank/retirement imports
 import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultData';
@@ -1344,6 +1345,7 @@ const saveProfileToDB = async (userId, profile, forceUpdate = false) => {
       gender: profile.gender,
       photo_url: profile.photoUrl,
       sidehustle_name: profile.sidehustleName,
+      side_hustle: profile.sideHustle,
       account_labels: profile.accountLabels ? JSON.stringify(profile.accountLabels) : null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
@@ -1374,6 +1376,7 @@ const dbToAppProfile = (p) => {
     gender: p?.gender || '',
     photoUrl: p?.photo_url || '',
     sidehustleName: p?.sidehustle_name || '',
+    sideHustle: p?.side_hustle || '',
     accountLabels
   };
 };
@@ -1577,7 +1580,8 @@ function App() {
     dateOfBirth: '',
     gender: '',
     photoUrl: '',
-    sidehustleName: ''
+    sidehustleName: '',
+    sideHustle: ''
   });
   const [userPreferences, setUserPreferences] = useState({
     theme: 'light',
@@ -1808,7 +1812,8 @@ function App() {
         dateOfBirth: newProfile.dateOfBirth || profile.dateOfBirth,
         gender: newProfile.gender || profile.gender,
         photoUrl: newProfile.photoUrl || profile.photoUrl,
-        sidehustleName: newProfile.sidehustleName || profile.sidehustleName
+        sidehustleName: newProfile.sidehustleName || profile.sidehustleName,
+        sideHustle: newProfile.sideHustle || profile.sideHustle
       };
       
       console.log('🛡️ [Profile] Merged profile to preserve data:', mergedProfile.firstName, mergedProfile.lastName);
@@ -3268,7 +3273,8 @@ function Dashboard({
         dateOfBirth: profile.dateOfBirth || '',
         gender: profile.gender || '',
         photoUrl: profile.photoUrl || '',
-        sidehustleName: profile.sidehustleName || ''
+        sidehustleName: profile.sidehustleName || '',
+        sideHustle: profile.sideHustle || ''
       });
     }
   }, [showManageAccountModal, profile, user?.email]);
@@ -3413,7 +3419,8 @@ function Dashboard({
         dateOfBirth: '',
         gender: '',
         photoUrl: '',
-        sidehustleName: ''
+        sidehustleName: '',
+        sideHustle: ''
       });
       
       console.log('✅ [Auth] State cleared, navigating to landing');
@@ -3607,7 +3614,11 @@ function Dashboard({
       case 'home':
         return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
       case 'sales':
-        return <GradientSection tab="sales"><SalesTrackerTab theme={theme} lastImportDate={lastImportDate} userId={user?.id} userEmail={user?.email} /></GradientSection>;
+        // Conditional rendering: Real Estate users get specialized Command Center
+        if (profile.sideHustle === 'real-estate') {
+          return <GradientSection tab="sales"><RealEstateCommandCenter theme={theme} lastImportDate={lastImportDate} userId={user?.id} userEmail={user?.email} profile={profile} onUpdateProfile={saveProfileToDB} /></GradientSection>;
+        }
+        return <GradientSection tab="sales"><SalesTrackerTab theme={theme} lastImportDate={lastImportDate} userId={user?.id} userEmail={user?.email} sideHustle={profile.sideHustle} profile={profile} /></GradientSection>;
       case 'budget':
         return <GradientSection tab="budget"><BudgetTab transactions={transactions} onNavigateToImport={() => setActiveTab('import')} theme={theme} lastImportDate={lastImportDate} /></GradientSection>;
       case 'transactions':
