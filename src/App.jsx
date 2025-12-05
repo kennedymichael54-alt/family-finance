@@ -2201,22 +2201,28 @@ function App() {
         setTasks(dbData.tasks.map(dbToAppTask));
       }
       
-      // Load user preferences/settings
-      if (dbData.settings) {
-        const prefs = {
-          theme: dbData.settings.theme || 'light',
-          language: dbData.settings.language || 'en',
-          avatar: dbData.settings.avatar || '👨‍💼'
-        };
-        setUserPreferences(prefs);
-        
-        // Also update localStorage for immediate access
-        localStorage.setItem('pn_darkMode', prefs.theme === 'dark' ? 'true' : 'false');
-        localStorage.setItem('pn_userAvatar', prefs.avatar);
-        if (dbData.settings.last_import_date) {
-          setLastImportDate(dbData.settings.last_import_date);
-          localStorage.setItem('pn_lastImportDate', dbData.settings.last_import_date);
-        }
+      // Load user preferences/settings - localStorage is SOURCE OF TRUTH
+      // Only use DB values if localStorage doesn't have them
+      const localAvatar = localStorage.getItem('pn_userAvatar');
+      const localTheme = localStorage.getItem('pn_darkMode');
+      
+      const prefs = {
+        theme: localTheme !== null ? (localTheme === 'true' ? 'dark' : 'light') : (dbData.settings?.theme || 'light'),
+        language: dbData.settings?.language || 'en',
+        avatar: localAvatar || dbData.settings?.avatar || '👨‍💼'
+      };
+      setUserPreferences(prefs);
+      
+      // Update localStorage to ensure consistency
+      if (localTheme === null && dbData.settings?.theme) {
+        localStorage.setItem('pn_darkMode', dbData.settings.theme === 'dark' ? 'true' : 'false');
+      }
+      if (!localAvatar && dbData.settings?.avatar) {
+        localStorage.setItem('pn_userAvatar', dbData.settings.avatar);
+      }
+      if (dbData.settings?.last_import_date) {
+        setLastImportDate(dbData.settings.last_import_date);
+        localStorage.setItem('pn_lastImportDate', dbData.settings.last_import_date);
       }
       
       // If DB had any data, we're done
@@ -4060,8 +4066,19 @@ function Dashboard({
   }, [showManageAccountModal, profile, user?.email]);
   
   // Avatar from props (synced across devices) - memojiAvatars defined globally
-  const userAvatar = userPreferences?.avatar || '👨‍💼';
+  // Get avatar - localStorage is source of truth
+  const userAvatar = (() => {
+    try {
+      const localAvatar = localStorage.getItem('pn_userAvatar');
+      if (localAvatar) return localAvatar;
+    } catch {}
+    return userPreferences?.avatar || '👨‍💼';
+  })();
   const setUserAvatar = useCallback((newAvatar) => {
+    // Save to localStorage immediately for persistence
+    try {
+      localStorage.setItem('pn_userAvatar', newAvatar);
+    } catch {}
     onUpdatePreferences({ avatar: newAvatar });
   }, [onUpdatePreferences]);
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
@@ -4107,15 +4124,28 @@ function Dashboard({
 
   // Theme state - synced across devices via userPreferences
   const [isDarkMode, setIsDarkMode] = useState(() => {
-    // First check userPreferences (from DB), then fallback to localStorage
+    // First check localStorage (source of truth), then userPreferences
+    try {
+      const saved = localStorage.getItem('pn_darkMode');
+      if (saved !== null) {
+        return saved === 'true';
+      }
+    } catch {}
+    // Fallback to userPreferences
     if (userPreferences?.theme) {
       return userPreferences.theme === 'dark';
     }
-    try {
-      const saved = localStorage.getItem('pn_darkMode');
-      return saved === 'true';
-    } catch { return false; }
+    return false;
   });
+  
+  // Sync isDarkMode when userPreferences prop changes (after DB load)
+  useEffect(() => {
+    // Only sync if localStorage doesn't have a value (first time load)
+    const localTheme = localStorage.getItem('pn_darkMode');
+    if (localTheme === null && userPreferences?.theme) {
+      setIsDarkMode(userPreferences.theme === 'dark');
+    }
+  }, [userPreferences?.theme]);
 
   // Get current theme based on mode
   const theme = isDarkMode ? darkTheme : lightTheme;
@@ -6011,6 +6041,29 @@ function Dashboard({
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={activeTab === 'settings' ? theme.primary : theme.textMuted} strokeWidth="2" strokeLinecap="round">
                   <circle cx="12" cy="12" r="3"/>
                   <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                </svg>
+              </button>
+              
+              {/* Logout Button */}
+              <button
+                onClick={handleSignOut}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '8px',
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  transition: 'background 0.2s'
+                }}
+                title="Logout"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke={theme.textMuted} strokeWidth="2" strokeLinecap="round">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                  <polyline points="16 17 21 12 16 7"/>
+                  <line x1="21" y1="12" x2="9" y2="12"/>
                 </svg>
               </button>
             </div>
