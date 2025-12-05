@@ -44,12 +44,15 @@ const DEMO_EXPENSES = [
   { id: 5, date: '2025-03-15', category: 'Education', description: 'CE Course - Ethics', amount: 75, deductible: true }
 ];
 
-export default function RealEstateCommandCenter({ user, isDarkMode, theme: propTheme }) {
+export default function RealEstateCommandCenter({ user, isDarkMode: isDarkModeProp, theme: propTheme, lastImportDate, userId, userEmail, profile, onUpdateProfile }) {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [listings, setListings] = useState(DEMO_LISTINGS);
   const [expenses, setExpenses] = useState(DEMO_EXPENSES);
   const [showAddListing, setShowAddListing] = useState(false);
   const [showAddExpense, setShowAddExpense] = useState(false);
+
+  // Derive isDarkMode from theme.mode or prop
+  const isDarkMode = isDarkModeProp ?? (propTheme?.mode === 'dark');
 
   const theme = propTheme || {
     textPrimary: isDarkMode ? '#F9FAFB' : '#111827',
