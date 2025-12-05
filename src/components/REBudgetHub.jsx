@@ -124,10 +124,19 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
     const totalInvested = downPayment + closingCosts + p.rentReadyCosts - p.sellerConcessions;
     const loanAmount = p.purchasePrice - downPayment;
     
-    // Monthly Mortgage Payment (P&I)
+    // Monthly Mortgage Payment (P&I) - with safeguard for 0% interest
     const monthlyRate = p.interestRate / 100 / 12;
     const numPayments = p.loanTermYears * 12;
-    const monthlyPI = loanAmount * (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) / (Math.pow(1 + monthlyRate, numPayments) - 1);
+    let monthlyPI = 0;
+    if (monthlyRate > 0 && numPayments > 0) {
+      const factor = Math.pow(1 + monthlyRate, numPayments);
+      monthlyPI = loanAmount * (monthlyRate * factor) / (factor - 1);
+    } else if (numPayments > 0) {
+      // 0% interest - simple division
+      monthlyPI = loanAmount / numPayments;
+    }
+    // Handle NaN
+    if (isNaN(monthlyPI) || !isFinite(monthlyPI)) monthlyPI = 0;
     const annualPI = monthlyPI * 12;
     
     // Income
@@ -159,10 +168,12 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
     const trueCashFlow = annualCashFlow + cashFlowFromDepreciation;
     const monthlyTrueCashFlow = trueCashFlow / 12;
     
-    // Returns
-    const capRate = (noi / p.purchasePrice) * 100;
-    const cashOnCashReturn = (annualCashFlow / totalInvested) * 100;
-    const trueCashOnCashReturn = (trueCashFlow / totalInvested) * 100;
+    // Returns - with safeguards for division by zero
+    const safePurchasePrice = p.purchasePrice || 1;
+    const safeTotalInvested = totalInvested || 1;
+    const capRate = (noi / safePurchasePrice) * 100;
+    const cashOnCashReturn = (annualCashFlow / safeTotalInvested) * 100;
+    const trueCashOnCashReturn = (trueCashFlow / safeTotalInvested) * 100;
     
     // First Year Interest vs Principal
     let remainingBalance = loanAmount;
@@ -181,10 +192,10 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
     
     // ROI Quadrants (Year 1)
     const appreciationReturn = p.purchasePrice * (p.annualAppreciation / 100);
-    const appreciationROI = (appreciationReturn / totalInvested) * 100;
-    const cashFlowROI = (annualCashFlow / totalInvested) * 100;
-    const debtPaydownROI = (totalPrincipalYear1 / totalInvested) * 100;
-    const depreciationROI = (cashFlowFromDepreciation / totalInvested) * 100;
+    const appreciationROI = (appreciationReturn / safeTotalInvested) * 100;
+    const cashFlowROI = (annualCashFlow / safeTotalInvested) * 100;
+    const debtPaydownROI = (totalPrincipalYear1 / safeTotalInvested) * 100;
+    const depreciationROI = (cashFlowFromDepreciation / safeTotalInvested) * 100;
     const totalROI = appreciationROI + cashFlowROI + debtPaydownROI + depreciationROI;
     
     // Generate multi-year projections
@@ -227,7 +238,7 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
       
       // Equity
       const equity = currentValue - loanBalance;
-      const ltv = (loanBalance / currentValue) * 100;
+      const ltv = currentValue > 0 ? (loanBalance / currentValue) * 100 : 0;
       
       // Appreciation this year
       const yearAppreciation = year === 1 
@@ -248,6 +259,10 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
       const costToAccessEquity = currentValue * 0.015; // 1.5% refi cost
       const trueNetEquity = equity - costToAccessEquity;
       
+      // Safe ROI calculations
+      const safeROI = safeTotalInvested > 0 ? (totalReturn / safeTotalInvested) * 100 : 0;
+      const safeAnnualizedROI = safeTotalInvested > 0 ? Math.pow(1 + totalReturn / safeTotalInvested, 1 / year) - 1 : 0;
+      
       projections.push({
         year,
         propertyValue: currentValue,
@@ -265,8 +280,8 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
         cumulativeDebtPaydown,
         cumulativeDepreciation,
         totalReturn,
-        roi: (totalReturn / totalInvested) * 100,
-        annualizedROI: Math.pow(1 + totalReturn / totalInvested, 1 / year) - 1,
+        roi: safeROI,
+        annualizedROI: safeAnnualizedROI,
         capRate: (yearNOI / currentValue) * 100,
         cashOnCash: (yearCashFlow / totalInvested) * 100,
         cashOutRefiEquity: Math.max(0, cashOutRefiEquity),
