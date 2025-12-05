@@ -7529,18 +7529,6 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
     }
   ];
   
-  // Determine the primary hub button based on subscription
-  const getPrimaryHubButton = () => {
-    if (hasREBudgetAccess) {
-      return { text: 'Go to REBudget Hub', action: () => onNavigate('rebudget-analyzer'), icon: '🏢' };
-    } else if (hasBizBudgetAccess) {
-      return { text: 'Go to BizBudget Hub', action: () => onNavigate('bizbudget-dashboard'), icon: '💼' };
-    }
-    return { text: 'Go to HomeBudget Hub', action: () => onNavigate('home'), icon: '🏠' };
-  };
-  
-  const primaryHub = getPrimaryHubButton();
-  
   const cardStyle = {
     background: theme.bgCard,
     borderRadius: '20px',
@@ -7791,15 +7779,16 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
               <span>🚀</span> Get Started - Import Data
             </button>
             
+            {/* HomeBudget Hub - Always available */}
             <button
-              onClick={primaryHub.action}
+              onClick={() => onNavigate('home')}
               style={{
-                padding: '14px 28px',
+                padding: '14px 24px',
                 borderRadius: '12px',
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
+                background: 'rgba(236, 72, 153, 0.2)',
+                border: '1px solid rgba(236, 72, 153, 0.4)',
                 color: 'white',
-                fontSize: '15px',
+                fontSize: '14px',
                 fontWeight: '600',
                 cursor: 'pointer',
                 display: 'flex',
@@ -7808,14 +7797,78 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                 transition: 'all 0.2s'
               }}
               onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.15)';
+                e.currentTarget.style.background = 'rgba(236, 72, 153, 0.3)';
+                e.currentTarget.style.transform = 'translateY(-2px)';
               }}
               onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.1)';
+                e.currentTarget.style.background = 'rgba(236, 72, 153, 0.2)';
+                e.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              <span>{primaryHub.icon}</span> {primaryHub.text}
+              <span>🏠</span> HomeBudget Hub
             </button>
+            
+            {/* BizBudget Hub - Show if user has access */}
+            {hasBizBudgetAccess && (
+              <button
+                onClick={() => onNavigate('bizbudget-dashboard')}
+                style={{
+                  padding: '14px 24px',
+                  borderRadius: '12px',
+                  background: 'rgba(139, 92, 246, 0.2)',
+                  border: '1px solid rgba(139, 92, 246, 0.4)',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(139, 92, 246, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(139, 92, 246, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <span>💼</span> BizBudget Hub
+              </button>
+            )}
+            
+            {/* REBudget Hub - Show if user has access */}
+            {hasREBudgetAccess && (
+              <button
+                onClick={() => onNavigate('rebudget-analyzer')}
+                style={{
+                  padding: '14px 24px',
+                  borderRadius: '12px',
+                  background: 'rgba(6, 182, 212, 0.2)',
+                  border: '1px solid rgba(6, 182, 212, 0.4)',
+                  color: 'white',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'rgba(6, 182, 212, 0.3)';
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'rgba(6, 182, 212, 0.2)';
+                  e.currentTarget.style.transform = 'translateY(0)';
+                }}
+              >
+                <span>🏢</span> REBudget Hub
+              </button>
+            )}
           </div>
         </div>
       </div>
