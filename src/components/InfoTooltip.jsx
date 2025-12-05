@@ -377,6 +377,19 @@ export const FINANCIAL_TOOLTIPS = {
     ]
   },
   
+  transactions: {
+    title: 'Transaction Count',
+    definition: 'The total number of financial transactions recorded in your account for the selected time period.',
+    calculation: 'Count of all deposits and withdrawals',
+    dataSource: 'Your imported bank transactions',
+    interpretation: 'More transactions may indicate more spending activity. Track trends to spot unusual patterns.',
+    tips: [
+      'Review transactions weekly to catch errors',
+      'Look for duplicate charges',
+      'Fewer transactions often means more intentional spending'
+    ]
+  },
+  
   savingsRate: {
     title: 'Savings Rate',
     definition: 'The percentage of your income that you\'re saving rather than spending. This is one of the most important metrics for building wealth.',
