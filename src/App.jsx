@@ -7163,7 +7163,7 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
                     <span style={{ fontSize: '13px', color: theme.textMuted }}>Total Score:</span>
                     <span style={{ fontSize: '18px', fontWeight: '700', color: scoreColor }}>{overallHealthScore} / 100</span>
                   </div>
-                
+                </div>
                 
                 {/* Smart Recommendations */}
                 <div style={{ marginTop: '24px', padding: '18px 22px', background: `linear-gradient(135deg, ${theme.mode === 'dark' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(139, 92, 246, 0.06)'}, ${theme.mode === 'dark' ? 'rgba(59, 130, 246, 0.08)' : 'rgba(59, 130, 246, 0.04)'})`, borderRadius: '14px', border: '1px solid rgba(139, 92, 246, 0.2)' }}>
