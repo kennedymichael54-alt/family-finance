@@ -7343,7 +7343,10 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
   const [activeSection, setActiveSection] = useState('welcome');
   const [newsLoading, setNewsLoading] = useState(false);
   const [selectedArticle, setSelectedArticle] = useState(null); // For in-app article viewer
+  const [selectedREArticle, setSelectedREArticle] = useState(null); // For real estate news viewer
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showSocialConnectModal, setShowSocialConnectModal] = useState(null); // Which social platform to connect
+  const [socialFeedFilter, setSocialFeedFilter] = useState('all'); // Filter for social feeds
   
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState({
@@ -7354,15 +7357,24 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
     socialMedia: false
   });
   
-  // Connected social media accounts
-  const [connectedSocials, setConnectedSocials] = useState({
-    facebook: false,
-    instagram: false,
-    twitter: false,
-    linkedin: false,
-    reddit: false,
-    tiktok: false
+  // Connected social media accounts (would be stored in database in production)
+  const [connectedSocials, setConnectedSocials] = useState(() => {
+    // Load from localStorage
+    const saved = localStorage.getItem('pn_connected_socials');
+    return saved ? JSON.parse(saved) : {
+      facebook: false,
+      instagram: false,
+      twitter: false,
+      linkedin: false,
+      reddit: false,
+      tiktok: false
+    };
   });
+  
+  // Save connected socials to localStorage
+  useEffect(() => {
+    localStorage.setItem('pn_connected_socials', JSON.stringify(connectedSocials));
+  }, [connectedSocials]);
   
   // Update time every minute
   useEffect(() => {
@@ -7738,6 +7750,366 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                 }}
               >
                 Close Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Real Estate Article Viewer Modal */}
+      {selectedREArticle && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setSelectedREArticle(null)}
+        >
+          <div 
+            style={{
+              background: theme.bgCard,
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '800px',
+              maxHeight: '90vh',
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '20px 24px',
+              borderBottom: `1px solid ${theme.borderLight}`,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: selectedREArticle.color + '10'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: selectedREArticle.color,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '20px'
+                }}>
+                  {selectedREArticle.icon}
+                </div>
+                <div>
+                  <div style={{ fontSize: '11px', color: selectedREArticle.color, fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    {selectedREArticle.category}
+                  </div>
+                  <div style={{ fontSize: '10px', color: theme.textMuted }}>
+                    {selectedREArticle.source} • {selectedREArticle.time}
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedREArticle(null)}
+                style={{
+                  width: '36px',
+                  height: '36px',
+                  borderRadius: '10px',
+                  border: 'none',
+                  background: theme.bgMain,
+                  color: theme.textSecondary,
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '18px'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            
+            {/* Modal Content */}
+            <div style={{
+              padding: '24px',
+              overflowY: 'auto',
+              flex: 1
+            }}>
+              <h2 style={{ 
+                fontSize: '24px', 
+                fontWeight: '700', 
+                color: theme.textPrimary,
+                marginBottom: '20px',
+                lineHeight: '1.3'
+              }}>
+                {selectedREArticle.title}
+              </h2>
+              <div 
+                style={{ 
+                  fontSize: '15px', 
+                  color: theme.textSecondary,
+                  lineHeight: '1.8'
+                }}
+                dangerouslySetInnerHTML={{ __html: selectedREArticle.content }}
+              />
+            </div>
+            
+            {/* Modal Footer */}
+            <div style={{
+              padding: '16px 24px',
+              borderTop: `1px solid ${theme.borderLight}`,
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center'
+            }}>
+              <span style={{ fontSize: '12px', color: theme.textMuted }}>
+                📡 Live Market Data • Updated {selectedREArticle.time}
+              </span>
+              <button
+                onClick={() => setSelectedREArticle(null)}
+                style={{
+                  padding: '10px 20px',
+                  borderRadius: '10px',
+                  background: selectedREArticle.color,
+                  border: 'none',
+                  color: 'white',
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                Close Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Social Media Connection Modal */}
+      {showSocialConnectModal && (
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.7)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000,
+            padding: '20px'
+          }}
+          onClick={() => setShowSocialConnectModal(null)}
+        >
+          <div 
+            style={{
+              background: theme.bgCard,
+              borderRadius: '24px',
+              width: '100%',
+              maxWidth: '500px',
+              overflow: 'hidden'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div style={{
+              padding: '24px',
+              borderBottom: `1px solid ${theme.borderLight}`,
+              textAlign: 'center',
+              background: `${showSocialConnectModal.gradient || showSocialConnectModal.color}10`
+            }}>
+              <div style={{
+                width: '64px',
+                height: '64px',
+                borderRadius: '16px',
+                background: showSocialConnectModal.gradient || showSocialConnectModal.bgColor,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: showSocialConnectModal.icon.length > 2 ? '32px' : '28px',
+                fontWeight: '700',
+                color: showSocialConnectModal.gradient ? 'white' : showSocialConnectModal.color,
+                margin: '0 auto 16px'
+              }}>
+                {showSocialConnectModal.icon}
+              </div>
+              <h3 style={{ fontSize: '20px', fontWeight: '700', color: theme.textPrimary, marginBottom: '8px' }}>
+                Connect {showSocialConnectModal.name}
+              </h3>
+              <p style={{ fontSize: '14px', color: theme.textSecondary }}>
+                {connectedSocials[showSocialConnectModal.id] 
+                  ? 'Your account is connected. Disconnect?' 
+                  : 'Link your account to see your feed in ProsperNest'}
+              </p>
+            </div>
+            
+            {/* Modal Content */}
+            <div style={{ padding: '24px' }}>
+              {!connectedSocials[showSocialConnectModal.id] ? (
+                <>
+                  {/* OAuth explanation */}
+                  <div style={{
+                    background: theme.bgMain,
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '20px'
+                  }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary, marginBottom: '12px' }}>
+                      🔒 Secure Connection via OAuth
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                      {[
+                        { icon: '✓', text: 'We never see or store your password' },
+                        { icon: '✓', text: 'Read-only access to your public feed' },
+                        { icon: '✓', text: 'Disconnect anytime from settings' },
+                        { icon: '✓', text: 'Your data stays on your device' }
+                      ].map((item, i) => (
+                        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ color: '#10B981', fontSize: '14px' }}>{item.icon}</span>
+                          <span style={{ fontSize: '13px', color: theme.textSecondary }}>{item.text}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* What you'll get */}
+                  <div style={{
+                    background: `${showSocialConnectModal.color}10`,
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '20px'
+                  }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary, marginBottom: '12px' }}>
+                      ✨ What you'll get
+                    </h4>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>• Your feed directly in ProsperNest</span>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>• Financial content recommendations</span>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>• No more app switching</span>
+                    </div>
+                  </div>
+                  
+                  {/* Connect Button */}
+                  <button
+                    onClick={() => {
+                      // Simulate OAuth connection (in production, this would redirect to OAuth flow)
+                      setConnectedSocials(prev => ({ ...prev, [showSocialConnectModal.id]: true }));
+                      setShowSocialConnectModal(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '14px',
+                      borderRadius: '12px',
+                      background: showSocialConnectModal.gradient || showSocialConnectModal.color,
+                      border: 'none',
+                      color: 'white',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px',
+                      marginBottom: '12px'
+                    }}
+                  >
+                    <span>🔗</span> Connect with {showSocialConnectModal.name}
+                  </button>
+                  
+                  <p style={{ fontSize: '11px', color: theme.textMuted, textAlign: 'center' }}>
+                    By connecting, you agree to ProsperNest's Terms of Service
+                  </p>
+                </>
+              ) : (
+                <>
+                  {/* Connected state */}
+                  <div style={{
+                    background: '#10B98115',
+                    borderRadius: '12px',
+                    padding: '20px',
+                    textAlign: 'center',
+                    marginBottom: '20px'
+                  }}>
+                    <div style={{
+                      width: '48px',
+                      height: '48px',
+                      borderRadius: '50%',
+                      background: '#10B981',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 12px',
+                      fontSize: '24px'
+                    }}>
+                      ✓
+                    </div>
+                    <h4 style={{ fontSize: '16px', fontWeight: '600', color: '#10B981', marginBottom: '4px' }}>
+                      Successfully Connected
+                    </h4>
+                    <p style={{ fontSize: '13px', color: theme.textSecondary }}>
+                      Your {showSocialConnectModal.name} feed is now visible in ProsperNest
+                    </p>
+                  </div>
+                  
+                  {/* Disconnect Button */}
+                  <button
+                    onClick={() => {
+                      setConnectedSocials(prev => ({ ...prev, [showSocialConnectModal.id]: false }));
+                      setShowSocialConnectModal(null);
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '14px',
+                      borderRadius: '12px',
+                      background: 'transparent',
+                      border: `2px solid #EF4444`,
+                      color: '#EF4444',
+                      fontSize: '15px',
+                      fontWeight: '600',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '8px'
+                    }}
+                  >
+                    <span>🔓</span> Disconnect {showSocialConnectModal.name}
+                  </button>
+                </>
+              )}
+            </div>
+            
+            {/* Modal Footer */}
+            <div style={{
+              padding: '16px 24px',
+              borderTop: `1px solid ${theme.borderLight}`,
+              textAlign: 'center'
+            }}>
+              <button
+                onClick={() => setShowSocialConnectModal(null)}
+                style={{
+                  padding: '10px 24px',
+                  borderRadius: '10px',
+                  background: 'transparent',
+                  border: `1px solid ${theme.borderLight}`,
+                  color: theme.textSecondary,
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  cursor: 'pointer'
+                }}
+              >
+                Close
               </button>
             </div>
           </div>
@@ -8505,6 +8877,13 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Interest Rates',
                   title: 'Fed Signals Potential Rate Cut in 2025',
                   summary: 'Federal Reserve officials hint at possible rate reductions as inflation continues to cool, potentially lowering mortgage rates.',
+                  content: `<h2>Federal Reserve Signals Shift in Monetary Policy</h2>
+                    <p>In a significant development for the housing market, Federal Reserve officials have indicated that rate cuts could be on the horizon for 2025 as inflation continues its downward trajectory.</p>
+                    <h3>Key Takeaways</h3>
+                    <p>The Fed's latest meeting minutes reveal growing confidence that inflation is moving sustainably toward the 2% target. Several officials noted that the current policy stance may be "sufficiently restrictive" and that maintaining high rates for too long could pose risks to employment.</p>
+                    <h3>What This Means for Homebuyers</h3>
+                    <p>If the Fed follows through with rate cuts, mortgage rates could fall significantly in 2025. Historically, 30-year fixed rates tend to decline 0.5-1% for every 1% cut in the federal funds rate.</p>
+                    <p>Experts suggest that buyers who are financially ready should consider locking in current rates with plans to refinance when rates drop further.</p>`,
                   source: 'Reuters',
                   time: '2 hours ago',
                   icon: '📉',
@@ -8515,6 +8894,15 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Mortgage Rates',
                   title: '30-Year Fixed Mortgage Dips to 6.5%',
                   summary: 'Average 30-year fixed mortgage rate falls to lowest level in three months, sparking renewed buyer interest.',
+                  content: `<h2>Mortgage Rates Hit Three-Month Low</h2>
+                    <p>The average 30-year fixed mortgage rate has fallen to 6.5%, marking its lowest point since September and providing relief to prospective homebuyers.</p>
+                    <h3>Rate Breakdown</h3>
+                    <p><strong>30-Year Fixed:</strong> 6.5% (down from 6.8% last week)</p>
+                    <p><strong>15-Year Fixed:</strong> 5.8% (down from 6.1%)</p>
+                    <p><strong>5/1 ARM:</strong> 6.2% (down from 6.4%)</p>
+                    <h3>Market Impact</h3>
+                    <p>Mortgage applications have increased 12% week-over-week, with purchase applications leading the surge. Industry experts note this is the first significant uptick in buyer activity since summer.</p>
+                    <p>For a $400,000 home with 20% down, this rate drop translates to approximately $85 in monthly savings compared to last month's rates.</p>`,
                   source: 'Mortgage News Daily',
                   time: '4 hours ago',
                   icon: '🏦',
@@ -8525,6 +8913,15 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Housing Market',
                   title: 'Home Sales Rise 3.2% in November',
                   summary: 'Existing home sales show unexpected gain as buyers take advantage of rate dip and increased inventory.',
+                  content: `<h2>November Home Sales Exceed Expectations</h2>
+                    <p>The National Association of Realtors reports that existing home sales rose 3.2% in November, defying economist predictions of a continued decline.</p>
+                    <h3>Key Statistics</h3>
+                    <p><strong>Total Sales:</strong> 4.15 million (seasonally adjusted annual rate)</p>
+                    <p><strong>Median Price:</strong> $387,600 (up 4.1% year-over-year)</p>
+                    <p><strong>Days on Market:</strong> 29 days (up from 23 days last year)</p>
+                    <h3>Regional Breakdown</h3>
+                    <p>The Midwest led gains with a 5.1% increase, followed by the South at 3.8%. The West saw modest gains of 1.9%, while the Northeast remained flat.</p>
+                    <p>First-time buyers accounted for 28% of purchases, up from 26% in October, suggesting improving affordability conditions.</p>`,
                   source: 'NAR',
                   time: '5 hours ago',
                   icon: '📈',
@@ -8535,6 +8932,15 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Market Analysis',
                   title: 'Housing Inventory Hits 2-Year High',
                   summary: 'More homes hitting the market gives buyers better negotiating power and more choices in many metros.',
+                  content: `<h2>Inventory Surge Benefits Homebuyers</h2>
+                    <p>Active housing inventory has reached its highest level since late 2022, giving buyers more options and negotiating leverage in many markets.</p>
+                    <h3>Inventory Numbers</h3>
+                    <p><strong>Active Listings:</strong> 1.33 million homes (up 18% year-over-year)</p>
+                    <p><strong>New Listings:</strong> 425,000 in November (up 12% from October)</p>
+                    <p><strong>Months of Supply:</strong> 3.8 months (still a seller's market, but improving)</p>
+                    <h3>Top Markets for Buyers</h3>
+                    <p>Cities seeing the biggest inventory increases include Austin (+45%), Phoenix (+38%), Denver (+32%), and Tampa (+28%). These markets are transitioning from severe seller's markets to more balanced conditions.</p>
+                    <p>Experts recommend buyers in these markets take advantage of reduced competition and increased seller willingness to negotiate on price and terms.</p>`,
                   source: 'Realtor.com',
                   time: '6 hours ago',
                   icon: '🏘️',
@@ -8545,6 +8951,15 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Investment',
                   title: 'Multifamily Cap Rates Stabilizing',
                   summary: 'Apartment building cap rates showing signs of stability after year-long adjustment period.',
+                  content: `<h2>Multifamily Investment Market Shows Signs of Stability</h2>
+                    <p>After a challenging year of rising interest rates and price discovery, multifamily cap rates appear to be stabilizing, offering clearer guidance for investors.</p>
+                    <h3>Current Cap Rate Environment</h3>
+                    <p><strong>Class A Properties:</strong> 5.0-5.5% (major metros)</p>
+                    <p><strong>Class B Properties:</strong> 5.5-6.5%</p>
+                    <p><strong>Class C Properties:</strong> 6.5-7.5%</p>
+                    <h3>Investment Outlook</h3>
+                    <p>Transaction volume remains 40% below 2022 levels, but deal flow is improving. Institutional investors are returning to the market, particularly for value-add opportunities.</p>
+                    <p>Rent growth has moderated to 2-3% annually, down from the 15%+ gains seen in 2021-2022, but occupancy remains strong at 94.5% nationally.</p>`,
                   source: 'CoStar',
                   time: '8 hours ago',
                   icon: '🏢',
@@ -8555,6 +8970,15 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                   category: 'Economic',
                   title: 'Inflation Report: What It Means for Rates',
                   summary: 'Latest CPI data suggests continued cooling, potentially good news for future mortgage rate trajectory.',
+                  content: `<h2>November CPI Report Analysis for Housing</h2>
+                    <p>The latest Consumer Price Index data shows inflation cooling to 3.1% annually, bringing renewed optimism for the housing market.</p>
+                    <h3>Inflation Breakdown</h3>
+                    <p><strong>Overall CPI:</strong> 3.1% (down from 3.2% in October)</p>
+                    <p><strong>Core CPI:</strong> 4.0% (unchanged)</p>
+                    <p><strong>Shelter Costs:</strong> 6.5% (down from 6.7%)</p>
+                    <h3>Implications for Mortgages</h3>
+                    <p>The shelter component, which makes up about one-third of CPI, continues to moderate. This "lagging" indicator is expected to decline further in 2025 as new lease data filters into the calculations.</p>
+                    <p>Bond market reactions suggest investors are pricing in rate cuts, which has already contributed to the recent decline in mortgage rates. If this trend continues, we could see 30-year rates in the 5.5-6% range by mid-2025.</p>`,
                   source: 'Bloomberg',
                   time: '10 hours ago',
                   icon: '💹',
@@ -8573,7 +8997,7 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                     overflow: 'hidden',
                     border: `1px solid ${theme.borderLight}`
                   }}
-                  onClick={() => console.log('Opening real estate article:', article.title)}
+                  onClick={() => setSelectedREArticle(article)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-4px)';
                     e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.12)';
@@ -8727,9 +9151,7 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                     transition: 'all 0.2s',
                     position: 'relative'
                   }}
-                  onClick={() => {
-                    setConnectedSocials(prev => ({ ...prev, [platform.id]: !prev[platform.id] }));
-                  }}
+                  onClick={() => setShowSocialConnectModal(platform)}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-2px)';
                     e.currentTarget.style.borderColor = platform.color;
@@ -8803,15 +9225,31 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                     Your Feed
                   </h4>
                   <div style={{ display: 'flex', gap: '8px' }}>
+                    <button
+                      onClick={() => setSocialFeedFilter('all')}
+                      style={{
+                        padding: '4px 12px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: socialFeedFilter === 'all' ? 'linear-gradient(135deg, #8B5CF6, #A78BFA)' : theme.bgCard,
+                        color: socialFeedFilter === 'all' ? 'white' : theme.textSecondary,
+                        fontSize: '11px',
+                        fontWeight: '600',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      All
+                    </button>
                     {Object.entries(connectedSocials).filter(([_, connected]) => connected).map(([id]) => (
                       <button
                         key={id}
+                        onClick={() => setSocialFeedFilter(id)}
                         style={{
                           padding: '4px 12px',
                           borderRadius: '20px',
                           border: 'none',
-                          background: theme.bgCard,
-                          color: theme.textSecondary,
+                          background: socialFeedFilter === id ? 'linear-gradient(135deg, #8B5CF6, #A78BFA)' : theme.bgCard,
+                          color: socialFeedFilter === id ? 'white' : theme.textSecondary,
                           fontSize: '11px',
                           fontWeight: '600',
                           cursor: 'pointer',
@@ -8827,17 +9265,35 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                 {/* Sample Feed Items */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   {[
-                    { platform: 'linkedin', author: 'Real Estate Trends', time: '2h', content: '📊 The latest housing market data shows promising signs for Q1 2025. Inventory levels are finally recovering in key markets...', likes: 234, comments: 45 },
-                    { platform: 'twitter', author: 'MortgageNews', time: '3h', content: '🏦 Breaking: 30-year fixed rates dip below 6.5% for the first time since September. What this means for buyers...', likes: 892, comments: 127 },
-                    { platform: 'reddit', author: 'r/RealEstate', time: '4h', content: '🔥 [Discussion] Anyone else noticing price drops in their market? Share your observations from the past month...', likes: 1.2, comments: 384 }
-                  ].filter(item => connectedSocials[item.platform]).slice(0, 3).map((post, i) => (
+                    { platform: 'facebook', author: 'Dave Ramsey', avatar: 'DR', time: '1h', content: '💵 The best time to start budgeting was 10 years ago. The second best time is TODAY. Stop making excuses and take control of your money!', likes: 4523, comments: 891, color: '#1877F2' },
+                    { platform: 'linkedin', author: 'Real Estate Trends', avatar: 'RE', time: '2h', content: '📊 The latest housing market data shows promising signs for Q1 2025. Inventory levels are finally recovering in key markets, giving buyers more options than we\'ve seen in years.', likes: 234, comments: 45, color: '#0A66C2' },
+                    { platform: 'twitter', author: '@MortgageNewsDaily', avatar: 'MN', time: '3h', content: '🏦 BREAKING: 30-year fixed rates dip below 6.5% for the first time since September. Refinance applications surge 23% week-over-week. What this means for buyers...', likes: 892, comments: 127, color: '#000000' },
+                    { platform: 'instagram', author: 'millennialmoney', avatar: 'MM', time: '3h', content: '🎯 3 money habits that changed my life:\n1. Pay yourself first (20% minimum)\n2. Track every dollar\n3. Invest the difference\n\nWhich one do you struggle with most? 👇', likes: 12400, comments: 2341, color: '#E4405F' },
+                    { platform: 'reddit', author: 'r/RealEstate', avatar: 'RE', time: '4h', content: '🔥 [Discussion] Anyone else noticing price drops in their market? Just saw a home in my neighborhood drop $50k after sitting for 60 days. Share your observations from the past month...', likes: 1234, comments: 384, color: '#FF4500' },
+                    { platform: 'tiktok', author: '@investorjohn', avatar: 'IJ', time: '5h', content: '🏠 POV: You just house hacked your first property and now your mortgage is basically FREE. This is how I did it in 2024 with only $15k down...', likes: 45600, comments: 3421, color: '#000000' },
+                    { platform: 'facebook', author: 'BiggerPockets', avatar: 'BP', time: '6h', content: '📈 New episode alert! "How I Bought 10 Rental Properties in 3 Years" - Learn the exact strategy this investor used to build passive income. Link in comments!', likes: 2341, comments: 567, color: '#1877F2' },
+                    { platform: 'linkedin', author: 'Grant Cardone', avatar: 'GC', time: '7h', content: '🚀 Real estate is NOT about buying one property. It\'s about building a portfolio. Your first deal teaches you. Your 10th deal pays you. Your 100th deal makes you wealthy.', likes: 5678, comments: 423, color: '#0A66C2' }
+                  ]
+                    .filter(item => connectedSocials[item.platform] && (socialFeedFilter === 'all' || socialFeedFilter === item.platform))
+                    .slice(0, 5)
+                    .map((post, i) => (
                     <div 
                       key={i}
                       style={{
                         padding: '16px',
                         background: theme.bgCard,
                         borderRadius: '12px',
-                        border: `1px solid ${theme.borderLight}`
+                        border: `1px solid ${theme.borderLight}`,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.borderColor = post.color;
+                        e.currentTarget.style.transform = 'translateX(4px)';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.borderColor = theme.borderLight;
+                        e.currentTarget.style.transform = 'translateX(0)';
                       }}
                     >
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
@@ -8845,27 +9301,28 @@ function NewsfeedHome({ theme, user, profile, subscription, subscriptionAccess, 
                           width: '36px',
                           height: '36px',
                           borderRadius: '50%',
-                          background: 'linear-gradient(135deg, #3B82F6, #8B5CF6)',
+                          background: `linear-gradient(135deg, ${post.color}, ${post.color}99)`,
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'center',
                           color: 'white',
-                          fontSize: '14px',
-                          fontWeight: '600'
+                          fontSize: '12px',
+                          fontWeight: '700'
                         }}>
-                          {post.author[0]}
+                          {post.avatar}
                         </div>
-                        <div>
+                        <div style={{ flex: 1 }}>
                           <div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{post.author}</div>
-                          <div style={{ fontSize: '11px', color: theme.textMuted }}>{post.time} ago • {post.platform}</div>
+                          <div style={{ fontSize: '11px', color: theme.textMuted }}>{post.time} ago • <span style={{ color: post.color, textTransform: 'capitalize' }}>{post.platform}</span></div>
                         </div>
                       </div>
-                      <p style={{ fontSize: '14px', color: theme.textSecondary, lineHeight: '1.5', marginBottom: '12px' }}>
+                      <p style={{ fontSize: '14px', color: theme.textSecondary, lineHeight: '1.5', marginBottom: '12px', whiteSpace: 'pre-line' }}>
                         {post.content}
                       </p>
                       <div style={{ display: 'flex', gap: '16px' }}>
-                        <span style={{ fontSize: '12px', color: theme.textMuted }}>❤️ {typeof post.likes === 'number' ? post.likes : post.likes + 'k'}</span>
-                        <span style={{ fontSize: '12px', color: theme.textMuted }}>💬 {post.comments}</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted }}>❤️ {post.likes >= 1000 ? (post.likes/1000).toFixed(1) + 'k' : post.likes}</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted }}>💬 {post.comments >= 1000 ? (post.comments/1000).toFixed(1) + 'k' : post.comments}</span>
+                        <span style={{ fontSize: '12px', color: theme.textMuted, marginLeft: 'auto' }}>🔗 Share</span>
                       </div>
                     </div>
                   ))}
