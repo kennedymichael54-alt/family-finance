@@ -118,51 +118,59 @@ function ComingSoonPage({ onNavigateToApp, onNavigateToAuth }) {
     setIsSubmitting(true);
     
     try {
-      // ============================================================
-      // WAITLIST EMAIL STORAGE - IMPORTANT FOR PRODUCTION
-      // ============================================================
-      // Option 1: Store in Supabase (RECOMMENDED - you already have it!)
-      // Uncomment below and create a 'waitlist' table in Supabase:
-      // CREATE TABLE waitlist (
-      //   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-      //   email TEXT UNIQUE NOT NULL,
-      //   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-      //   source TEXT DEFAULT 'coming_soon_page'
-      // );
-      //
-      // const { data, error } = await supabase
-      //   .from('waitlist')
-      //   .insert([{ email: email, source: 'coming_soon_page' }]);
-      // if (error) throw error;
+      // Initialize Supabase
+      const sb = await initSupabase();
       
-      // Option 2: Send to your email marketing service API
-      // Examples: Mailchimp, ConvertKit, Beehiiv, SendGrid, etc.
-      // await fetch('https://your-email-service-api.com/subscribe', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({ email })
-      // });
-      
-      // TEMPORARY: Store locally for demo (data stays in browser only!)
-      // ⚠️ WARNING: This does NOT persist across browsers/devices!
-      const waitlist = JSON.parse(localStorage.getItem('pn_waitlist') || '[]');
-      const exists = waitlist.some(entry => entry.email === email);
-      if (!exists) {
-        waitlist.push({ 
-          email, 
-          timestamp: new Date().toISOString(),
-          source: 'coming_soon_page'
-        });
-        localStorage.setItem('pn_waitlist', JSON.stringify(waitlist));
+      if (sb) {
+        // Insert into Supabase waitlist table
+        const { data, error } = await sb
+          .from('waitlist')
+          .insert([{ 
+            email: email.toLowerCase().trim(),
+            source: 'coming_soon_page',
+            utm_source: new URLSearchParams(window.location.search).get('utm_source') || null,
+            utm_medium: new URLSearchParams(window.location.search).get('utm_medium') || null,
+            utm_campaign: new URLSearchParams(window.location.search).get('utm_campaign') || null,
+            referrer: document.referrer || null,
+            user_agent: navigator.userAgent || null
+          }])
+          .select();
+        
+        if (error) {
+          // Check if it's a duplicate email error
+          if (error.code === '23505' || error.message?.includes('duplicate')) {
+            console.log('ℹ️ Email already on waitlist:', email);
+            setIsSubmitted(true); // Still show success - they're already signed up!
+            return;
+          }
+          throw error;
+        }
+        
+        console.log('✅ Waitlist signup saved to Supabase:', data);
+      } else {
+        // Fallback to localStorage if Supabase isn't available
+        console.warn('⚠️ Supabase not available, using localStorage fallback');
+        const waitlist = JSON.parse(localStorage.getItem('pn_waitlist') || '[]');
+        const exists = waitlist.some(entry => entry.email.toLowerCase() === email.toLowerCase());
+        if (!exists) {
+          waitlist.push({ 
+            email: email.toLowerCase().trim(), 
+            timestamp: new Date().toISOString(),
+            source: 'coming_soon_page'
+          });
+          localStorage.setItem('pn_waitlist', JSON.stringify(waitlist));
+        }
       }
-      
-      console.log('✅ Waitlist signup:', email);
-      console.log('📊 Total signups (this browser):', waitlist.length);
       
       setIsSubmitted(true);
     } catch (error) {
-      console.error('Waitlist signup error:', error);
-      alert('Something went wrong. Please try again.');
+      console.error('❌ Waitlist signup error:', error);
+      // Show user-friendly error
+      if (error.message?.includes('duplicate') || error.code === '23505') {
+        setIsSubmitted(true); // Already signed up
+      } else {
+        alert('Something went wrong. Please try again or contact support.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -2336,6 +2344,90 @@ const initSupabase = () => {
   })();
   
   return supabaseInitPromise;
+};
+
+// ============================================================================
+// USER ACTIVITY TRACKING - For Daily Admin Analytics Email
+// ============================================================================
+// This function logs user activities to Supabase for the daily digest email.
+// Call this when users: login, view pages, click buttons, use features
+// ============================================================================
+
+const trackUserActivity = async (userId, userEmail, activityType, activityName, details = {}) => {
+  try {
+    const sb = await initSupabase();
+    if (!sb) return;
+    
+    // Get device info from user agent
+    const ua = navigator.userAgent;
+    const isMobile = /iPhone|iPad|iPod|Android|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    const isTablet = /iPad|Android(?!.*Mobile)/i.test(ua);
+    const deviceType = isTablet ? 'tablet' : (isMobile ? 'mobile' : 'desktop');
+    
+    // Simple browser detection
+    let browser = 'unknown';
+    if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('Safari')) browser = 'Safari';
+    else if (ua.includes('Edge')) browser = 'Edge';
+    
+    // Simple OS detection
+    let os = 'unknown';
+    if (ua.includes('Windows')) os = 'Windows';
+    else if (ua.includes('Mac')) os = 'macOS';
+    else if (ua.includes('Linux')) os = 'Linux';
+    else if (ua.includes('Android')) os = 'Android';
+    else if (ua.includes('iOS') || ua.includes('iPhone') || ua.includes('iPad')) os = 'iOS';
+    
+    // Get or create session ID
+    let sessionId = sessionStorage.getItem('pn_session_id');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      sessionStorage.setItem('pn_session_id', sessionId);
+    }
+    
+    const { error } = await sb
+      .from('user_activity')
+      .insert([{
+        user_id: userId || null,
+        user_email: userEmail || null,
+        activity_type: activityType,      // 'login', 'page_view', 'feature_use', 'button_click'
+        activity_name: activityName,      // 'Dashboard', 'Budget Tab', 'Add Transaction', etc.
+        activity_details: details,        // Any additional context
+        page_path: window.location.pathname,
+        session_id: sessionId,
+        device_type: deviceType,
+        browser: browser,
+        os: os
+      }]);
+    
+    if (error) {
+      // Silently fail - don't disrupt user experience for analytics
+      console.log('📊 [Analytics] Failed to track:', error.message);
+    } else {
+      console.log(`📊 [Analytics] Tracked: ${activityType} - ${activityName}`);
+    }
+  } catch (e) {
+    // Silently fail
+    console.log('📊 [Analytics] Error:', e.message);
+  }
+};
+
+// Convenience functions for common tracking scenarios
+const trackPageView = (userId, userEmail, pageName) => {
+  trackUserActivity(userId, userEmail, 'page_view', pageName);
+};
+
+const trackLogin = (userId, userEmail) => {
+  trackUserActivity(userId, userEmail, 'login', 'User Login', { method: 'email' });
+};
+
+const trackFeatureUse = (userId, userEmail, featureName, details = {}) => {
+  trackUserActivity(userId, userEmail, 'feature_use', featureName, details);
+};
+
+const trackButtonClick = (userId, userEmail, buttonName, details = {}) => {
+  trackUserActivity(userId, userEmail, 'button_click', buttonName, details);
 };
 
 // ============================================================================
