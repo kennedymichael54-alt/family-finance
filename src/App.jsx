@@ -12085,25 +12085,18 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          {/* Collapse/Expand All Button */}
+          {/* Edit Layout Button */}
           <button
-            onClick={() => {
-              const allCollapsed = !expandedHubs.homebudget && !expandedHubs.bizbudget && !expandedHubs.rebudget;
-              if (allCollapsed) {
-                setExpandedHubs({ homebudget: true, bizbudget: true, rebudget: true, dataimport: true });
-              } else {
-                setExpandedHubs({ homebudget: false, bizbudget: false, rebudget: false, dataimport: false });
-              }
-            }}
+            onClick={() => setIsEditMode(!isEditMode)}
             style={{
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
               padding: '10px 16px',
-              border: `1px solid ${theme.borderLight}`,
+              border: isEditMode ? 'none' : `1px solid ${theme.borderLight}`,
               borderRadius: '10px',
-              background: theme.bgCard,
-              color: theme.textSecondary,
+              background: isEditMode ? theme.primary : theme.bgCard,
+              color: isEditMode ? 'white' : theme.textSecondary,
               fontSize: '13px',
               fontWeight: '600',
               cursor: 'pointer',
@@ -12111,27 +12104,13 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
               transition: 'all 0.2s'
             }}
           >
-            {(!expandedHubs.homebudget && !expandedHubs.bizbudget && !expandedHubs.rebudget) ? (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="15 3 21 3 21 9"></polyline>
-                  <polyline points="9 21 3 21 3 15"></polyline>
-                  <line x1="21" y1="3" x2="14" y2="10"></line>
-                  <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-                Expand All
-              </>
-            ) : (
-              <>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="4 14 10 14 10 20"></polyline>
-                  <polyline points="20 10 14 10 14 4"></polyline>
-                  <line x1="14" y1="10" x2="21" y2="3"></line>
-                  <line x1="3" y1="21" x2="10" y2="14"></line>
-                </svg>
-                Collapse All
-              </>
-            )}
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+              <rect x="3" y="3" width="7" height="7" />
+              <rect x="14" y="3" width="7" height="7" />
+              <rect x="14" y="14" width="7" height="7" />
+              <rect x="3" y="14" width="7" height="7" />
+            </svg>
+            {isEditMode ? 'Done' : 'Edit Layout'}
           </button>
           
           <div className="account-toggle" style={{ display: 'flex', gap: '8px', background: theme.bgCard, padding: '4px', borderRadius: '12px', boxShadow: theme.cardShadow }}>
@@ -14677,7 +14656,7 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
   };
   
   // Filter transactions by account type
-  const accountFilteredTransactions = transactions.filter(t => {
+  const filteredByAccount = transactions.filter(t => {
     if (activeAccount === 'all') return true;
     if (activeAccount === 'personal') return t.accountType === 'personal' || !t.accountType;
     if (activeAccount === 'sidehustle') return t.accountType === 'sidehustle';
@@ -14685,9 +14664,9 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
   });
   
   // Calculate stats from filtered transactions
-  const totalTransactions = accountFilteredTransactions.length;
-  const incomeTransactions = accountFilteredTransactions.filter(t => parseFloat(t.amount) > 0);
-  const expenseTransactions = accountFilteredTransactions.filter(t => parseFloat(t.amount) < 0);
+  const totalTransactions = filteredByAccount.length;
+  const incomeTransactions = filteredByAccount.filter(t => parseFloat(t.amount) > 0);
+  const expenseTransactions = filteredByAccount.filter(t => parseFloat(t.amount) < 0);
   const totalIncome = incomeTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
   const totalExpenses = Math.abs(expenseTransactions.reduce((sum, t) => sum + parseFloat(t.amount), 0));
   
@@ -14954,8 +14933,8 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
               <th style={{ padding: '16px 20px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textSecondary, textTransform: 'uppercase', width: '40px' }}>
                 <input 
                   type="checkbox" 
-                  checked={selectedTxns.length === Math.min(10, accountFilteredTransactions.length) && accountFilteredTransactions.length > 0}
-                  onChange={(e) => setSelectedTxns(e.target.checked ? accountFilteredTransactions.slice(0, 10).map((_, i) => i) : [])}
+                  checked={selectedTxns.length === Math.min(10, filteredByAccount.length) && filteredByAccount.length > 0}
+                  onChange={(e) => setSelectedTxns(e.target.checked ? filteredByAccount.slice(0, 10).map((_, i) => i) : [])}
                   style={{ cursor: 'pointer' }} 
                 />
               </th>
@@ -14968,7 +14947,7 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
             </tr>
           </thead>
           <tbody>
-            {accountFilteredTransactions.length === 0 ? (
+            {filteredByAccount.length === 0 ? (
               <tr>
                 <td colSpan="7" style={{ padding: '80px 20px', textAlign: 'center', color: theme.textMuted }}>
                   <div style={{ 
@@ -14986,7 +14965,7 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
                 </td>
               </tr>
             ) : (
-              accountFilteredTransactions.slice(0, 10).map((t, i) => {
+              filteredByAccount.slice(0, 10).map((t, i) => {
                 const isSideHustle = t.accountType === 'sidehustle';
                 const acctStyle = isSideHustle 
                   ? { bg: '#FEE2E2', color: '#DC2626', icon: '💼', label: accountLabels?.sidehustle || 'Side Hustle' }
