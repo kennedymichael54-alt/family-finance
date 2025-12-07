@@ -721,7 +721,7 @@ function ComingSoonPage({ onNavigateToApp, onNavigateToAuth }) {
           borderTop: `1px solid ${theme.border}`
         }}>
           <p style={{ fontSize: '13px', color: theme.textMuted }}>
-            © 2024 ProsperNest. All rights reserved. • Built with 💜 for entrepreneurs everywhere.
+            © 2025 ProsperNest. All rights reserved. • Built with 💜 for entrepreneurs everywhere.
           </p>
         </footer>
       </div>
@@ -3599,7 +3599,7 @@ function LandingPage({ setView }) {
 
         {/* Footer */}
         <footer style={{ maxWidth: '1400px', margin: '0 auto', padding: '40px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', marginTop: '60px' }}>
-          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>© 2024 ProsperNest. All rights reserved. www.prospernest.io</p>
+          <p style={{ color: 'rgba(255,255,255,0.5)', fontSize: '14px' }}>© 2025 ProsperNest. All rights reserved. www.prospernest.app</p>
         </footer>
       </div>
     </div>
@@ -3933,7 +3933,7 @@ function AuthPage({ setView }) {
               <button onClick={() => setShowTerms(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#6B7280' }}>×</button>
             </div>
             <div style={{ padding: '24px', overflowY: 'auto', fontSize: '14px', lineHeight: 1.7, color: '#4B5563' }}>
-              <p style={{ marginBottom: '16px' }}><strong>Last Updated:</strong> December 2, 2024</p>
+              <p style={{ marginBottom: '16px' }}><strong>Last Updated:</strong> December 6, 2025</p>
               
               <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1F2937', marginTop: '20px', marginBottom: '12px' }}>1. Acceptance of Terms</h3>
               <p style={{ marginBottom: '16px' }}>By accessing or using ProsperNest ("Service"), you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our Service.</p>
@@ -3954,7 +3954,7 @@ function AuthPage({ setView }) {
               <p style={{ marginBottom: '16px' }}>ProsperNest is provided "as is" without warranties. We shall not be liable for any indirect, incidental, or consequential damages arising from your use of the Service.</p>
               
               <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1F2937', marginTop: '20px', marginBottom: '12px' }}>7. Contact</h3>
-              <p style={{ marginBottom: '16px' }}>For questions about these Terms, contact us at legal@prospernest.io</p>
+              <p style={{ marginBottom: '16px' }}>For questions about these Terms, contact us at legal@prospernest.app</p>
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
               <button onClick={() => setShowTerms(false)} style={{ width: '100%', padding: '12px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
@@ -3974,7 +3974,7 @@ function AuthPage({ setView }) {
               <button onClick={() => setShowPrivacy(false)} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: '#6B7280' }}>×</button>
             </div>
             <div style={{ padding: '24px', overflowY: 'auto', fontSize: '14px', lineHeight: 1.7, color: '#4B5563' }}>
-              <p style={{ marginBottom: '16px' }}><strong>Last Updated:</strong> December 2, 2024</p>
+              <p style={{ marginBottom: '16px' }}><strong>Last Updated:</strong> December 6, 2025</p>
               
               <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '8px', padding: '16px', marginBottom: '20px' }}>
                 <p style={{ fontWeight: '600', color: '#166534', marginBottom: '8px' }}>🔒 Quick Privacy Facts:</p>
@@ -3999,10 +3999,10 @@ function AuthPage({ setView }) {
               <p style={{ marginBottom: '16px' }}>We use trusted third-party services (like Plaid) to securely connect to your financial institutions. These providers never share your login credentials with us.</p>
               
               <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1F2937', marginTop: '20px', marginBottom: '12px' }}>5. Your Rights</h3>
-              <p style={{ marginBottom: '16px' }}>You can access, correct, or delete your data at any time. Contact us at privacy@prospernest.io for any privacy-related requests.</p>
+              <p style={{ marginBottom: '16px' }}>You can access, correct, or delete your data at any time. Contact us at privacy@prospernest.app for any privacy-related requests.</p>
               
               <h3 style={{ fontSize: '16px', fontWeight: '600', color: '#1F2937', marginTop: '20px', marginBottom: '12px' }}>6. Contact</h3>
-              <p style={{ marginBottom: '16px' }}>For privacy questions, contact us at privacy@prospernest.io</p>
+              <p style={{ marginBottom: '16px' }}>For privacy questions, contact us at privacy@prospernest.app</p>
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid #E5E7EB' }}>
               <button onClick={() => setShowPrivacy(false)} style={{ width: '100%', padding: '12px', background: '#4F46E5', color: 'white', border: 'none', borderRadius: '8px', fontSize: '14px', fontWeight: '600', cursor: 'pointer' }}>
@@ -6797,7 +6797,7 @@ function Dashboard({
                 fontSize: '10px',
                 color: 'rgba(255, 255, 255, 0.3)'
               }}>
-                © 2024 ProsperNest
+                © 2025 ProsperNest
               </div>
             )}
           </div>
@@ -7931,7 +7931,7 @@ function Dashboard({
               <button 
                 onClick={() => {
                   // TODO: Integrate with Stripe checkout
-                  alert('Payment integration coming soon! For now, please contact support@prospernest.io');
+                  alert('Payment integration coming soon! For now, please contact support@prospernest.app');
                 }}
                 style={{ 
                   flex: 2, 
