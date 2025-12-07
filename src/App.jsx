@@ -5750,11 +5750,15 @@ function Dashboard({
       items: BIZBUDGET_ACCESS_USERS.includes(user?.email?.toLowerCase()) ? [
         { id: 'bizbudget-dashboard', label: 'Dashboard', icon: Icons.Dashboard },
         { id: 'bizbudget-pipeline', label: profile?.businessType === 'real_estate_franchise' ? 'Deal Pipeline' : 'Projects', icon: Icons.HomeBudgetHub },
+        { id: 'bizbudget-budget', label: 'Budget', icon: Icons.Budget },
+        { id: 'bizbudget-transactions', label: 'Transactions', icon: Icons.Bills },
+        { id: 'bizbudget-bills', label: 'Bills', icon: Icons.Bills },
+        { id: 'bizbudget-goals', label: 'Goals', icon: Icons.Goals },
+        { id: 'bizbudget-tasks', label: 'Tasks', icon: Icons.Tasks },
         { id: 'bizbudget-forecast', label: 'Revenue Forecast', icon: Icons.Reports },
         { id: 'bizbudget-tax', label: 'Tax Planning', icon: Icons.Budget },
         { id: 'bizbudget-history', label: profile?.businessType === 'real_estate_franchise' ? 'Deal History' : 'Project History', icon: Icons.Calendar },
         { id: 'bizbudget-statements', label: 'Financial Statements', icon: Icons.Reports },
-        { id: 'bizbudget-budget', label: 'Budget vs Actuals', icon: Icons.Budget },
       ] : []
     },
     {
@@ -5941,6 +5945,10 @@ function Dashboard({
       case 'bizbudget-history':
       case 'bizbudget-statements':
       case 'bizbudget-budget':
+      case 'bizbudget-transactions':
+      case 'bizbudget-bills':
+      case 'bizbudget-goals':
+      case 'bizbudget-tasks':
         if (!BIZBUDGET_ACCESS_USERS.includes(user?.email?.toLowerCase())) {
           return <GradientSection tab="home"><DashboardHome transactions={transactions} goals={goals} bills={bills} tasks={tasks || []} theme={theme} lastImportDate={lastImportDate} accountLabels={accountLabels} editingAccountLabel={editingAccountLabel} setEditingAccountLabel={setEditingAccountLabel} updateAccountLabel={updateAccountLabel} /></GradientSection>;
         }
@@ -14217,11 +14225,15 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
   const tabMapping = {
     'dashboard': 'overview',
     'pipeline': 'projects',
+    'budget': 'budget',
+    'transactions': 'transactions',
+    'bills': 'bills',
+    'goals': 'goals',
+    'tasks': 'tasks',
     'forecast': 'forecast',
     'tax': 'taxes',
     'history': 'history',
-    'statements': 'statements',
-    'budget': 'budget'
+    'statements': 'statements'
   };
   
   const [activeTab, setActiveTab] = useState(tabMapping[initialTab] || 'overview');
@@ -14229,6 +14241,9 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProject, setShowAddProject] = useState(false);
+  const [showAddBill, setShowAddBill] = useState(false);
+  const [showAddGoal, setShowAddGoal] = useState(false);
+  const [showAddTask, setShowAddTask] = useState(false);
   
   // Collapsible section states
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -15143,6 +15158,305 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
                 </div>
               );
             })}
+          </CollapsibleSection>
+        </div>
+      )}
+
+      {/* Transactions Tab */}
+      {activeTab === 'transactions' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Transactions</h2>
+            <button
+              style={{
+                padding: '10px 20px', background: theme.primary, color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <span>+</span> Add Transaction
+            </button>
+          </div>
+
+          <CollapsibleSection id="transactions-summary" title="Transaction Summary" icon="📊" defaultOpen={true}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div style={{ background: '#DCFCE7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#166534' }}>{formatCurrency(12500)}</div>
+                <div style={{ fontSize: '13px', color: '#166534' }}>Income This Month</div>
+              </div>
+              <div style={{ background: '#FEE2E2', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#DC2626' }}>{formatCurrency(4200)}</div>
+                <div style={{ fontSize: '13px', color: '#DC2626' }}>Expenses This Month</div>
+              </div>
+              <div style={{ background: '#DBEAFE', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#1E40AF' }}>47</div>
+                <div style={{ fontSize: '13px', color: '#1E40AF' }}>Total Transactions</div>
+              </div>
+              <div style={{ background: '#EDE9FE', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#5B21B6' }}>{formatCurrency(8300)}</div>
+                <div style={{ fontSize: '13px', color: '#5B21B6' }}>Net Cash Flow</div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="transactions-list" title="Recent Transactions" icon="💳" defaultOpen={true}>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: theme.bgMain }}>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textSecondary }}>Date</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textSecondary }}>Description</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textSecondary }}>Category</th>
+                    <th style={{ padding: '12px 16px', textAlign: 'right', fontSize: '13px', fontWeight: '600', color: theme.textSecondary }}>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { date: '2025-12-06', desc: 'Client Payment - ABC Corp', category: 'Income', amount: 2500, type: 'income' },
+                    { date: '2025-12-05', desc: 'Software Subscription', category: 'Software', amount: -49, type: 'expense' },
+                    { date: '2025-12-04', desc: 'Office Supplies', category: 'Supplies', amount: -125, type: 'expense' },
+                    { date: '2025-12-03', desc: 'Client Payment - XYZ Inc', category: 'Income', amount: 1800, type: 'income' },
+                    { date: '2025-12-02', desc: 'Marketing - Facebook Ads', category: 'Marketing', amount: -200, type: 'expense' },
+                  ].map((txn, i) => (
+                    <tr key={i} style={{ borderTop: `1px solid ${theme.borderLight}` }}>
+                      <td style={{ padding: '14px 16px', fontSize: '14px', color: theme.textSecondary }}>{txn.date}</td>
+                      <td style={{ padding: '14px 16px', fontSize: '14px', color: theme.textPrimary, fontWeight: '500' }}>{txn.desc}</td>
+                      <td style={{ padding: '14px 16px' }}>
+                        <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', background: theme.bgMain, color: theme.textSecondary }}>
+                          {txn.category}
+                        </span>
+                      </td>
+                      <td style={{ padding: '14px 16px', fontSize: '14px', fontWeight: '600', textAlign: 'right', color: txn.type === 'income' ? '#22C55E' : '#DC2626' }}>
+                        {txn.type === 'income' ? '+' : ''}{formatCurrency(Math.abs(txn.amount))}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CollapsibleSection>
+        </div>
+      )}
+
+      {/* Bills Tab */}
+      {activeTab === 'bills' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Bills & Subscriptions</h2>
+            <button
+              onClick={() => setShowAddBill(true)}
+              style={{
+                padding: '10px 20px', background: theme.primary, color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <span>+</span> Add Bill
+            </button>
+          </div>
+
+          <CollapsibleSection id="bills-summary" title="Bills Summary" icon="📊" defaultOpen={true}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400E' }}>{formatCurrency(1250)}</div>
+                <div style={{ fontSize: '13px', color: '#92400E' }}>Due This Week</div>
+              </div>
+              <div style={{ background: '#DBEAFE', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#1E40AF' }}>{formatCurrency(2800)}</div>
+                <div style={{ fontSize: '13px', color: '#1E40AF' }}>Due This Month</div>
+              </div>
+              <div style={{ background: '#DCFCE7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#166534' }}>8</div>
+                <div style={{ fontSize: '13px', color: '#166534' }}>Active Subscriptions</div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="bills-upcoming" title="Upcoming Bills" icon="📅" defaultOpen={true}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { name: 'Office Rent', amount: 1500, dueDate: '2025-12-15', category: 'Rent', recurring: 'Monthly' },
+                { name: 'Adobe Creative Cloud', amount: 54.99, dueDate: '2025-12-10', category: 'Software', recurring: 'Monthly' },
+                { name: 'Internet Service', amount: 89, dueDate: '2025-12-12', category: 'Utilities', recurring: 'Monthly' },
+                { name: 'Liability Insurance', amount: 250, dueDate: '2025-12-20', category: 'Insurance', recurring: 'Monthly' },
+                { name: 'QuickBooks', amount: 40, dueDate: '2025-12-08', category: 'Software', recurring: 'Monthly' },
+              ].map((bill, i) => (
+                <div key={i} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '14px 16px', background: theme.bgMain, borderRadius: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '40px', height: '40px', borderRadius: '10px', background: '#FEF3C7',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'
+                    }}>📄</div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {bill.dueDate} • {bill.recurring}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>{formatCurrency(bill.amount)}</div>
+                    <span style={{ padding: '2px 8px', borderRadius: '4px', fontSize: '11px', background: theme.bgCard, color: theme.textMuted }}>{bill.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CollapsibleSection>
+        </div>
+      )}
+
+      {/* Goals Tab */}
+      {activeTab === 'goals' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Goals</h2>
+            <button
+              onClick={() => setShowAddGoal(true)}
+              style={{
+                padding: '10px 20px', background: theme.primary, color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <span>+</span> Add Goal
+            </button>
+          </div>
+
+          <CollapsibleSection id="goals-overview" title="Goals Overview" icon="🎯" defaultOpen={true}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              <div style={{ background: '#DCFCE7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#166534' }}>3</div>
+                <div style={{ fontSize: '13px', color: '#166534' }}>On Track</div>
+              </div>
+              <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400E' }}>1</div>
+                <div style={{ fontSize: '13px', color: '#92400E' }}>At Risk</div>
+              </div>
+              <div style={{ background: '#EDE9FE', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#5B21B6' }}>2</div>
+                <div style={{ fontSize: '13px', color: '#5B21B6' }}>Completed</div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="goals-active" title="Active Goals" icon="📈" defaultOpen={true}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {[
+                { name: 'Q4 Revenue Target', target: 50000, current: 42000, deadline: '2025-12-31', category: 'Revenue' },
+                { name: 'Reduce Operating Costs', target: 20, current: 15, deadline: '2025-12-31', category: 'Savings', isPercent: true },
+                { name: 'Acquire 10 New Clients', target: 10, current: 7, deadline: '2025-12-31', category: 'Growth' },
+                { name: 'Build Emergency Fund', target: 25000, current: 18000, deadline: '2026-03-31', category: 'Savings' },
+              ].map((goal, i) => {
+                const progress = (goal.current / goal.target) * 100;
+                return (
+                  <div key={i} style={{ background: theme.bgMain, borderRadius: '12px', padding: '16px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div>
+                        <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '2px' }}>Deadline: {goal.deadline}</div>
+                      </div>
+                      <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '11px', background: theme.bgCard, color: theme.textSecondary }}>{goal.category}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>
+                        {goal.isPercent ? `${goal.current}%` : formatCurrency(goal.current)} of {goal.isPercent ? `${goal.target}%` : formatCurrency(goal.target)}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : '#DC2626' }}>
+                        {Math.round(progress)}%
+                      </span>
+                    </div>
+                    <div style={{ background: theme.bgCard, borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
+                      <div style={{
+                        width: `${Math.min(progress, 100)}%`, height: '100%',
+                        background: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : theme.primary,
+                        borderRadius: '8px'
+                      }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </CollapsibleSection>
+        </div>
+      )}
+
+      {/* Tasks Tab */}
+      {activeTab === 'tasks' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Tasks</h2>
+            <button
+              onClick={() => setShowAddTask(true)}
+              style={{
+                padding: '10px 20px', background: theme.primary, color: 'white',
+                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', gap: '8px'
+              }}
+            >
+              <span>+</span> Add Task
+            </button>
+          </div>
+
+          <CollapsibleSection id="tasks-summary" title="Task Summary" icon="📋" defaultOpen={true}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+              <div style={{ background: '#FEE2E2', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#DC2626' }}>3</div>
+                <div style={{ fontSize: '13px', color: '#DC2626' }}>Overdue</div>
+              </div>
+              <div style={{ background: '#FEF3C7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#92400E' }}>5</div>
+                <div style={{ fontSize: '13px', color: '#92400E' }}>Due Today</div>
+              </div>
+              <div style={{ background: '#DBEAFE', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#1E40AF' }}>12</div>
+                <div style={{ fontSize: '13px', color: '#1E40AF' }}>In Progress</div>
+              </div>
+              <div style={{ background: '#DCFCE7', borderRadius: '12px', padding: '16px', textAlign: 'center' }}>
+                <div style={{ fontSize: '24px', fontWeight: '700', color: '#166534' }}>28</div>
+                <div style={{ fontSize: '13px', color: '#166534' }}>Completed</div>
+              </div>
+            </div>
+          </CollapsibleSection>
+
+          <CollapsibleSection id="tasks-active" title="Active Tasks" icon="✅" defaultOpen={true}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {[
+                { title: 'Follow up with ABC Corp', dueDate: '2025-12-07', priority: 'high', category: 'Sales' },
+                { title: 'Prepare Q4 financial report', dueDate: '2025-12-10', priority: 'high', category: 'Finance' },
+                { title: 'Review contractor invoices', dueDate: '2025-12-08', priority: 'medium', category: 'Admin' },
+                { title: 'Update website portfolio', dueDate: '2025-12-15', priority: 'low', category: 'Marketing' },
+                { title: 'Schedule team meeting', dueDate: '2025-12-09', priority: 'medium', category: 'Admin' },
+              ].map((task, i) => (
+                <div key={i} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '14px 16px', background: theme.bgMain, borderRadius: '10px'
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{
+                      width: '20px', height: '20px', borderRadius: '4px',
+                      border: `2px solid ${theme.borderLight}`, cursor: 'pointer'
+                    }} />
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{task.title}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {task.dueDate}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{
+                      padding: '4px 8px', borderRadius: '4px', fontSize: '11px',
+                      background: task.priority === 'high' ? '#FEE2E2' : task.priority === 'medium' ? '#FEF3C7' : '#DCFCE7',
+                      color: task.priority === 'high' ? '#DC2626' : task.priority === 'medium' ? '#92400E' : '#166534'
+                    }}>
+                      {task.priority}
+                    </span>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', background: theme.bgCard, color: theme.textMuted }}>
+                      {task.category}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CollapsibleSection>
         </div>
       )}
