@@ -890,6 +890,314 @@ export default function BizBudgetHub({ theme, lastImportDate, userEmail, initial
           )}
         </div>
       )}
+
+      {/* TRANSACTIONS TAB */}
+      {activeTab === 'transactions' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            <button style={{ padding: '10px 20px', background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>+ Add Transaction</button>
+          </div>
+
+          <SectionHeader 
+            title="Transaction Summary" 
+            icon="📊"
+            gradient="linear-gradient(180deg, #10B981, #06B6D4)" 
+            sectionKey="transactionSummary"
+          />
+          {!collapsedSections.transactionSummary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+              <KPICard title="Income This Month" value={formatCurrency(stats.totalRevenue / 3)} subtitle="Property sales & fees" gradient="linear-gradient(90deg, #10B981, #34D399)" />
+              <KPICard title="Expenses This Month" value={formatCurrency(BUDGET_CATEGORIES.reduce((s, c) => s + c.actual, 0) / 6)} subtitle="Operating costs" gradient="linear-gradient(90deg, #EF4444, #F59E0B)" />
+              <KPICard title="Total Transactions" value={deals.length * 8} subtitle="YTD count" gradient="linear-gradient(90deg, #3B82F6, #06B6D4)" />
+              <KPICard title="Net Cash Flow" value={formatCurrency(stats.totalProfit / 3)} subtitle="This month" gradient="linear-gradient(90deg, #8B5CF6, #EC4899)" />
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Recent Transactions" 
+            icon="💳"
+            badge="Last 30 days"
+            gradient="linear-gradient(180deg, #8B5CF6, #EC4899)" 
+            sectionKey="recentTransactions"
+          />
+          {!collapsedSections.recentTransactions && (
+            <div style={{ background: theme.bgCard, borderRadius: '16px', overflow: 'hidden', marginBottom: '32px', border: `1px solid ${theme.borderLight}`, position: 'relative' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead><tr style={{ background: theme.bgMain }}><th style={{ padding: '16px 20px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textMuted }}>Date</th><th style={{ padding: '16px 20px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textMuted }}>Description</th><th style={{ padding: '16px 20px', textAlign: 'left', fontSize: '13px', fontWeight: '600', color: theme.textMuted }}>Property</th><th style={{ padding: '16px 20px', textAlign: 'right', fontSize: '13px', fontWeight: '600', color: theme.textMuted }}>Amount</th></tr></thead>
+                <tbody>
+                  {[
+                    { date: '2025-12-06', desc: 'Property Sale - 321 Elm St', property: 'Roswell', amount: 95000, type: 'income' },
+                    { date: '2025-12-05', desc: 'Contractor Payment - Plumbing', property: '456 Oak Ave', amount: -4500, type: 'expense' },
+                    { date: '2025-12-04', desc: 'Materials - Flooring', property: '456 Oak Ave', amount: -2800, type: 'expense' },
+                    { date: '2025-12-03', desc: 'Earnest Money Deposit', property: '123 Main St', amount: -2500, type: 'expense' },
+                    { date: '2025-12-02', desc: 'Closing Costs', property: '321 Elm St', amount: -1800, type: 'expense' },
+                    { date: '2025-12-01', desc: 'Marketing - Listing Photos', property: '789 Pine Rd', amount: -450, type: 'expense' },
+                  ].map((txn, i) => (
+                    <tr key={i} style={{ borderBottom: `1px solid ${theme.borderLight}` }}>
+                      <td style={{ padding: '16px 20px', fontSize: '14px', color: theme.textSecondary }}>{txn.date}</td>
+                      <td style={{ padding: '16px 20px', fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{txn.desc}</td>
+                      <td style={{ padding: '16px 20px' }}><span style={{ padding: '4px 12px', borderRadius: '20px', background: theme.bgMain, color: theme.textMuted, fontSize: '12px' }}>{txn.property}</span></td>
+                      <td style={{ padding: '16px 20px', fontSize: '14px', fontWeight: '600', textAlign: 'right', color: txn.type === 'income' ? theme.success : theme.danger }}>{txn.type === 'income' ? '+' : ''}{formatCurrency(Math.abs(txn.amount))}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* BILLS TAB */}
+      {activeTab === 'bills' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            <button style={{ padding: '10px 20px', background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>+ Add Bill</button>
+          </div>
+
+          <SectionHeader 
+            title="Bills Summary" 
+            icon="📊"
+            gradient="linear-gradient(180deg, #F59E0B, #EF4444)" 
+            sectionKey="billsSummary"
+          />
+          {!collapsedSections.billsSummary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+              <KPICard title="Due This Week" value={formatCurrency(4500)} subtitle="3 bills upcoming" gradient="linear-gradient(90deg, #F59E0B, #EF4444)" />
+              <KPICard title="Due This Month" value={formatCurrency(12000)} subtitle="8 bills total" gradient="linear-gradient(90deg, #3B82F6, #06B6D4)" />
+              <KPICard title="Active Subscriptions" value="12" subtitle="Monthly recurring" gradient="linear-gradient(90deg, #10B981, #34D399)" />
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Upcoming Bills" 
+            icon="📅"
+            badge="Next 30 days"
+            gradient="linear-gradient(180deg, #8B5CF6, #EC4899)" 
+            sectionKey="upcomingBills"
+          />
+          {!collapsedSections.upcomingBills && (
+            <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', marginBottom: '32px', border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+              {[
+                { name: 'HomeVestors Franchise Fee', amount: 2500, dueDate: '2025-12-15', category: 'Franchise', recurring: 'Monthly' },
+                { name: 'Property Insurance - 4742 Marino Dr', amount: 350, dueDate: '2025-12-10', category: 'Insurance', recurring: 'Monthly' },
+                { name: 'Holding Costs - 2936 Walker Rd', amount: 850, dueDate: '2025-12-12', category: 'Holding', recurring: 'Monthly' },
+                { name: 'MLS Subscription', amount: 45, dueDate: '2025-12-20', category: 'Software', recurring: 'Monthly' },
+                { name: 'CRM Software', amount: 99, dueDate: '2025-12-08', category: 'Software', recurring: 'Monthly' },
+              ].map((bill, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: i < 4 ? `1px solid ${theme.borderLight}` : 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '12px', background: isDark ? 'rgba(245, 158, 11, 0.2)' : 'rgba(245, 158, 11, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📄</div>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {bill.dueDate} • {bill.recurring}</div>
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '16px', fontWeight: '600', color: theme.textPrimary }}>{formatCurrency(bill.amount)}</div>
+                    <span style={{ padding: '2px 8px', borderRadius: '12px', background: theme.bgMain, color: theme.textMuted, fontSize: '11px' }}>{bill.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Recurring Subscriptions" 
+            icon="🔄"
+            gradient="linear-gradient(180deg, #10B981, #06B6D4)" 
+            sectionKey="subscriptions"
+          />
+          {!collapsedSections.subscriptions && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px' }}>
+              {[
+                { name: 'REIPro', amount: 149, icon: '🏠', category: 'Software' },
+                { name: 'Podio CRM', amount: 99, icon: '📱', category: 'Software' },
+                { name: 'RingCentral', amount: 49, icon: '📞', category: 'Communications' },
+                { name: 'DocuSign', amount: 25, icon: '✍️', category: 'Software' },
+                { name: 'QuickBooks', amount: 40, icon: '📊', category: 'Accounting' },
+                { name: 'Zoom', amount: 15, icon: '🎥', category: 'Communications' },
+              ].map((sub, i) => (
+                <div key={i} style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #10B981, #06B6D4)' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                    <span style={{ fontSize: '24px' }}>{sub.icon}</span>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{sub.name}</div>
+                      <div style={{ fontSize: '11px', color: theme.textMuted }}>{sub.category}</div>
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '20px', fontWeight: '700', color: theme.textPrimary }}>{formatCurrency(sub.amount)}<span style={{ fontSize: '12px', fontWeight: '400', color: theme.textMuted }}>/mo</span></div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* GOALS TAB */}
+      {activeTab === 'goals' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            <button style={{ padding: '10px 20px', background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>+ Add Goal</button>
+          </div>
+
+          <SectionHeader 
+            title="Goals Overview" 
+            icon="🎯"
+            gradient="linear-gradient(180deg, #8B5CF6, #EC4899)" 
+            sectionKey="goalsOverview"
+          />
+          {!collapsedSections.goalsOverview && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
+              <KPICard title="On Track" value="4" subtitle="Goals progressing well" gradient="linear-gradient(90deg, #10B981, #34D399)" />
+              <KPICard title="At Risk" value="1" subtitle="Needs attention" gradient="linear-gradient(90deg, #F59E0B, #EF4444)" />
+              <KPICard title="Completed" value="8" subtitle="This year" gradient="linear-gradient(90deg, #8B5CF6, #A78BFA)" />
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Active Goals" 
+            icon="📈"
+            badge="Q4 2025"
+            gradient="linear-gradient(180deg, #10B981, #06B6D4)" 
+            sectionKey="activeGoals"
+          />
+          {!collapsedSections.activeGoals && (
+            <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', marginBottom: '32px', border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #10B981, #06B6D4)' }} />
+              {[
+                { name: 'Close 8 Deals This Year', current: stats.closedCount, target: 8, deadline: '2025-12-31', category: 'Deals' },
+                { name: 'Achieve $100K Net Profit', current: stats.totalProfit, target: 100000, deadline: '2025-12-31', category: 'Revenue', isCurrency: true },
+                { name: 'Build $25K Cash Reserve', current: 18000, target: 25000, deadline: '2025-12-31', category: 'Savings', isCurrency: true },
+                { name: 'Reduce Avg DOM to 45 Days', current: stats.avgDOM, target: 45, deadline: '2025-12-31', category: 'Efficiency', isReverse: true },
+              ].map((goal, i) => {
+                const progress = goal.isReverse 
+                  ? Math.max(0, Math.min(100, (1 - (goal.current - goal.target) / goal.target) * 100))
+                  : Math.min(100, (goal.current / goal.target) * 100);
+                const isOnTrack = progress >= 70;
+                return (
+                  <div key={i} style={{ padding: '20px 0', borderBottom: i < 3 ? `1px solid ${theme.borderLight}` : 'none' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                      <div>
+                        <div style={{ fontSize: '15px', fontWeight: '600', color: theme.textPrimary }}>{goal.name}</div>
+                        <div style={{ fontSize: '12px', color: theme.textMuted, marginTop: '4px' }}>Deadline: {goal.deadline}</div>
+                      </div>
+                      <span style={{ padding: '4px 12px', borderRadius: '20px', background: isOnTrack ? 'rgba(16, 185, 129, 0.1)' : 'rgba(245, 158, 11, 0.1)', color: isOnTrack ? '#10B981' : '#F59E0B', fontSize: '12px', fontWeight: '500' }}>{goal.category}</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '13px', color: theme.textSecondary }}>
+                        {goal.isCurrency ? formatCurrency(goal.current) : goal.current} of {goal.isCurrency ? formatCurrency(goal.target) : goal.target}
+                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: isOnTrack ? '#10B981' : '#F59E0B' }}>{Math.round(progress)}%</span>
+                    </div>
+                    <div style={{ height: '8px', background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${progress}%`, height: '100%', background: isOnTrack ? 'linear-gradient(90deg, #10B981, #34D399)' : 'linear-gradient(90deg, #F59E0B, #EF4444)', borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TASKS TAB */}
+      {activeTab === 'tasks' && (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '16px' }}>
+            <button style={{ padding: '10px 20px', background: `linear-gradient(135deg, ${theme.primary}, ${theme.secondary})`, border: 'none', borderRadius: '10px', color: 'white', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px', boxShadow: '0 4px 12px rgba(139, 92, 246, 0.3)' }}>+ Add Task</button>
+          </div>
+
+          <SectionHeader 
+            title="Task Summary" 
+            icon="📋"
+            gradient="linear-gradient(180deg, #EF4444, #F59E0B)" 
+            sectionKey="taskSummary"
+          />
+          {!collapsedSections.taskSummary && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '32px' }}>
+              <KPICard title="Overdue" value="2" subtitle="Needs immediate action" gradient="linear-gradient(90deg, #EF4444, #F87171)" />
+              <KPICard title="Due Today" value="4" subtitle="Complete today" gradient="linear-gradient(90deg, #F59E0B, #FBBF24)" />
+              <KPICard title="In Progress" value="12" subtitle="Currently working" gradient="linear-gradient(90deg, #3B82F6, #06B6D4)" />
+              <KPICard title="Completed" value="45" subtitle="This month" gradient="linear-gradient(90deg, #10B981, #34D399)" />
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Active Tasks" 
+            icon="✅"
+            badge="Priority order"
+            gradient="linear-gradient(180deg, #8B5CF6, #EC4899)" 
+            sectionKey="activeTasks"
+          />
+          {!collapsedSections.activeTasks && (
+            <div style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', marginBottom: '32px', border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+              <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(90deg, #8B5CF6, #EC4899)' }} />
+              {[
+                { title: 'Schedule inspection - 4742 Marino Dr', dueDate: '2025-12-07', priority: 'high', category: 'Properties', property: '4742 Marino Dr' },
+                { title: 'Get contractor bids for rehab', dueDate: '2025-12-08', priority: 'high', category: 'Rehab', property: '2936 Walker Rd' },
+                { title: 'Review purchase agreement', dueDate: '2025-12-09', priority: 'medium', category: 'Legal', property: '4742 Marino Dr' },
+                { title: 'Update MLS listing photos', dueDate: '2025-12-10', priority: 'medium', category: 'Marketing', property: '2936 Walker Rd' },
+                { title: 'Follow up with buyer agent', dueDate: '2025-12-11', priority: 'low', category: 'Sales', property: '2936 Walker Rd' },
+                { title: 'Submit franchise report', dueDate: '2025-12-15', priority: 'low', category: 'Admin', property: 'General' },
+              ].map((task, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 0', borderBottom: i < 5 ? `1px solid ${theme.borderLight}` : 'none' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ width: '24px', height: '24px', borderRadius: '6px', border: `2px solid ${task.priority === 'high' ? '#EF4444' : task.priority === 'medium' ? '#F59E0B' : theme.borderLight}`, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{task.title}</div>
+                      <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {task.dueDate} • {task.property}</div>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ padding: '4px 10px', borderRadius: '20px', fontSize: '11px', fontWeight: '500', background: task.priority === 'high' ? 'rgba(239, 68, 68, 0.1)' : task.priority === 'medium' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)', color: task.priority === 'high' ? '#EF4444' : task.priority === 'medium' ? '#F59E0B' : '#10B981' }}>{task.priority}</span>
+                    <span style={{ padding: '4px 10px', borderRadius: '20px', background: theme.bgMain, color: theme.textMuted, fontSize: '11px' }}>{task.category}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <SectionHeader 
+            title="Deal-Specific Tasks" 
+            icon="🏠"
+            gradient="linear-gradient(180deg, #F59E0B, #EF4444)" 
+            sectionKey="dealTasks"
+          />
+          {!collapsedSections.dealTasks && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+              {deals.filter(d => d.status !== 'Closed').map(deal => (
+                <div key={deal.id} style={{ background: theme.bgCard, borderRadius: '16px', padding: '20px', border: `1px solid ${theme.borderLight}`, position: 'relative', overflow: 'hidden' }}>
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: getStatusColor(deal.status).bg }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                    <div>
+                      <div style={{ fontSize: '14px', fontWeight: '600', color: theme.textPrimary }}>{deal.property.split(',')[0]}</div>
+                      <span style={{ padding: '2px 8px', borderRadius: '12px', background: getStatusColor(deal.status).bg, color: getStatusColor(deal.status).color, fontSize: '10px', fontWeight: '500' }}>{deal.status}</span>
+                    </div>
+                    <div style={{ fontSize: '12px', color: theme.textMuted }}>3 tasks pending</div>
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textSecondary }}>
+                      <span style={{ width: '16px', height: '16px', borderRadius: '4px', border: `1.5px solid ${theme.borderLight}` }} />
+                      Schedule inspection
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textSecondary }}>
+                      <span style={{ width: '16px', height: '16px', borderRadius: '4px', border: `1.5px solid ${theme.borderLight}` }} />
+                      Get contractor bids
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: theme.textSecondary }}>
+                      <span style={{ width: '16px', height: '16px', borderRadius: '4px', border: `1.5px solid ${theme.borderLight}` }} />
+                      Review title report
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
