@@ -7,6 +7,85 @@ import { InfoTooltip, MetricLabel, ProjectionBadge, ActualDataBadge, FINANCIAL_T
 import { DEFAULT_TRANSACTIONS, DEFAULT_RETIREMENT_DATA } from './data/defaultData';
 
 // ============================================================================
+// RESPONSIVE HOOK - Detects device type and screen size
+// ============================================================================
+const useResponsive = () => {
+  const [screen, setScreen] = useState({
+    width: typeof window !== 'undefined' ? window.innerWidth : 1200,
+    height: typeof window !== 'undefined' ? window.innerHeight : 800,
+    isMobile: false,
+    isTablet: false,
+    isDesktop: true,
+    isLandscape: true,
+    deviceType: 'desktop',
+    breakpoint: 'xl'
+  });
+
+  useEffect(() => {
+    const updateScreen = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isLandscape = width > height;
+      
+      // Device detection
+      const isMobile = width < 768;
+      const isTablet = width >= 768 && width < 1024;
+      const isDesktop = width >= 1024;
+      
+      // Breakpoint detection (matches Tailwind)
+      let breakpoint = 'xl';
+      if (width < 640) breakpoint = 'xs';
+      else if (width < 768) breakpoint = 'sm';
+      else if (width < 1024) breakpoint = 'md';
+      else if (width < 1280) breakpoint = 'lg';
+      else if (width < 1536) breakpoint = 'xl';
+      else breakpoint = '2xl';
+      
+      // Specific device detection
+      let deviceType = 'desktop';
+      if (width <= 430) deviceType = 'iphone';
+      else if (width <= 768) deviceType = 'iphone-landscape';
+      else if (width <= 834) deviceType = 'ipad-mini';
+      else if (width <= 1024) deviceType = 'ipad';
+      else if (width <= 1194) deviceType = 'ipad-pro-11';
+      else if (width <= 1366) deviceType = 'ipad-pro-12';
+      else deviceType = 'desktop';
+      
+      setScreen({
+        width,
+        height,
+        isMobile,
+        isTablet,
+        isDesktop,
+        isLandscape,
+        deviceType,
+        breakpoint
+      });
+    };
+
+    updateScreen();
+    window.addEventListener('resize', updateScreen);
+    window.addEventListener('orientationchange', () => {
+      setTimeout(updateScreen, 100); // Delay for orientation change
+    });
+    
+    return () => {
+      window.removeEventListener('resize', updateScreen);
+      window.removeEventListener('orientationchange', updateScreen);
+    };
+  }, []);
+
+  return screen;
+};
+
+// Responsive size helper - returns appropriate size based on screen
+const getResponsiveValue = (screen, { mobile, tablet, desktop }) => {
+  if (screen.isMobile) return mobile;
+  if (screen.isTablet) return tablet;
+  return desktop;
+};
+
+// ============================================================================
 // LAZY LOADED COMPONENTS - Code splitting for better initial load
 // ============================================================================
 const HomeTab = lazy(() => import('./components/HomeTab'));
@@ -4980,6 +5059,9 @@ function Dashboard({
   userRole = USER_ROLES.STARTER,
   permissions = ROLE_PERMISSIONS[USER_ROLES.STARTER]
 }) {
+  // Responsive hook - detect device and screen size
+  const screen = useResponsive();
+  
   const [activeTab, setActiveTab] = useState('newsfeed');
   const [previousTab, setPreviousTab] = useState('home');
   const [tabRestored, setTabRestored] = useState(false); // Track if we've restored the tab
@@ -5010,7 +5092,7 @@ function Dashboard({
   const [subscriptionLoading, setSubscriptionLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [expandedHubs, setExpandedHubs] = useState({}); // All hubs collapsed by default
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false); // Sidebar collapse state
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => screen.isMobile || screen.isTablet); // Auto-collapse on mobile/tablet
   const [trialBannerCollapsed, setTrialBannerCollapsed] = useState(false); // Trial banner collapse
   
   // Custom account type labels (rename Personal/Side Hustle)
@@ -5706,6 +5788,14 @@ function Dashboard({
   // Mobile menu state
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Helper to navigate and close mobile menu
+  const navigateToTab = (tabId) => {
+    setActiveTab(tabId);
+    if (screen.isMobile || screen.isTablet) {
+      setMobileMenuOpen(false);
+    }
+  };
+
   return (
     <>
       {/* Global Responsive Styles */}
@@ -5722,8 +5812,145 @@ function Dashboard({
           0% { background-position: -200% 0; }
           100% { background-position: 200% 0; }
         }
+        
+        /* ============================================
+           RESPONSIVE BREAKPOINTS
+           ============================================ */
+        
+        /* iPhone SE, small phones (320px - 375px) */
+        @media (max-width: 375px) {
+          .dashboard-main {
+            margin-left: 0 !important;
+          }
+          .content-area {
+            padding: 12px !important;
+          }
+          .card-padding {
+            padding: 12px !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .stat-value {
+            font-size: 20px !important;
+          }
+          .page-title {
+            font-size: 20px !important;
+          }
+          .section-title {
+            font-size: 16px !important;
+          }
+        }
+        
+        /* iPhone 14/15/16 standard (376px - 430px) */
+        @media (min-width: 376px) and (max-width: 430px) {
+          .dashboard-main {
+            margin-left: 0 !important;
+          }
+          .content-area {
+            padding: 16px !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: 1fr !important;
+            gap: 12px !important;
+          }
+          .chart-grid-2-1, .chart-grid-1-1 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        
+        /* iPhone Pro Max, large phones (431px - 480px) */
+        @media (min-width: 431px) and (max-width: 480px) {
+          .dashboard-main {
+            margin-left: 0 !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        
+        /* Small tablets, phones landscape (481px - 767px) */
+        @media (min-width: 481px) and (max-width: 767px) {
+          .dashboard-main {
+            margin-left: 0 !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .chart-grid-2-1 {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        
+        /* iPad Mini, iPad 10.2" portrait (768px - 834px) */
+        @media (min-width: 768px) and (max-width: 834px) {
+          .dashboard-sidebar {
+            width: 200px !important;
+          }
+          .dashboard-main {
+            margin-left: 200px !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .content-area {
+            padding: 20px !important;
+          }
+          .sidebar-nav-item {
+            padding: 10px 14px !important;
+            font-size: 13px !important;
+          }
+          .sidebar-icon {
+            width: 18px !important;
+            height: 18px !important;
+          }
+        }
+        
+        /* iPad Air, iPad 10.9" (835px - 1024px) */
+        @media (min-width: 835px) and (max-width: 1024px) {
+          .dashboard-sidebar {
+            width: 220px !important;
+          }
+          .dashboard-main {
+            margin-left: 220px !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+        }
+        
+        /* iPad Pro 11" (1025px - 1194px) */
+        @media (min-width: 1025px) and (max-width: 1194px) {
+          .dashboard-sidebar {
+            width: 240px !important;
+          }
+          .dashboard-main {
+            margin-left: 240px !important;
+          }
+          .stat-grid-4 {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+        }
+        
+        /* iPad Pro 12.9" (1195px - 1366px) */
+        @media (min-width: 1195px) and (max-width: 1366px) {
+          .dashboard-sidebar {
+            width: 260px !important;
+          }
+          .dashboard-main {
+            margin-left: 260px !important;
+          }
+        }
+        
+        /* Mobile Menu Toggle (show on tablets and below) */
         @media (max-width: 1024px) {
           .dashboard-sidebar {
+            position: fixed !important;
+            left: 0 !important;
+            top: 0 !important;
+            bottom: 0 !important;
+            z-index: 100 !important;
             transform: translateX(-100%);
             transition: transform 0.3s ease;
           }
@@ -5740,15 +5967,24 @@ function Dashboard({
             background: rgba(0,0,0,0.5);
             z-index: 99;
           }
+          .mobile-menu-btn {
+            display: flex !important;
+          }
         }
+        
+        /* Hide mobile menu on desktop */
+        @media (min-width: 1025px) {
+          .mobile-menu-btn {
+            display: none !important;
+          }
+          .dashboard-overlay {
+            display: none !important;
+          }
+        }
+        
+        /* Common mobile optimizations */
         @media (max-width: 768px) {
-          .stat-grid-4 {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          .chart-grid-2-1 {
-            grid-template-columns: 1fr !important;
-          }
-          .chart-grid-1-1 {
+          .chart-grid-2-1, .chart-grid-1-1 {
             grid-template-columns: 1fr !important;
           }
           .task-stat-grid {
@@ -5763,7 +5999,27 @@ function Dashboard({
           .filter-tabs button {
             flex: 1 1 45%;
           }
+          .dashboard-header-content {
+            flex-direction: column;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+          .account-toggle {
+            width: 100%;
+            overflow-x: auto;
+          }
+          .hub-switcher {
+            flex-wrap: wrap;
+            gap: 8px !important;
+          }
+          .hub-switcher button {
+            flex: 1 1 calc(50% - 4px);
+            font-size: 12px !important;
+            padding: 8px 12px !important;
+          }
         }
+        
+        /* Very small screens */
         @media (max-width: 480px) {
           .stat-grid-4 {
             grid-template-columns: 1fr !important;
@@ -5771,43 +6027,63 @@ function Dashboard({
           .task-stat-grid {
             grid-template-columns: 1fr !important;
           }
-          .dashboard-header-content {
-            flex-direction: column;
-            align-items: flex-start !important;
-            gap: 16px !important;
-          }
-          .account-toggle {
-            width: 100%;
-            overflow-x: auto;
-          }
           .filter-tabs button {
             flex: 1 1 100%;
           }
+          .tab-button {
+            padding: 8px 12px !important;
+            font-size: 12px !important;
+          }
+          .modal-content {
+            width: 95% !important;
+            max-height: 90vh !important;
+            margin: 16px !important;
+          }
         }
         
-        /* iPhone Pro / Pro Max optimizations */
-        @media (max-width: 430px) {
-          .content-area {
-            padding: 16px !important;
+        /* Landscape phone optimizations */
+        @media (max-height: 500px) and (orientation: landscape) {
+          .dashboard-sidebar {
+            padding-top: 8px !important;
           }
-          .card-padding {
-            padding: 16px !important;
+          .sidebar-nav-item {
+            padding: 6px 12px !important;
           }
           .header-bar {
-            padding: 0 16px !important;
+            height: 50px !important;
           }
         }
         
-        /* iPad optimizations */
-        @media (min-width: 768px) and (max-width: 1024px) {
-          .stat-grid-4 {
-            grid-template-columns: repeat(2, 1fr) !important;
+        /* Touch device optimizations */
+        @media (hover: none) and (pointer: coarse) {
+          .clickable, button, a {
+            min-height: 44px;
+            min-width: 44px;
+          }
+          .sidebar-nav-item {
+            min-height: 44px;
+          }
+          * {
+            -webkit-tap-highlight-color: transparent;
+          }
+          .scroll-container {
+            -webkit-overflow-scrolling: touch;
+          }
+        }
+        
+        /* Safe area for notched devices */
+        @supports (padding: max(0px)) {
+          .dashboard-main {
+            padding-left: max(16px, env(safe-area-inset-left));
+            padding-right: max(16px, env(safe-area-inset-right));
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
           }
           .dashboard-sidebar {
-            width: 200px !important;
+            padding-top: max(16px, env(safe-area-inset-top));
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
           }
-          .dashboard-main {
-            margin-left: 200px !important;
+          .header-bar {
+            padding-top: env(safe-area-inset-top);
           }
         }
         
@@ -5825,22 +6101,29 @@ function Dashboard({
       <div style={{ display: 'flex', minHeight: '100vh', background: theme.bgMain, fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
 
       {/* Mobile Menu Overlay */}
-      {mobileMenuOpen && (
+      {/* Mobile Overlay - visible when menu is open on mobile */}
+      {mobileMenuOpen && screen.isMobile && (
         <div 
           className="dashboard-overlay"
           onClick={() => setMobileMenuOpen(false)}
-          style={{ display: 'none' }}
+          style={{ 
+            display: 'block',
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.5)',
+            zIndex: 99
+          }}
         />
       )}
 
-      {/* Mobile Menu Button - Only visible on mobile */}
+      {/* Mobile Menu Button - Only visible on mobile/tablet */}
       <button
         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         className="mobile-menu-btn"
         style={{
-          display: 'none',
+          display: screen.isMobile || screen.isTablet ? 'flex' : 'none',
           position: 'fixed',
-          top: '16px',
+          top: '14px',
           left: '16px',
           zIndex: 200,
           width: '44px',
@@ -5851,13 +6134,22 @@ function Dashboard({
           cursor: 'pointer',
           alignItems: 'center',
           justifyContent: 'center',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+          boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
         }}
       >
         <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={theme.textPrimary} strokeWidth="2">
-          <line x1="3" y1="12" x2="21" y2="12"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <line x1="3" y1="18" x2="21" y2="18"/>
+          {mobileMenuOpen ? (
+            <>
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </>
+          ) : (
+            <>
+              <line x1="3" y1="12" x2="21" y2="12"/>
+              <line x1="3" y1="6" x2="21" y2="6"/>
+              <line x1="3" y1="18" x2="21" y2="18"/>
+            </>
+          )}
         </svg>
       </button>
       <style>{`
@@ -5905,7 +6197,7 @@ function Dashboard({
       <aside 
         className={`dashboard-sidebar ${mobileMenuOpen ? 'open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`}
         style={{
-        width: sidebarCollapsed ? '80px' : '260px',
+        width: sidebarCollapsed ? '80px' : (screen.isTablet ? '220px' : '260px'),
         background: theme.sidebarBg,
         borderRight: theme.mode === 'light' ? 'none' : `1px solid ${theme.border}`,
         display: 'flex',
@@ -5916,7 +6208,8 @@ function Dashboard({
         boxShadow: theme.mode === 'light' 
           ? '4px 0 32px rgba(30, 27, 75, 0.3)' 
           : '4px 0 24px rgba(0, 0, 0, 0.3)',
-        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        transition: 'width 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        transform: screen.isMobile && !mobileMenuOpen ? 'translateX(-100%)' : 'translateX(0)'
       }}>
         {/* Logo Area with Collapse Button */}
         <div style={{ 
@@ -6224,7 +6517,7 @@ function Dashboard({
           {sidebarCollapsed ? (
             <div style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
               <div
-                onClick={() => setActiveTab('newsfeed')}
+                onClick={() => navigateToTab('newsfeed')}
                 style={{
                   width: '48px',
                   height: '48px',
@@ -6249,7 +6542,7 @@ function Dashboard({
             </div>
           ) : (
             <div
-              onClick={() => setActiveTab('newsfeed')}
+              onClick={() => navigateToTab('newsfeed')}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -6747,7 +7040,7 @@ function Dashboard({
                     {hub.items.map((item, index) => (
                       <div
                         key={item.id}
-                        onClick={() => setActiveTab(item.id)}
+                        onClick={() => navigateToTab(item.id)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
@@ -6811,7 +7104,7 @@ function Dashboard({
             sidebarCollapsed ? (
               <div key={item.id} style={{ marginBottom: '8px', display: 'flex', justifyContent: 'center' }}>
                 <div
-                  onClick={() => setActiveTab(item.id)}
+                  onClick={() => navigateToTab(item.id)}
                   style={{
                     width: '48px',
                     height: '48px',
@@ -6834,7 +7127,7 @@ function Dashboard({
             ) : (
               <div
                 key={item.id}
-                onClick={() => setActiveTab(item.id)}
+                onClick={() => navigateToTab(item.id)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -7060,20 +7353,20 @@ function Dashboard({
       {/* Main Content */}
       <main className="dashboard-main" style={{ 
         flex: 1, 
-        marginLeft: sidebarCollapsed ? '80px' : '260px', 
+        marginLeft: screen.isMobile ? '0' : (sidebarCollapsed ? '80px' : (screen.isTablet ? '220px' : '260px')), 
         display: 'flex', 
         flexDirection: 'column',
         transition: 'margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
       }}>
         {/* Top Header - Premium Styling */}
         <header className="header-bar" style={{
-          height: '72px',
+          height: screen.isMobile ? '64px' : '72px',
           background: theme.headerBg || theme.bgWhite,
           borderBottom: `1px solid ${theme.headerBorder || theme.border}`,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 28px',
+          padding: screen.isMobile ? '0 16px 0 60px' : '0 28px',
           position: 'sticky',
           top: 0,
           zIndex: 50,
