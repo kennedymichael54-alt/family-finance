@@ -14241,9 +14241,6 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddClient, setShowAddClient] = useState(false);
   const [showAddProject, setShowAddProject] = useState(false);
-  const [showAddBill, setShowAddBill] = useState(false);
-  const [showAddGoal, setShowAddGoal] = useState(false);
-  const [showAddTask, setShowAddTask] = useState(false);
   
   // Collapsible section states
   const [collapsedSections, setCollapsedSections] = useState({});
@@ -15167,13 +15164,7 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Transactions</h2>
-            <button
-              style={{
-                padding: '10px 20px', background: theme.primary, color: 'white',
-                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
+            <button style={{ padding: '10px 20px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>+</span> Add Transaction
             </button>
           </div>
@@ -15222,9 +15213,7 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
                       <td style={{ padding: '14px 16px', fontSize: '14px', color: theme.textSecondary }}>{txn.date}</td>
                       <td style={{ padding: '14px 16px', fontSize: '14px', color: theme.textPrimary, fontWeight: '500' }}>{txn.desc}</td>
                       <td style={{ padding: '14px 16px' }}>
-                        <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', background: theme.bgMain, color: theme.textSecondary }}>
-                          {txn.category}
-                        </span>
+                        <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', background: theme.bgMain, color: theme.textSecondary }}>{txn.category}</span>
                       </td>
                       <td style={{ padding: '14px 16px', fontSize: '14px', fontWeight: '600', textAlign: 'right', color: txn.type === 'income' ? '#22C55E' : '#DC2626' }}>
                         {txn.type === 'income' ? '+' : ''}{formatCurrency(Math.abs(txn.amount))}
@@ -15242,15 +15231,8 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
       {activeTab === 'bills' && (
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Bills & Subscriptions</h2>
-            <button
-              onClick={() => setShowAddBill(true)}
-              style={{
-                padding: '10px 20px', background: theme.primary, color: 'white',
-                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
+            <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Bills</h2>
+            <button style={{ padding: '10px 20px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>+</span> Add Bill
             </button>
           </div>
@@ -15281,15 +15263,9 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
                 { name: 'Liability Insurance', amount: 250, dueDate: '2025-12-20', category: 'Insurance', recurring: 'Monthly' },
                 { name: 'QuickBooks', amount: 40, dueDate: '2025-12-08', category: 'Software', recurring: 'Monthly' },
               ].map((bill, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '14px 16px', background: theme.bgMain, borderRadius: '10px'
-                }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: theme.bgMain, borderRadius: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '40px', height: '40px', borderRadius: '10px', background: '#FEF3C7',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px'
-                    }}>📄</div>
+                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px' }}>📄</div>
                     <div>
                       <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{bill.name}</div>
                       <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {bill.dueDate} • {bill.recurring}</div>
@@ -15311,14 +15287,7 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Goals</h2>
-            <button
-              onClick={() => setShowAddGoal(true)}
-              style={{
-                padding: '10px 20px', background: theme.primary, color: 'white',
-                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
+            <button style={{ padding: '10px 20px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>+</span> Add Goal
             </button>
           </div>
@@ -15362,16 +15331,10 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
                       <span style={{ fontSize: '13px', color: theme.textSecondary }}>
                         {goal.isPercent ? `${goal.current}%` : formatCurrency(goal.current)} of {goal.isPercent ? `${goal.target}%` : formatCurrency(goal.target)}
                       </span>
-                      <span style={{ fontSize: '13px', fontWeight: '600', color: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : '#DC2626' }}>
-                        {Math.round(progress)}%
-                      </span>
+                      <span style={{ fontSize: '13px', fontWeight: '600', color: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : '#DC2626' }}>{Math.round(progress)}%</span>
                     </div>
                     <div style={{ background: theme.bgCard, borderRadius: '8px', height: '8px', overflow: 'hidden' }}>
-                      <div style={{
-                        width: `${Math.min(progress, 100)}%`, height: '100%',
-                        background: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : theme.primary,
-                        borderRadius: '8px'
-                      }} />
+                      <div style={{ width: `${Math.min(progress, 100)}%`, height: '100%', background: progress >= 80 ? '#22C55E' : progress >= 50 ? '#F59E0B' : theme.primary, borderRadius: '8px' }} />
                     </div>
                   </div>
                 );
@@ -15386,14 +15349,7 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
         <div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2 style={{ fontSize: '20px', fontWeight: '600', color: theme.textPrimary, margin: 0 }}>Business Tasks</h2>
-            <button
-              onClick={() => setShowAddTask(true)}
-              style={{
-                padding: '10px 20px', background: theme.primary, color: 'white',
-                border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer',
-                display: 'flex', alignItems: 'center', gap: '8px'
-              }}
-            >
+            <button style={{ padding: '10px 20px', background: theme.primary, color: 'white', border: 'none', borderRadius: '10px', fontSize: '14px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>+</span> Add Task
             </button>
           </div>
@@ -15428,31 +15384,17 @@ function GeneralBusinessDashboard({ theme, profile, lastImportDate, initialTab =
                 { title: 'Update website portfolio', dueDate: '2025-12-15', priority: 'low', category: 'Marketing' },
                 { title: 'Schedule team meeting', dueDate: '2025-12-09', priority: 'medium', category: 'Admin' },
               ].map((task, i) => (
-                <div key={i} style={{
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  padding: '14px 16px', background: theme.bgMain, borderRadius: '10px'
-                }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 16px', background: theme.bgMain, borderRadius: '10px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <div style={{
-                      width: '20px', height: '20px', borderRadius: '4px',
-                      border: `2px solid ${theme.borderLight}`, cursor: 'pointer'
-                    }} />
+                    <div style={{ width: '20px', height: '20px', borderRadius: '4px', border: `2px solid ${theme.borderLight}`, cursor: 'pointer' }} />
                     <div>
                       <div style={{ fontSize: '14px', fontWeight: '500', color: theme.textPrimary }}>{task.title}</div>
                       <div style={{ fontSize: '12px', color: theme.textMuted }}>Due: {task.dueDate}</div>
                     </div>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{
-                      padding: '4px 8px', borderRadius: '4px', fontSize: '11px',
-                      background: task.priority === 'high' ? '#FEE2E2' : task.priority === 'medium' ? '#FEF3C7' : '#DCFCE7',
-                      color: task.priority === 'high' ? '#DC2626' : task.priority === 'medium' ? '#92400E' : '#166534'
-                    }}>
-                      {task.priority}
-                    </span>
-                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', background: theme.bgCard, color: theme.textMuted }}>
-                      {task.category}
-                    </span>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', background: task.priority === 'high' ? '#FEE2E2' : task.priority === 'medium' ? '#FEF3C7' : '#DCFCE7', color: task.priority === 'high' ? '#DC2626' : task.priority === 'medium' ? '#92400E' : '#166534' }}>{task.priority}</span>
+                    <span style={{ padding: '4px 8px', borderRadius: '4px', fontSize: '11px', background: theme.bgCard, color: theme.textMuted }}>{task.category}</span>
                   </div>
                 </div>
               ))}
