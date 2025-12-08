@@ -47,6 +47,15 @@ export default function BizBudgetHub({ theme, lastImportDate, userEmail, initial
   const [collapsedSections, setCollapsedSections] = useState({});
   const [deals] = useState(DEMO_DEALS);
   
+  // Filter transactions for BizBudget Hub - show business and sidehustle transactions
+  const bizTransactions = useMemo(() => {
+    return transactions.filter(t => 
+      t.hubType === 'bizbudget' || 
+      t.accountType === 'business' || 
+      t.accountType === 'sidehustle'
+    );
+  }, [transactions]);
+  
   useEffect(() => { if (profile?.bizbudgetBusinessName) setBusinessName(profile.bizbudgetBusinessName); }, [profile?.bizbudgetBusinessName]);
   
   const saveBusinessName = async () => {
@@ -950,7 +959,7 @@ export default function BizBudgetHub({ theme, lastImportDate, userEmail, initial
           <SectionHeader 
             title="Transaction History" 
             icon="📋"
-            badge={`${transactions?.length || 0} records`}
+            badge={`${bizTransactions?.length || 0} records`}
             gradient="linear-gradient(180deg, #3B82F6, #06B6D4)" 
             sectionKey="transactionHistory"
           />
@@ -1002,7 +1011,7 @@ export default function BizBudgetHub({ theme, lastImportDate, userEmail, initial
                   </tr>
                 </thead>
                 <tbody>
-                  {(transactions && transactions.length > 0 ? transactions.slice(0, 15) : [
+                  {(bizTransactions && bizTransactions.length > 0 ? bizTransactions.slice(0, 15) : [
                     { date: '2025-12-06', description: 'Property Sale - 321 Elm St', category: 'Sales', amount: 95000, status: 'Completed', property: 'Roswell' },
                     { date: '2025-12-05', description: 'Contractor Payment - Plumbing', category: 'Contractor', amount: -4500, status: 'Completed', property: '456 Oak Ave' },
                     { date: '2025-12-04', description: 'Materials - Flooring', category: 'Materials', amount: -2800, status: 'Completed', property: '456 Oak Ave' },
@@ -1046,7 +1055,7 @@ export default function BizBudgetHub({ theme, lastImportDate, userEmail, initial
 
               {/* Pagination */}
               <div style={{ padding: '16px 20px', borderTop: `1px solid ${theme.borderLight}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '13px', color: theme.textMuted }}>Showing 1-10 of {transactions?.length || 10}</span>
+                <span style={{ fontSize: '13px', color: theme.textMuted }}>Showing 1-10 of {bizTransactions?.length || 10}</span>
                 <div style={{ display: 'flex', gap: '8px' }}>
                   <button style={{ padding: '8px 14px', borderRadius: '8px', border: `1px solid ${theme.borderLight}`, background: theme.bgMain, color: theme.textSecondary, fontSize: '13px', cursor: 'pointer' }}>Previous</button>
                   <button style={{ padding: '8px 14px', borderRadius: '8px', border: 'none', background: theme.primary, color: 'white', fontSize: '13px', cursor: 'pointer' }}>Next</button>
