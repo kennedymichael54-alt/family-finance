@@ -608,26 +608,6 @@ export const SIDE_HUSTLE_OPTIONS = [
 // Get default config for users without a side hustle set
 const DEFAULT_CONFIG = SIDE_HUSTLE_CONFIG['general-sales'];
 
-// Map profile sideHustle values to SIDE_HUSTLE_CONFIG keys
-const PROFILE_TO_CONFIG_MAP = {
-  'realtor': 'real-estate',
-  'photography': 'photographer',
-  'beauty': 'hair-stylist',
-  'fitness': 'fitness-trainer',
-  'content': 'content-creator',
-  'freelancer': 'consultant',
-  'ecommerce': 'ecommerce',
-  'tutor': 'consultant',
-  'crafts': 'freelance-creative',
-  'food': 'general-sales',
-  'repair': 'general-sales',
-  'pet': 'general-sales',
-  'music': 'event-planner',
-  'rental': 'real-estate',
-  'rideshare': 'general-sales',
-  'other': 'general-sales'
-};
-
 const SalesTrackerTab = ({ user, isDarkMode }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [pipeline, setPipeline] = useState([]);
@@ -638,9 +618,22 @@ const SalesTrackerTab = ({ user, isDarkMode }) => {
   const [modalType, setModalType] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   
-  // Get user's side hustle type - map from profile value to config key
-  const profileSideHustle = user?.sideHustle || 'general-sales';
-  const sideHustleType = PROFILE_TO_CONFIG_MAP[profileSideHustle] || profileSideHustle;
+  // Collapsible sections state
+  const [collapsedSections, setCollapsedSections] = useState({});
+  const ALL_SECTIONS = ['stats', 'pipeline', 'recentActivity', 'quickActions', 'commissions', 'expenses', 'contacts'];
+  const collapseAll = () => {
+    const collapsed = {};
+    ALL_SECTIONS.forEach(s => collapsed[s] = true);
+    setCollapsedSections(collapsed);
+  };
+  const expandAll = () => {
+    const expanded = {};
+    ALL_SECTIONS.forEach(s => expanded[s] = false);
+    setCollapsedSections(expanded);
+  };
+  
+  // Get user's side hustle type (defaults to general-sales if not set)
+  const sideHustleType = user?.sideHustle || 'general-sales';
   const config = SIDE_HUSTLE_CONFIG[sideHustleType] || DEFAULT_CONFIG;
   
   // Generate unique storage key for this user
@@ -1789,6 +1782,26 @@ const SalesTrackerTab = ({ user, isDarkMode }) => {
             {tab.label}
           </button>
         ))}
+      </div>
+
+      {/* Collapse All / Expand All Toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button onClick={collapseAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff',
+          border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#6b7280',
+          fontWeight: '500', transition: 'all 0.2s'
+        }}>🗂️ Collapse All</button>
+        <button onClick={expandAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: isDarkMode ? 'rgba(255,255,255,0.05)' : '#fff',
+          border: `1px solid ${isDarkMode ? 'rgba(255,255,255,0.1)' : '#e5e7eb'}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: isDarkMode ? 'rgba(255,255,255,0.7)' : '#6b7280',
+          fontWeight: '500', transition: 'all 0.2s'
+        }}>📂 Expand All</button>
       </div>
 
       {/* Tab Content */}
