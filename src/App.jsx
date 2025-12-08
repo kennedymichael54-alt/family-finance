@@ -6458,7 +6458,7 @@ function Dashboard({
         }}>
           {/* Logo */}
           <div 
-            onClick={() => setActiveTab('newsfeed')}
+            onClick={() => setActiveTab('home')}
             style={{ 
               display: 'flex', 
               alignItems: 'center', 
