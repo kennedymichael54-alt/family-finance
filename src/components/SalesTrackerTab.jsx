@@ -608,6 +608,26 @@ export const SIDE_HUSTLE_OPTIONS = [
 // Get default config for users without a side hustle set
 const DEFAULT_CONFIG = SIDE_HUSTLE_CONFIG['general-sales'];
 
+// Map profile sideHustle values to SIDE_HUSTLE_CONFIG keys
+const PROFILE_TO_CONFIG_MAP = {
+  'realtor': 'real-estate',
+  'photography': 'photographer',
+  'beauty': 'hair-stylist',
+  'fitness': 'fitness-trainer',
+  'content': 'content-creator',
+  'freelancer': 'consultant',
+  'ecommerce': 'ecommerce',
+  'tutor': 'consultant',
+  'crafts': 'freelance-creative',
+  'food': 'general-sales',
+  'repair': 'general-sales',
+  'pet': 'general-sales',
+  'music': 'event-planner',
+  'rental': 'real-estate',
+  'rideshare': 'general-sales',
+  'other': 'general-sales'
+};
+
 const SalesTrackerTab = ({ user, isDarkMode }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [pipeline, setPipeline] = useState([]);
@@ -618,8 +638,9 @@ const SalesTrackerTab = ({ user, isDarkMode }) => {
   const [modalType, setModalType] = useState('');
   const [editingItem, setEditingItem] = useState(null);
   
-  // Get user's side hustle type (defaults to general-sales if not set)
-  const sideHustleType = user?.sideHustle || 'general-sales';
+  // Get user's side hustle type - map from profile value to config key
+  const profileSideHustle = user?.sideHustle || 'general-sales';
+  const sideHustleType = PROFILE_TO_CONFIG_MAP[profileSideHustle] || profileSideHustle;
   const config = SIDE_HUSTLE_CONFIG[sideHustleType] || DEFAULT_CONFIG;
   
   // Generate unique storage key for this user
