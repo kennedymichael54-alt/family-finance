@@ -3072,19 +3072,18 @@ const checkSubscriptionAccess = (subscription, userEmail = null) => {
 };
 
 // CSV Parser
-const parseCSV = (csvText) => {
-  const lines = csvText.split('\n');
-  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-  const transactions = [];
-
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-
+// Smart CSV Parser - handles various bank formats and column orders
+const parseCSV = (csvText, options = {}) => {
+  const { hubType = 'homebudget', accountType = 'personal', fileType = 'checking' } = options;
+  
+  const lines = csvText.split('\n').filter(line => line.trim());
+  if (lines.length < 2) return [];
+  
+  // Helper: Parse a single CSV line handling quoted values
+  const parseCSVLine = (line) => {
     const values = [];
     let current = '';
     let inQuotes = false;
-
     for (let char of line) {
       if (char === '"') {
         inQuotes = !inQuotes;
@@ -3096,20 +3095,164 @@ const parseCSV = (csvText) => {
       }
     }
     values.push(current.trim());
-
-    if (values.length >= 5) {
-      transactions.push({
-        id: i,
-        date: values[0],
-        description: values[1]?.replace(/"/g, '') || '',
-        originalDescription: values[2]?.replace(/"/g, '') || '',
-        category: values[3]?.replace(/"/g, '') || 'Uncategorized',
-        amount: parseFloat(values[4]) || 0,
-        status: values[5]?.replace(/"/g, '') || 'Posted'
-      });
+    return values;
+  };
+  
+  // Helper: Parse amount from various formats
+  const parseAmount = (str) => {
+    if (!str) return 0;
+    let cleaned = str.replace(/[$£€¥,\s]/g, '').trim();
+    if (cleaned.startsWith('(') && cleaned.endsWith(')')) {
+      cleaned = '-' + cleaned.slice(1, -1);
+    }
+    if (cleaned.endsWith('-')) {
+      cleaned = '-' + cleaned.slice(0, -1);
+    }
+    const num = parseFloat(cleaned);
+    return isNaN(num) ? 0 : num;
+  };
+  
+  // Helper: Parse date from various formats
+  const parseFlexibleDate = (str) => {
+    if (!str) return null;
+    str = str.trim().replace(/['"]/g, '');
+    
+    // Try common date formats
+    const patterns = [
+      { regex: /^(\d{4})-(\d{1,2})-(\d{1,2})/, order: ['y', 'm', 'd'] }, // ISO
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{4})/, order: ['m', 'd', 'y'] }, // US MM/DD/YYYY
+      { regex: /^(\d{1,2})\/(\d{1,2})\/(\d{2})$/, order: ['m', 'd', 'y'], shortYear: true }, // US MM/DD/YY
+      { regex: /^(\d{1,2})-(\d{1,2})-(\d{4})/, order: ['m', 'd', 'y'] }, // MM-DD-YYYY
+      { regex: /^(\d{1,2})\.(\d{1,2})\.(\d{4})/, order: ['d', 'm', 'y'] }, // EU DD.MM.YYYY
+    ];
+    
+    for (const { regex, order, shortYear } of patterns) {
+      const match = str.match(regex);
+      if (match) {
+        let parts = { y: match[order.indexOf('y') + 1], m: match[order.indexOf('m') + 1], d: match[order.indexOf('d') + 1] };
+        if (shortYear) parts.y = parseInt(parts.y) > 50 ? '19' + parts.y : '20' + parts.y;
+        const dateStr = `${parts.y}-${String(parts.m).padStart(2, '0')}-${String(parts.d).padStart(2, '0')}`;
+        if (!isNaN(new Date(dateStr).getTime())) return dateStr;
+      }
+    }
+    
+    // Month name format: Jan 15, 2024
+    const monthMatch = str.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})/);
+    if (monthMatch) {
+      const months = { jan: '01', feb: '02', mar: '03', apr: '04', may: '05', jun: '06', jul: '07', aug: '08', sep: '09', oct: '10', nov: '11', dec: '12' };
+      const m = months[monthMatch[1].toLowerCase().slice(0, 3)];
+      if (m) return `${monthMatch[3]}-${m}-${String(monthMatch[2]).padStart(2, '0')}`;
+    }
+    
+    // Last resort
+    const parsed = new Date(str);
+    return !isNaN(parsed.getTime()) ? parsed.toISOString().split('T')[0] : null;
+  };
+  
+  // Parse header row - normalize to lowercase
+  const rawHeaders = parseCSVLine(lines[0]);
+  const headers = rawHeaders.map(h => h.toLowerCase().trim().replace(/['"]/g, ''));
+  
+  // Column mapping - maps various bank column names to our standard fields
+  const columnMappings = {
+    date: ['date', 'transaction date', 'posting date', 'post date', 'trans date', 'posted date', 'effective date', 'trans. date'],
+    description: ['description', 'memo', 'transaction', 'name', 'merchant', 'payee', 'transaction description', 'details', 'narrative'],
+    originalDescription: ['original description', 'original_description', 'raw description', 'bank description'],
+    category: ['category', 'type', 'transaction type', 'trans type', 'classification', 'tag', 'label'],
+    amount: ['amount', 'transaction amount', 'trans amount', 'value', 'sum', 'total'],
+    debit: ['debit', 'withdrawal', 'withdrawals', 'money out', 'debit amount', 'debits', 'outflow'],
+    credit: ['credit', 'deposit', 'deposits', 'money in', 'credit amount', 'credits', 'inflow'],
+    status: ['status', 'state', 'transaction status', 'posted', 'cleared'],
+    balance: ['balance', 'running balance', 'account balance', 'ending balance'],
+    account: ['account', 'account name', 'account number', 'source']
+  };
+  
+  // Find column indices for each field
+  const columnIndices = {};
+  for (const [field, aliases] of Object.entries(columnMappings)) {
+    for (let i = 0; i < headers.length; i++) {
+      const h = headers[i];
+      if (aliases.some(alias => h === alias || h.includes(alias) || alias.includes(h))) {
+        columnIndices[field] = i;
+        break;
+      }
     }
   }
-
+  
+  // Positional fallbacks if columns not found
+  if (columnIndices.date === undefined) columnIndices.date = 0;
+  if (columnIndices.amount === undefined && columnIndices.debit === undefined && columnIndices.credit === undefined) {
+    // Find first numeric-looking column after date
+    for (let i = 0; i < headers.length; i++) {
+      if (i !== columnIndices.date && i !== columnIndices.description) {
+        columnIndices.amount = i;
+        break;
+      }
+    }
+  }
+  if (columnIndices.description === undefined) {
+    columnIndices.description = columnIndices.date === 0 ? 1 : 0;
+  }
+  
+  console.log('📊 [CSV Parse] Headers:', headers);
+  console.log('📊 [CSV Parse] Column mapping:', columnIndices);
+  
+  const transactions = [];
+  
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    if (values.length < 2) continue;
+    
+    const getValue = (field) => {
+      const idx = columnIndices[field];
+      return idx !== undefined && values[idx] ? values[idx].replace(/['"]/g, '').trim() : '';
+    };
+    
+    // Parse date
+    let parsedDate = parseFlexibleDate(getValue('date'));
+    if (!parsedDate) continue; // Skip rows without valid date
+    
+    // Parse amount - handle debit/credit columns or combined amount
+    let amount = 0;
+    if (columnIndices.debit !== undefined || columnIndices.credit !== undefined) {
+      const debit = parseAmount(getValue('debit'));
+      const credit = parseAmount(getValue('credit'));
+      amount = credit - debit; // Credits positive, debits negative
+    } else {
+      amount = parseAmount(getValue('amount'));
+    }
+    
+    // Get description
+    let description = getValue('description') || getValue('originalDescription') || 'Unknown Transaction';
+    
+    // Get category or auto-assign based on amount
+    let category = getValue('category');
+    if (!category || category.toLowerCase() === 'uncategorized' || category === '') {
+      category = amount >= 0 ? 'Income' : 'Expense';
+    }
+    
+    // Get status
+    let status = getValue('status') || 'Completed';
+    if (status.toLowerCase().includes('pend')) status = 'Processing';
+    else status = 'Completed';
+    
+    transactions.push({
+      id: `import_${Date.now()}_${i}`,
+      date: parsedDate,
+      description: description,
+      originalDescription: getValue('originalDescription') || description,
+      category: category,
+      amount: amount,
+      status: status,
+      accountType: accountType,
+      hubType: hubType,
+      fileType: fileType,
+      importedAt: new Date().toISOString(),
+      source: 'csv_import'
+    });
+  }
+  
+  console.log(`✅ [CSV Parse] Parsed ${transactions.length} transactions for ${hubType}/${accountType}`);
   return transactions;
 };
 // ============================================================================
@@ -16531,13 +16674,26 @@ function ImportTabDS({ onImport, parseCSV, transactionCount, theme, activeTab, p
     setImportResult(null);
     try {
       const text = await file.text();
-      const transactions = parseCSV(text);
+      
+      // Determine account type based on hub and selected category
+      let accountType = 'personal';
+      if (activeHub === 'bizbudget') {
+        accountType = 'business';
+      } else if (selectedCategory?.id === 'sales-tracker') {
+        accountType = 'sidehustle';
+      }
+      
+      const transactions = parseCSV(text, {
+        hubType: activeHub,
+        accountType: accountType,
+        fileType: selectedFileType?.id || 'checking'
+      });
 
       if (transactions.length > 0) {
         onImport(transactions);
         setImportResult({ success: true, count: transactions.length, fileName: file.name });
       } else {
-        setImportResult({ success: false, error: 'No valid transactions found in file' });
+        setImportResult({ success: false, error: 'No valid transactions found in file. Please check your CSV format.' });
       }
     } catch (error) {
       setImportResult({ success: false, error: error.message });
