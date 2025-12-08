@@ -32,6 +32,25 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
   const [activeTab, setActiveTab] = useState(mappedInitialTab);
   const [collapsedSections, setCollapsedSections] = useState({});
   
+  // All section IDs for collapse/expand all
+  const ALL_SECTIONS = [
+    'propertyDetails', 'financing', 'income', 'expenses', 'analysis',
+    'projections', 'roiAnalysis', 'equityTracker', 'saleProjection',
+    'simulation', 'comparison', 'aiInsights'
+  ];
+  
+  const collapseAll = () => {
+    const collapsed = {};
+    ALL_SECTIONS.forEach(s => collapsed[s] = true);
+    setCollapsedSections(collapsed);
+  };
+  
+  const expandAll = () => {
+    const expanded = {};
+    ALL_SECTIONS.forEach(s => expanded[s] = false);
+    setCollapsedSections(expanded);
+  };
+  
   // Simulation Criteria State
   const [simulationCriteria, setSimulationCriteria] = useState({
     minCashOnCash: 8,
@@ -3234,6 +3253,22 @@ const REBudgetHub = ({ theme: themeProp = {}, profile, initialTab = 'analyzer' }
             </p>
           </div>
         </div>
+      </div>
+      
+      {/* Collapse All / Expand All Toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button onClick={collapseAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>🗂️ Collapse All</button>
+        <button onClick={expandAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>📂 Expand All</button>
       </div>
       
       {/* Tab Content */}
