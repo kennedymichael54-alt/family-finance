@@ -12581,6 +12581,42 @@ function DashboardHome({ transactions, goals, bills = [], tasks = [], theme, las
         </div>
       </div>
       
+      {/* Collapse All / Expand All Toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button
+          onClick={() => setCollapsedSections({
+            healthScore: true, netWorth: true, cashFlow: true, spending: true,
+            spendingCategory: true, recurring: true, quickActions: true, milestones: true,
+            financialOverview: true, spendingAnalysis: true, transactions: true,
+            transactionList: true, goalsProgress: true
+          })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+            background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+            borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+            color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+          }}
+        >
+          🗂️ Collapse All
+        </button>
+        <button
+          onClick={() => setCollapsedSections({
+            healthScore: false, netWorth: false, cashFlow: false, spending: false,
+            spendingCategory: false, recurring: false, quickActions: false, milestones: false,
+            financialOverview: false, spendingAnalysis: false, transactions: false,
+            transactionList: false, goalsProgress: false
+          })}
+          style={{
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+            background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+            borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+            color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+          }}
+        >
+          📂 Expand All
+        </button>
+      </div>
+      
       {/* Edit Mode Instructions */}
       {isEditMode && (
         <div style={{
@@ -15827,6 +15863,15 @@ function TasksTab({ tasks, onUpdateTasks, theme, lastImportDate, accountLabels }
   const [newTask, setNewTask] = useState({ title: '', description: '', dueDate: '', priority: 'medium', category: 'Personal' });
   const [editingTask, setEditingTask] = useState(null);
   const [activeAccount, setActiveAccount] = useState('all');
+  
+  // Collapsible sections state
+  const [collapsedSections, setCollapsedSections] = useState({
+    stats: false,
+    taskList: false
+  });
+  
+  const collapseAll = () => setCollapsedSections({ stats: true, taskList: true });
+  const expandAll = () => setCollapsedSections({ stats: false, taskList: false });
 
   // Filter tasks by account type
   const accountFilteredTasks = tasks.filter(t => {
@@ -15938,6 +15983,22 @@ function TasksTab({ tasks, onUpdateTasks, theme, lastImportDate, accountLabels }
             Add Task
           </button>
         </div>
+      </div>
+
+      {/* Collapse All / Expand All Toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button onClick={collapseAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>🗂️ Collapse All</button>
+        <button onClick={expandAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>📂 Expand All</button>
       </div>
 
       {/* Stats Overview */}
@@ -16264,12 +16325,16 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
   
   // Collapsible sections state
   const [collapsedSections, setCollapsedSections] = useState({
+    stats: false,
     transactionList: false
   });
   
   const toggleSection = (section) => {
     setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
+  
+  const collapseAll = () => setCollapsedSections({ stats: true, transactionList: true });
+  const expandAll = () => setCollapsedSections({ stats: false, transactionList: false });
   
   // Filter transactions by account type
   const filteredByAccount = transactions.filter(t => {
@@ -16353,6 +16418,22 @@ function TransactionsTabDS({ transactions, onNavigateToImport, theme, lastImport
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Collapse All / Expand All Toolbar */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px' }}>
+        <button onClick={collapseAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>🗂️ Collapse All</button>
+        <button onClick={expandAll} style={{
+          display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 14px',
+          background: theme.bgCard, border: `1px solid ${theme.borderLight}`,
+          borderRadius: '10px', cursor: 'pointer', fontSize: '13px',
+          color: theme.textSecondary, fontWeight: '500', transition: 'all 0.2s'
+        }}>📂 Expand All</button>
       </div>
 
       {/* Stats Cards - Gradient style matching Dashboard */}
