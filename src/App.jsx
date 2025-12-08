@@ -2734,7 +2734,6 @@ const savePreferencesToDB = async (userId, preferences) => {
     const { error } = await sb.from('user_settings').upsert({
       user_id: userId,
       theme: preferences.theme || 'light',
-      language: preferences.language || 'en',
       last_import_date: preferences.lastImportDate || null,
       updated_at: new Date().toISOString()
     }, { onConflict: 'user_id' });
